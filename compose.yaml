@@ -1,0 +1,139 @@
+# Base Compose file: everything that is the SAME in dev and prod.
+#
+# Never run this file alone. Always combine it with one override:
+#   dev:   docker compose -f compose.yaml -f compose.dev.yaml  ...   (make up)
+#   prod:  docker compose -f compose.yaml -f compose.prod.yaml ...   (make prod-up)
+# Later files add to or replace settings from earlier ones.
+#
+# Values like ${POSTGRES_USER} come from the .env file next to this file.
+# ${NAME:?message} stops Compose with that message if NAME is missing.
+# ${NAME:-default} uses the default if NAME is unset or empty.
+#
+# Startup order (enforced by depends_on + healthchecks):
+#   db (healthy) -> migrate (finished OK) -> api (healthy) -> caddy
+
+# Prefix for container, network and volume names (e.g. sound-archive-db-1),
+# the same whatever the folder is called.
+name: sound-archive
+
+# "x-" blocks are ignored by Compose itself; they hold settings that several
+# services share. "&backend" names the block, "<<: *backend" pastes it in.
+x-backend: &backend
+  # api and migrate use the same image: same code, different command.
+  build:
+    context: ./backend
+  image: sound-archive-backend:prod
+
+services:
+  db:
+    # Official PostGIS image = official Postgres 18 + PostGIS 3.6.
+    # amd64 only (fine for this laptop and the MSI). See docs/ARCHITECTURE.md
+    # for an arm64 alternative.
+    image: postgis/postgis:18-3.6
+    environment:
+      # Read by the Postgres image on FIRST start only, to create the
+      # admin user and the database.
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      # Read by our init script to create the API's limited user.
+      APP_DB_USER: ${APP_DB_USER:?set APP_DB_USER in .env}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
+    volumes:
+      # Database files. By default a Docker named volume ("db_data"); set
+      # DB_DATA_DIR in .env to an absolute path to use a folder instead.
+      # Postgres 18 images keep their data under /var/lib/postgresql/18/...,
+      # so the mount point is /var/lib/postgresql (not .../data as in older guides).
+      - ${DB_DATA_DIR:-db_data}:/var/lib/postgresql
+      # Mount just our one script, not the whole folder: the PostGIS image
+      # has its own 10_postgis.sh in this directory and we must not hide it.
+      - ./infra/postgres/init/20-create-app-user.sh:/docker-entrypoint-initdb.d/20-create-app-user.sh:ro
+    healthcheck:
+      # -h 127.0.0.1 forces a TCP check. During first-time setup Postgres runs a
+      # temporary server reachable only via a local socket; checking TCP avoids
+      # reporting "healthy" before the init scripts have finished.
+      # $$ is how you write a literal $ in Compose: the variable is expanded
+      # inside the container, not by Compose.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s  # first start (initdb) can take a while; failures don't count yet
+      start_interval: 1s # ...but check every second during that period
+
+  migrate:
+    <<: *backend
+    # One-shot job: apply database migrations, then exit.
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DB_HOST: db
+      DB_NAME: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      # The admin user: migrations create extensions and tables, and the
+      # tables then belong to this user (see infra/postgres/init/).
+      DB_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: *backend
+    environment:
+      DB_HOST: db
+      DB_NAME: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      # The limited app user: can read and write data, cannot change the schema.
+      DB_USER: ${APP_DB_USER:?set APP_DB_USER in .env}
+      DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
+    # No "ports:" on purpose. Only Caddy reaches the API, over Compose's
+    # internal network.
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        # Start only after migrations ran and exited with code 0.
+        condition: service_completed_successfully
+    healthcheck:
+      # The slim Python image has no curl, so use Python's own HTTP client.
+      # Checks liveness only (/api/health), so a database outage does not
+      # mark the API itself as broken.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+      start_interval: 1s
+
+  caddy:
+    image: caddy:2.11.7-alpine
+    environment:
+      # Read by the Caddyfile. ":80" = plain HTTP. A domain name = automatic HTTPS.
+      CADDY_SITE_ADDRESS: ${CADDY_SITE_ADDRESS:-:80}
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./web:/srv/web:ro
+      # /data holds HTTPS certificates and keys. It must survive container
+      # re-creation, or Caddy would request new certificates every time
+      # (and Let's Encrypt rate-limits that).
+      - caddy_data:/data
+      - caddy_config:/config
+    # Ports are published in compose.dev.yaml / compose.prod.yaml, because
+    # they differ between the two.
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      # Ask Caddy's admin API (inside the container only). This works whether
+      # the site is plain HTTP or a domain with HTTPS.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+      start_interval: 1s
+
+# Named volumes: storage managed by Docker that survives `docker compose down`.
+# Only `docker compose down -v` (make reset-db) deletes them.
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:

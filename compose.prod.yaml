@@ -1,0 +1,44 @@
+# Prod overrides for the MSI, used together with compose.yaml:
+#   docker compose -f compose.yaml -f compose.prod.yaml up -d --build   (make prod-up)
+# Only what differs from the base file is here.
+#
+# Note what is NOT here: no "ports" for db or api. Only Caddy is reachable
+# from outside. Docker-published ports bypass the ufw firewall, so anything
+# published here is open to the network (see docs/DEPLOY_MSI.md).
+
+# Log rotation: Docker keeps each container's output in a JSON file that grows
+# forever by default. This caps it at 5 files of 10 MB per container (about
+# 50 MB), so logs cannot fill the disk.
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "5"
+
+services:
+  db:
+    <<: *logging
+    # Start again after a crash or a reboot, unless you stopped it yourself.
+    restart: unless-stopped
+
+  migrate:
+    <<: *logging
+    # One-shot job: it must NOT be restarted after it exits successfully.
+    restart: "no"
+
+  api:
+    <<: *logging
+    restart: unless-stopped
+
+  caddy:
+    <<: *logging
+    restart: unless-stopped
+    ports:
+      # 80: plain HTTP now; with a domain, also needed for the Let's Encrypt
+      #     challenge and the redirect to HTTPS.
+      - "80:80"
+      # 443 (TCP and UDP): HTTPS, once CADDY_SITE_ADDRESS is a domain.
+      # UDP is for HTTP/3. Unused (but harmless) while on plain HTTP.
+      - "443:443"
+      - "443:443/udp"
