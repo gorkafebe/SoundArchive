@@ -65,7 +65,8 @@ USER app
 # bind-mounted from the laptop (compose.dev.yaml), so saving in VS Code is enough.
 # Plain uvicorn polls files for changes, which also works on Docker Desktop
 # for Windows and macOS (file-change events don't always cross into containers).
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# --reload-dir app: watch only our code, not e.g. a local .venv folder.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "app"]
 
 # --- prod (last stage = what `docker build` produces by default) -----------------
 FROM runtime AS prod
