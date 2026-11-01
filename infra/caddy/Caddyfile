@@ -1,0 +1,35 @@
+# Caddy configuration: the only service reachable from outside.
+#
+#   /api/*        -> forwarded to the FastAPI service (api:8000)
+#   everything    -> static files from web/ (mounted at /srv/web)
+#
+# The site address comes from the CADDY_SITE_ADDRESS environment variable;
+# {$NAME:default} means "use $NAME, or the default if it is unset".
+#   :80                 plain HTTP for any hostname or IP (dev, and Tailscale)
+#   archive.example.com Caddy automatically gets and renews a Let's Encrypt
+#                       certificate, serves HTTPS on 443 and redirects 80 -> 443.
+# Changing that one variable is the whole switch. See docs/DEPLOY_MSI.md.
+#
+# Caddy's admin API stays on its default, localhost:2019 inside the container.
+# It is not published; the Docker healthcheck uses it.
+
+{$CADDY_SITE_ADDRESS::80} {
+	# Compress responses (HTML, JSON) when the browser supports it.
+	encode zstd gzip
+
+	# "handle" blocks are tried in order and only the first match runs,
+	# so /api/... never falls through to the file server.
+	handle /api/* {
+		# "api" is the Compose service name; Docker's internal DNS resolves it.
+		# The path is forwarded unchanged: FastAPI's routes also start with /api.
+		reverse_proxy api:8000
+	}
+
+	handle {
+		root * /srv/web
+		file_server
+	}
+
+	# Access log for every request, printed to the container log.
+	log
+}
