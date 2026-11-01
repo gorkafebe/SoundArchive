@@ -1,0 +1,37 @@
+# --- Secrets and local configuration ---------------------------------------
+# .env holds real passwords. Only .env.example (placeholders) is committed.
+.env
+.env.*
+!.env.example
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- JavaScript (for the React app in a later phase) -----------------------
+node_modules/
+
+# --- Local data directories ------------------------------------------------
+# If you point DB_DATA_DIR (or later, file storage) inside the repo, use one of
+# these folder names so the data never ends up in git.
+data/
+.data/
+pgdata/
+
+# --- Editors ---------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*~
+
+# --- Operating systems -----------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
