@@ -1,0 +1,10 @@
+# Files Docker should NOT send to the build. Keeps images small and stops a
+# local virtualenv or secrets from being copied into an image by accident.
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+.env.*
+Dockerfile
+.dockerignore

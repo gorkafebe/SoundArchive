@@ -1,0 +1,31 @@
+[project]
+name = "sound-archive-api"
+version = "0.1.0"
+description = "Sound Archive API"
+requires-python = ">=3.14,<3.15"
+dependencies = [
+    "alembic>=1.20.1",
+    "fastapi>=0.162.0",
+    "psycopg[binary]>=3.3.6",
+    "pydantic-settings>=2.16.2",
+    "sqlalchemy>=2.1.6",
+    "uvicorn>=0.54.0",
+]
+
+[tool.uv]
+# This is an application, not a library to publish: uv only installs the
+# dependencies, and the code runs straight from the source folder.
+package = false
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.16.0",
+    "pytest>=9.2.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Don't write a .pytest_cache folder: in dev the source folder is mounted from
+# the laptop and the container's non-root user may not be allowed to write there.
+# -rs prints the reason for any skipped test.
+addopts = "-p no:cacheprovider -rs"
