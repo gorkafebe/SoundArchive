@@ -96,6 +96,25 @@ lag behind and conflict with these packages.
   docker compose version
   ```
 
+- [ ] Rotate the logs of **every** container by default. `compose.prod.yaml`
+      already caps this app's logs; this sets the same limit for any other
+      container on the machine (for example the monitoring panel). Create
+      `/etc/docker/daemon.json` (`sudo nano /etc/docker/daemon.json`) with:
+
+  ```json
+  {
+    "log-driver": "json-file",
+    "log-opts": { "max-size": "10m", "max-file": "5" }
+  }
+  ```
+
+  Then restart Docker: `sudo systemctl restart docker`. Running containers
+  are restarted too, and the setting applies only to containers created
+  after the change.
+
+Status on the MSI: **done** 2026-11-02 (Docker Engine 29.9.2, Compose v5.6.1,
+`daemon.json` as above; checked with `cat /etc/docker/daemon.json`).
+
 Docker starts automatically at boot (systemd service `docker`). With
 `restart: unless-stopped` in `compose.prod.yaml`, the app comes back after a
 reboot too.
