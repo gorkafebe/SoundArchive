@@ -154,7 +154,7 @@ reboot too.
 
   (A private repository needs credentials on the MSI, for example a
   read-only *deploy key* added to the repository. How to create it:
-  [MSI_SERVER_SETUP.md, section 10](MSI_SERVER_SETUP.md#10-still-to-do).)
+  [MSI_SERVER_SETUP.md, section 14](MSI_SERVER_SETUP.md#14-still-to-do).)
 
 ---
 

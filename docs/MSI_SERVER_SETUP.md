@@ -523,7 +523,148 @@ The SSD is **not a backup**. Before storing any real recording, set up backups
 
 ---
 
-## 10. Still to do
+## 10. Battery charge limit (msi-ec)
+
+Status: limit **done and verified** 2026-11-02 (start 50%, end 60%).
+Survives reboots: **verified for two reboots** without any extra service
+(see "Does it survive a reboot?" below); **not verified** after a cold boot
+with all power removed.
+
+*Why:* a server that is always plugged in keeps its battery at 100%, and a
+lithium battery held full and warm wears out faster. Holding it at 60% slows
+that down. The laptop's **embedded controller** (EC, a small chip with its
+own firmware that handles the keyboard, fans and charging) applies the limit,
+not Linux. It does not drain the battery and does not limit performance: it
+only stops charging above the end value.
+
+### What was done
+
+1. Ubuntu's kernel 6.8 has an `msi_ec` driver, but it refused this machine:
+   `Firmware version is not supported: '1583EMS1.109'` (seen by the owner on
+   2026-11-02; no longer in the system log).
+2. The newer version of the same driver, the external project
+   [BeardOverflow/msi-ec](https://github.com/BeardOverflow/msi-ec), lists
+   `1583EMS1.109` in its `ALLOWED_FW_G2_1` group (`msi-ec.c`, commented
+   "Pulse GL66 12UEK"; `1583EMS1.110` is commented "Katana GF66 12UG"). The
+   driver recognises a laptop by its **EC firmware**, not by its model name,
+   so this Katana is supported through a sister model's firmware.
+3. It was built and installed with **DKMS** (Dynamic Kernel Module Support:
+   it rebuilds the module automatically for every new kernel). It needs
+   kernel 6.5 or newer:
+
+   ```sh
+   sudo apt install -y build-essential linux-headers-generic dkms
+   git clone https://github.com/BeardOverflow/msi-ec ~/msi-ec
+   cd ~/msi-ec
+   sudo make dkms-install
+   ```
+
+   The module goes to `/lib/modules/<kernel>/updates/dkms/`, which takes
+   priority over the kernel's own `msi_ec`. `make dkms-install` also writes
+   `/etc/modules-load.d/msi-ec.conf` (one line, `msi-ec`), so the module
+   loads at every boot. Secure Boot needed one extra step: see
+   [section 11](#11-secure-boot-and-the-mok).
+4. After the module loaded, both thresholds read `0`. The limit was set
+   on purpose:
+
+   ```sh
+   echo 60 | sudo tee /sys/class/power_supply/BAT1/charge_control_end_threshold
+   ```
+
+   The thresholds then read **start 50, end 60**, and within about 5 seconds
+   `upower` changed from `charging` to `fully-charged` at 95%: the EC had
+   stopped charging. (Observed by the owner at the time; the command itself
+   is in the system log at 12:19 UTC.)
+
+Start and end are **one setting** inside the EC: start is always end minus
+10. The driver accepts an end value from 10 to 100; MSI's own three modes are
+end 60 / start 50, end 80 / start 70 and end 100 / start 90 (msi-ec README
+and `msi-ec.c`). The battery stays at 95% because the EC does not discharge
+it; it will only charge again once it drops below 50%.
+
+### Check it
+
+```sh
+cat /sys/class/power_supply/BAT1/charge_control_{start,end}_threshold   # 50, 60
+cat /sys/class/power_supply/BAT1/{status,capacity}    # Not charging, 95 (until it drifts below 50)
+dkms status                                           # msi_ec/0.13, <kernel>, x86_64: installed
+lsmod | grep msi_ec
+cat /sys/devices/platform/msi-ec/fw_version           # 1583EMS1.109
+```
+
+Readings on 2026-11-02 at 17:20 UTC (verified): `50` and `60`;
+`Not charging`, 95%; `msi_ec/0.13, 6.8.0-147-generic, x86_64: installed`;
+module file `/lib/modules/6.8.0-147-generic/updates/dkms/msi-ec.ko.zst`;
+firmware `1583EMS1.109`.
+
+### Battery health
+
+The battery reports charge in ampere-hours (`charge_full`,
+`charge_full_design`), not watt-hours. On 2026-11-02:
+`charge_full` 3,014,000 µAh against `charge_full_design` 4,562,000 µAh,
+that is **66% of its design capacity**. `upower` gives the same in energy:
+34.36 Wh against 52.01 Wh. At the 60% limit that is about **20 Wh**. The
+cycle count always reads 0 (the firmware does not report it).
+
+### Does it survive a reboot?
+
+There is no service that writes the limit at boot
+(`systemctl status battery-charge-limit.service` says the unit could not be
+found). Even so, the system log shows the limit was written **once**, at
+12:19 UTC, and the machine then went through an abrupt stop (12:45), a boot
+(13:20) and a clean reboot (14:58), with no later command touching it. At
+17:20 it still read 50/60. So the EC **keeps the setting across reboots**
+while the charger is connected.
+
+**Not verified:** a cold boot after removing all power, a fully drained
+battery, or a BIOS update; any of them might reset the EC to its default (no
+limit, so charging to 100%). A small boot-time service would re-apply 60%
+just in case. It is a proposal in [section 14](#14-still-to-do).
+
+What to watch: after a kernel update, DKMS rebuilds the module by itself
+(with the same signing key, so no new MOK enrolment). If the
+`charge_control_*` files disappear, look at `dkms status` first.
+
+---
+
+## 11. Secure Boot and the MOK
+
+Status: **done and verified** 2026-11-02 (`mokutil --sb-state` →
+`SecureBoot enabled`; the msi-ec module is signed and loads).
+
+**Secure Boot** stays on, on purpose: the firmware only starts a boot loader
+and kernel signed by a trusted key, and the kernel only loads signed modules.
+An out-of-tree module such as `msi-ec` is not signed by Ubuntu, so:
+
+- DKMS created a key of its own for this machine, the **MOK** (Machine Owner
+  Key), and signs every module it builds with it
+  (`modinfo -F signer msi_ec` → `soundarchive Secure Boot Module Signature key`).
+- That key had to be **enrolled** in the firmware once. During the
+  installation a one-time password was chosen for it; at the next reboot a
+  blue screen, **"MOK management"**, appeared before Ubuntu, and the key was
+  enrolled there with that password (the usual steps are *Enroll MOK* →
+  *Continue* → *Yes* → password → *Reboot*).
+- The one-time password was letters and digits only, in case that screen
+  used a US keyboard layout (on a Spanish keyboard some symbols are in other
+  places). It is used once and **never written down anywhere**.
+
+When to repeat the enrolment: only after a reinstall, if the firmware's
+Secure Boot keys are reset, or if the blue screen was missed (it appears only
+once). Then:
+
+```sh
+sudo mokutil --import /var/lib/shim-signed/mok/MOK.der    # asks for a new one-time password
+sudo reboot                                               # enrol in the blue screen
+```
+
+Kernel updates reuse the same key, so they need nothing.
+
+Not recorded in these docs, on purpose: the one-time password and the key's
+fingerprint.
+
+---
+
+## 14. Still to do
 
 Not done yet. Tick them as they are completed, and record each one in the
 project log.
