@@ -20,8 +20,10 @@ Commands starting with `sudo` change the system. Unless a step says
 | | |
 |---|---|
 | Model | MSI Katana GF66 12UE-091XES (laptop), x86_64 |
-| CPU | to check: `lscpu \| head -20` (the core layout, 6 performance + 8 efficient, suggests an i7-12700H) |
-| RAM | to check: `free -h` |
+| CPU | Intel Core i7-12700H, 14 cores / 20 threads, 400–4700 MHz (verified with `lscpu`, 2026-11-02) |
+| RAM | 16 GB (`free -h` shows `15Gi`), swap 4 GiB (verified) |
+| GPU | NVIDIA GeForce RTX 3060 Mobile (GA106M), open-source `nouveau` driver, powered down while unused (see [section 12](#12-power-saving-plan-nothing-applied-yet)) |
+| BIOS / EC firmware | BIOS `E1583IMS.10F` (2023-07-03, from `hostnamectl`); embedded controller `1583EMS1.109` (see [section 10](#10-battery-charge-limit-msi-ec)) |
 | Disk | one NVMe SSD, Micron 2450 (MTFDKBA512TFK), the only disk. Sold as 512 GB; `lsblk` shows `476.9G` because it counts in GiB. |
 | Second M.2 slot | unknown. Check it: a second SSD is the cheapest way to add space. |
 | Wired network | `enp4s0` |
@@ -383,6 +385,40 @@ By default, closing the lid suspends the laptop and the server disappears.
 Verified on 2026-11-02: with the MSI plugged in and an SSH session open, the
 lid was closed and the session stayed alive.
 
+### Never sleep
+
+A server should never suspend or hibernate, whatever triggers it (the lid,
+a key, an idle timer, a command). Masking the sleep targets makes systemd
+refuse all of them:
+
+- [ ] Mask the four sleep targets:
+
+  ```sh
+  sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+  ```
+
+- [ ] Check: each line must say `masked`.
+
+  ```sh
+  systemctl is-enabled sleep.target suspend.target hibernate.target hybrid-sleep.target
+  ```
+
+  To undo it one day: `sudo systemctl unmask` with the same four names.
+
+Status: **done** 2026-11-02 at 13:30 UTC (the command is in the system log)
+and **verified** at 17:21 UTC (all four `masked`). This step was not written
+down when it was done; it is recorded here from the log.
+
+Why it was done then: at 12:45 UTC that day the MSI stopped responding. The
+lid had been closed since 12:07 (ignored, as configured) and the machine was
+idle (99% idle at 12:40 according to `sar`). The kernel log ends with
+`xhci_hcd 0000:00:14.0: xHCI host controller not responding, assume dead`,
+there is no clean shutdown, and the next boot (13:20) found the journal
+"uncleanly shut down". No `PM: suspend` message appears, so it is **not
+proven** that it tried to sleep. The cause is **unknown**; the masking is a
+precaution. If it happens again, note the time and check
+`journalctl -b -1 | tail -n 50` after the reboot.
+
 ### Turn the screen off when idle
 
 Only matters with the lid open; with the lid closed the laptop turns its
@@ -451,18 +487,14 @@ it on a hard surface (not fabric), and raise it slightly if possible.
   this laptop.
 - **Battery charge limit:** on MSI laptops this is not a BIOS option. Windows
   programs handle it (Battery Master in Dragon Center / MSI Center), and
-  Windows has been erased. Check whether Linux exposes it:
+  Windows has been erased. On Linux the `msi-ec` driver exposes it: **done**,
+  the limit is 60%. See [section 10](#10-battery-charge-limit-msi-ec).
 
-  ```sh
-  ls /sys/class/power_supply/BAT1/      # look for charge_control_end_threshold
-  ```
-
-  Until then there is no limit. MSI's default behaviour: charging stops at
-  100% and resumes below 89%.
-
-> **The battery works as a UPS.** Short power cuts do not turn the server off.
-> Only a long cut that drains the battery would need someone to press the
-> power button, if the BIOS has no automatic power-on. Wake-on-LAN is a
+> **The battery bridges short power cuts, but it is not a UPS you can rely
+> on.** It holds about 66% of its design capacity, and with the 60% limit it
+> sits at about 20 Wh (section 10). Time on battery under the server's load
+> has not been measured. A long cut drains it, and then someone has to press
+> the power button unless the BIOS has an automatic power-on. Wake-on-LAN is a
 > possible plan B (not verified).
 
 ---
