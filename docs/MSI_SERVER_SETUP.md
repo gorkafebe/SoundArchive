@@ -742,10 +742,55 @@ fine: Grafana shows times in the browser's zone.
 
 ## 14. Still to do
 
-Not done yet. Tick them as they are completed, and record each one in the
-project log.
+Done since the first version of this list (2026-11-02):
 
-- [ ] Record CPU and RAM: `lscpu | head -20` and `free -h`.
+- [x] CPU and RAM recorded (table at the top).
+- [x] Docker Engine and the Compose plugin installed, with global log
+      rotation ([DEPLOY_MSI.md](DEPLOY_MSI.md), section 1).
+- [x] Battery limit at 60% with `msi-ec` (section 10), Secure Boot kept on
+      (section 11).
+- [x] Sleep disabled for good (section 8, "Never sleep").
+- [x] A full rehearsal of DEPLOY_MSI.md on the MSI itself, in a throwaway
+      copy that was deleted afterwards (DEPLOY_MSI.md, section 11). The real
+      app is **not** deployed yet.
+
+Not done yet, roughly in order. Tick them as they are completed, and record
+each one in the project log.
+
+- [ ] **Full reboot test.** Before: note `docker ps`, `uptime` and the two
+      charge thresholds. Then `sudo reboot`, log in again and check: every
+      monitoring container `healthy`, thresholds still 50/60, `dkms status`
+      without errors, both network interfaces up (`ip -br a`),
+      `systemctl --failed` empty. Then a **cold boot** (power off, wait 30 s,
+      power button). *Why:* nothing has proved yet that everything comes back
+      by itself after a restart.
+- [ ] **Battery limit at boot (optional insurance, not verified).** The EC
+      kept the limit through two reboots (section 10). If it is ever lost, a
+      small service re-applies it at every boot. Proposed
+      `/etc/systemd/system/battery-charge-limit.service`:
+
+  ```ini
+  [Unit]
+  Description=Limit battery charge to 60 percent (msi-ec)
+  After=multi-user.target
+
+  [Service]
+  Type=oneshot
+  RemainAfterExit=yes
+  ExecStart=/bin/sh -c 'for i in $$(seq 1 30); do [ -w /sys/class/power_supply/BAT1/charge_control_end_threshold ] && break; sleep 1; done; echo 60 > /sys/class/power_supply/BAT1/charge_control_end_threshold'
+
+  [Install]
+  WantedBy=multi-user.target
+  ```
+
+  It waits up to 30 s for the driver's file to appear, then writes 60.
+  `$$` is how a unit file writes a literal `$` (systemd itself expands
+  `$NAME`). `systemd-analyze verify` accepts the file; it has not run at a
+  real boot. Enable it with
+  `sudo systemctl daemon-reload && sudo systemctl enable --now battery-charge-limit.service`,
+  then check the thresholds, and again after the reboot test.
+
+- [ ] **Time zone** (section 13): `sudo timedatectl set-timezone Europe/Madrid`.
 - [ ] Firewall (allow SSH **before** enabling, or you lock yourself out):
 
   ```sh
@@ -777,17 +822,26 @@ project log.
       IdentityFile ~/.ssh/sound_archive_deploy
   ```
 
-- [ ] Continue with [DEPLOY_MSI.md](DEPLOY_MSI.md): Docker Engine and the
-      Compose plugin from Docker's apt repository, the `docker` group, a first
-      test with `docker run --rm hello-world`, `git clone`, and the first real
-      run of the production stack. Fix anything unclear in that file as you go.
+- [ ] **Deploy the real app:** continue with [DEPLOY_MSI.md](DEPLOY_MSI.md)
+      from section 3 (`git clone` into `/srv/sound-archive`, `.env`, first
+      run). Docker is already installed. The rehearsal already found and fixed
+      the unclear parts (Caddyfile updates, who can reach the site).
+- [ ] **Incoming IPv6:** once the app runs, check that the router blocks
+      incoming IPv6, or ports 80/443 are open to the internet (DEPLOY_MSI.md,
+      section 6).
 - [ ] Router: reserve a fixed IP for each interface by MAC address (or rely on
       Tailscale names).
 - [ ] Back up the Lenovo's SSH private key and/or authorize a second key.
 - [ ] External USB disk for backups, before any real recording is stored.
 - [ ] Check whether there is a free second M.2 slot.
-- [ ] Temperatures with the lid closed, and under audio processing load.
-- [ ] BIOS: look for an automatic power-on option after a power cut.
-- [ ] Battery: check for `charge_control_end_threshold`; check now and then
-      that the battery is not swelling (a swollen battery lifts the case or the
-      touchpad).
+- [ ] Temperatures with the lid closed for a while, and under audio
+      processing load. Also unplug the charger for a minute and watch the
+      monitoring panel show "on battery".
+- [ ] BIOS: look for an automatic power-on option after a power cut, and for
+      a switch that turns the NVIDIA GPU off completely.
+- [ ] Power saving, in the order of section 12, starting with a wattmeter.
+- [ ] Battery: check now and then that it is not swelling (a swollen battery
+      lifts the case or the touchpad).
+- [ ] If the MSI stops responding again (as at 12:45 UTC on 2026-11-02,
+      section 8), note the time and read the end of the previous boot's log:
+      `journalctl -b -1 | tail -n 50`.
