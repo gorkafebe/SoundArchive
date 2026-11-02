@@ -342,6 +342,28 @@ docker compose -f compose.yaml -f compose.prod.yaml logs --since 1h caddy   # la
 Logs are rotated: at most 5 files × 10 MB per container (set in
 `compose.prod.yaml`), so they cannot fill the disk.
 
+Caddy's access log records every request with the visitor's IP address and
+request headers. That is useful for debugging, and it is personal data once
+the site is public.
+
+### When a service is down
+
+`restart: unless-stopped` brings a service back when its **process** dies,
+but not when **you** stop it. Measured in a rehearsal on the MSI
+(2026-11-02):
+
+| What happened | Result |
+|---|---|
+| The API process exited | Docker restarted it; healthy again after about 2 s |
+| PostgreSQL crashed (`pg_ctl stop -m immediate`) | Docker restarted it; it recovered by itself; `/api/health/db` back to 200 after about 1 s |
+| `docker stop` or `docker kill` on a container | It stays down (Docker treats both as "stopped by you"). `make prod-up` starts it again |
+
+While the database is down, `/api/health/db` answers `503` and `/api/health`
+stays `200`, so the test page paints the database box red and the API box
+green (read from the page's code; not seen in a browser).
+Whether everything comes back after a full reboot of the MSI is **not
+verified** yet.
+
 ---
 
 ## 9. Roll back to a previous commit
@@ -408,5 +430,13 @@ Notes:
 - Once the address is a domain, Caddy answers only for that name. Visiting
   `http://<msi-tailscale-name>/` no longer shows the site. Use the domain.
 - To go back to plain HTTP, set `CADDY_SITE_ADDRESS=:80` and `make prod-up`.
+- To try the HTTPS setup before having a domain, set
+  `CADDY_SITE_ADDRESS=localhost` and `make prod-up`. Then, on the MSI:
+  `curl -k https://localhost/api/health` (`-k` because the certificate comes
+  from Caddy's own local authority, which no browser trusts) and
+  `curl -I http://localhost/` (expect `308 Permanent Redirect` to `https://`).
+  Rehearsed on 2026-11-02: it works, and the certificate survives a Caddy
+  restart and re-creation because it is stored in `caddy_data`. It does
+  **not** test Let's Encrypt, DNS or the router. Set `:80` back afterwards.
 - Opening ports on your router makes the MSI reachable from the whole
   internet. Only Caddy is published (section 2), but keep the system updated.
