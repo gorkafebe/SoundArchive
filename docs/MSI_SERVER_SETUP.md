@@ -664,6 +664,82 @@ fingerprint.
 
 ---
 
+## 12. Power saving (plan; nothing applied yet)
+
+Status: **plan only**. Nothing below has been changed on the MSI.
+
+A gaming laptop running 24/7 as a server wastes power on parts it does not
+need. Before changing anything, measure; after each change, measure again.
+
+### Starting point (read on 2026-11-02 at 17:20 UTC, verified)
+
+| What | Reading | Command |
+|---|---|---|
+| NVIDIA GPU | `nouveau` driver; **`suspended`** (power control `auto`): 2.38 h suspended against 24 s active since boot | `cat /sys/bus/pci/devices/0000:01:00.0/power/{runtime_status,control}`, `lspci -k -s 01:00` |
+| CPU frequency driver | `intel_pstate`, status `active`, governor `powersave`, preference `balance_performance`, turbo allowed (`no_turbo` = 0) | `/sys/devices/system/cpu/cpu0/cpufreq/`, `/sys/devices/system/cpu/intel_pstate/` |
+| PCIe power saving (ASPM) | policy `default` (whatever the firmware chose) | `cat /sys/module/pcie_aspm/parameters/policy` |
+| Power tools | TLP not installed; `power-profiles-daemon` inactive; `thermald` active | `systemctl is-active tlp power-profiles-daemon thermald` |
+| Idle use | CPU about 1% busy; memory about 2.3 GB of 16 GB | Prometheus, 2026-11-02 |
+
+`powersave` with `intel_pstate` active does not mean "slow": the CPU still
+speeds up under load; `balance_performance` tells it how eagerly.
+
+One oddity: the 1-minute load average never drops below about 1.0 although
+the CPU is almost idle. Kernel threads for USB power management (`kworker/...+usb`,
+`+pm`) keep entering the "waiting for I/O" state (`D` in `ps`), which counts
+towards the load average without using CPU. At boot the kernel also logs
+`usb usb1-port8: connect-debounce failed`. No effect has been measured;
+**to confirm** whether it costs power (step 3).
+
+### Proposed order
+
+1. **Confirm and make the 60% limit permanent** (section 10). It protects the
+   battery, which matters more than a few watts.
+2. **GPU:** it is already powered down while unused, with the open-source
+   `nouveau` driver. Do **not** install NVIDIA's proprietary driver: the
+   server does not need the GPU, the driver is large, and its kernel module
+   would also need MOK signing. Check the state above now and then.
+3. **Baseline with a plug-in power meter** (a "wattmeter" between the wall
+   and the charger): note the watts at idle with the lid closed, and during a
+   typical task. Without that number, no saving can be shown.
+4. **TLP** (`sudo apt install tlp`), a service that applies many small
+   power settings. It has separate values for mains (`*_ON_AC`) and battery
+   (`*_ON_BAT`), and its strongest savings are in the battery values. On a
+   machine that is always plugged in, copy the battery values you want into
+   the `*_ON_AC` settings. (This is an inference from how TLP is organised;
+   check what it applies with `sudo tlp-stat`.) Do not run
+   `powertop --auto-tune` as well (the two fight over the same settings), and
+   make sure `power-profiles-daemon` is not running at the same time (the
+   two also overlap; today it is inactive).
+5. **BIOS:** look for a GPU switch (to disable the NVIDIA GPU completely) and
+   for power-on after a power cut (section 8).
+6. **Write down the numbers before and after** each step, with the date.
+
+---
+
+## 13. Time zone
+
+Status: **pending** (needs `sudo`).
+
+The MSI runs on UTC (`timedatectl` → `Time zone: Etc/UTC (UTC, +0000)`,
+verified 2026-11-02); the Lenovo runs on Madrid time. So everything made on
+the MSI shows times one hour behind Spain in winter (two in summer): logs,
+`date`, and the dates of git commits made there. The two commits of the
+guide's repository show it: one made on the MSI is dated `+0000`, one made on
+the Lenovo `+0100`, so their times look out of order.
+
+Planned fix:
+
+```sh
+sudo timedatectl set-timezone Europe/Madrid
+timedatectl        # Time zone: Europe/Madrid (CET, +0100)
+```
+
+Containers keep their own time zone (UTC) unless told otherwise. That is
+fine: Grafana shows times in the browser's zone.
+
+---
+
 ## 14. Still to do
 
 Not done yet. Tick them as they are completed, and record each one in the
