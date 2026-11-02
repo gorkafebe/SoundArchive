@@ -11,6 +11,10 @@ never by copying files.
 
 ## 0. Prerequisites (do these yourself first)
 
+- [ ] The machine is prepared following [MSI_SERVER_SETUP.md](MSI_SERVER_SETUP.md):
+      OS install, disk, network, key-only SSH, running with the lid closed,
+      firewall, Tailscale and a read-only deploy key. This file starts where
+      that one ends.
 - [ ] Ubuntu Server on the MSI, x86_64, up to date: `sudo apt update && sudo apt upgrade`
 - [ ] **SSH key-only login**: your public key is in `~/.ssh/authorized_keys`,
       and `PasswordAuthentication no` is set in the SSH server config. Test
@@ -20,6 +24,22 @@ never by copying files.
 - [ ] You can `ssh <user>@<msi-tailscale-name>` from your laptop.
 - [ ] The repository is pushed to a remote (GitHub, GitLab...) that the MSI
       can clone from.
+
+Lessons from the first install (2026-11-02). Details are in
+[MSI_SERVER_SETUP.md](MSI_SERVER_SETUP.md):
+
+- **Disk size.** Ubuntu's guided LVM layout gives the root filesystem only
+  about 100 GB and leaves the rest of the disk unallocated. Check `df -h /`;
+  if it is small, extend it (section 5 there). Otherwise Docker images and the
+  database run out of space long before the disk is full.
+- **Wi-Fi.** Ubuntu Server may not include `wpasupplicant`. Install it, with
+  the cable connected, **before** applying a Wi-Fi netplan config (section 6
+  there).
+- **Netplan files.** Leave the installer's `50-cloud-init.yaml` untouched and
+  put Wi-Fi in its own file (`60-wifi.yaml`, `chmod 600`). Apply changes with
+  `sudo netplan try`, which rolls back by itself if you lose the connection.
+- **Lid closed.** The server must ignore the lid switch, or closing the lid
+  suspends it. See section 8 there.
 
 ---
 
@@ -114,7 +134,8 @@ reboot too.
   ```
 
   (A private repository needs credentials on the MSI, for example a
-  read-only *deploy key* added to the repository.)
+  read-only *deploy key* added to the repository. How to create it:
+  [MSI_SERVER_SETUP.md, section 10](MSI_SERVER_SETUP.md#10-still-to-do).)
 
 ---
 
