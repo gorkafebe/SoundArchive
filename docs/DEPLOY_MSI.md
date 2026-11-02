@@ -440,3 +440,46 @@ Notes:
   **not** test Let's Encrypt, DNS or the router. Set `:80` back afterwards.
 - Opening ports on your router makes the MSI reachable from the whole
   internet. Only Caddy is published (section 2), but keep the system updated.
+
+---
+
+## 11. Testing a copy on the MSI without touching the real one
+
+`compose.yaml` fixes the project name: `name: sound-archive`. Compose uses it
+as the prefix of every container, network and volume
+(`sound-archive-db-1`, `sound-archive_db_data`). So a **second copy** of the
+repository in another folder, started with `make prod-up`, would take over
+the real containers and open the real database volume.
+
+To try something in a copy, give the copy its own project name in every
+command. The `COMPOSE_PROJECT_NAME` variable wins over `name:`:
+
+```sh
+git clone /srv/sound-archive /tmp/sa-test
+cd /tmp/sa-test
+cp .env.example .env && chmod 600 .env     # then set new test passwords
+export COMPOSE_PROJECT_NAME=sa-test        # only for this terminal
+docker compose -f compose.yaml -f compose.prod.yaml config | grep -m1 '^name:'
+```
+
+The last command must print `name: sa-test`. Then `make prod-check`,
+`make prod-up`, and so on, in the same terminal. Things to know:
+
+- `make` prints the `docker compose` command **without** the variable. If you
+  copy that command into another terminal, `export` the variable there too.
+- Image names are fixed in the Compose files, not prefixed: the copy builds
+  `sound-archive-backend:prod`, the same tag as the real app. That is harmless
+  (the real `make prod-up` rebuilds it), but it is shared.
+- The prod setup publishes ports 80 and 443, so a prod copy cannot start
+  while the real app is running.
+- Clean up with the project name, so only the copy's containers, network and
+  volumes are deleted, then delete the folder:
+
+  ```sh
+  docker compose -p sa-test -f compose.yaml -f compose.prod.yaml down -v
+  cd / && rm -rf /tmp/sa-test
+  ```
+
+Used on 2026-11-02 for a full rehearsal of this checklist on the MSI, with the
+project name `sa-rehearsal`, before the real deployment. That rehearsal found
+the Caddyfile and network notes in sections 6 and 7.
