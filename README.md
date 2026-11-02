@@ -72,5 +72,6 @@ Run `make` with no arguments to print this list. Each command prints the real
     ├── ARCHITECTURE.md   what each service does and how a request flows
     ├── DEV_SETUP.md      setting up and working on a development machine
     ├── MSI_SERVER_SETUP.md  turning the MSI laptop into the server (OS, network, SSH, battery)
-    └── DEPLOY_MSI.md     deploying to the Ubuntu server, step by step
+    ├── DEPLOY_MSI.md     deploying to the Ubuntu server, step by step
+    └── design/           interface research and design brief (no screens designed yet)
 ```
