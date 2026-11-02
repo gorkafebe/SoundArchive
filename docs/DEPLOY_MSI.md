@@ -183,6 +183,9 @@ reboot too.
   ```
 
   Expected: `OK: prod config is valid; db and api publish no ports.`
+  It also fails if a `TEST_ADMIN_*` variable (the admin password used only by
+  the dev tests, see `compose.dev.yaml`) ended up in the prod configuration.
+  It checks names only and never prints values.
 
 - [ ] Build and start (first time: a few minutes to download and build):
 

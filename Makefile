@@ -53,13 +53,19 @@ reset-db: ## Dev: DELETE all database data and volumes, then start fresh
 prod-config: ## Prod: print the merged prod configuration
 	$(PROD) config
 
-prod-check: ## Prod: validate the config and check db/api publish no ports
+# TEST_ADMIN_* variables carry the admin password for the dev-only privilege
+# test (compose.dev.yaml) and must never reach prod. The check matches the
+# name only: grep -q prints nothing, so no value and no config is shown.
+prod-check: ## Prod: validate the config; no db/api ports, no TEST_ADMIN_* vars
 	$(PROD) config --quiet
 	@for svc in db api; do \
 	  if $(PROD) config $$svc | grep -q 'published:'; then \
 	    echo "FAIL: '$$svc' publishes a port in prod"; exit 1; \
 	  fi; \
 	done; \
+	if $(PROD) config | grep -q 'TEST_ADMIN_'; then \
+	  echo "FAIL: a TEST_ADMIN_* variable is set in the prod config (dev only)"; exit 1; \
+	fi; \
 	echo "OK: prod config is valid; db and api publish no ports."
 
 prod-up: ## Prod: build and start everything in the background

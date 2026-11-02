@@ -41,7 +41,7 @@ Run `make` with no arguments to print this list. Each command prints the real
 | `make psql` | Dev: SQL shell in the database, as the admin user |
 | `make reset-db` | Dev: **delete all database data** and start fresh (asks first) |
 | `make prod-config` | Prod: print the merged prod configuration |
-| `make prod-check` | Prod: validate the config; check db and api publish no ports |
+| `make prod-check` | Prod: validate the config; check db and api publish no ports and no dev-only `TEST_ADMIN_*` variable reaches prod |
 | `make prod-up` | Prod: build and start in the background (on the MSI) |
 | `make prod-down` | Prod: stop and remove containers (data is kept) |
 | `make prod-ps` | Prod: show containers and their health |
