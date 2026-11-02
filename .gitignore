@@ -35,3 +35,22 @@ pgdata/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# --- Local agent instructions ----------------------------------------------
+# Personal, machine-local instructions for the coding assistant. Never committed.
+CLAUDE.local.md
+
+# --- Technical guide (safety net) ------------------------------------------
+# The LaTeX study guide lives OUTSIDE this repository, in ../SoundArchive-Guia/,
+# so git never sees it. These rules only matter if the folder or its build
+# files ever end up inside this working tree by mistake.
+SoundArchive-Guia/
+*.aux
+*.log
+*.toc
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
