@@ -247,6 +247,30 @@ reboot too.
   nc -zv -w 3 <msi-tailscale-name> 5432
   ```
 
+- [ ] The same check without a second machine, on the MSI. Nothing should
+      listen on the database or API ports, and only Caddy should publish:
+
+  ```sh
+  ss -tln | grep -E ':(5432|5433|8000) '        # prints nothing
+  docker ps --format 'table {{.Names}}\t{{.Ports}}'
+  ```
+
+  Only the `caddy` line shows published ports (`0.0.0.0:80->80/tcp`,
+  `[::]:80->80/tcp`, the same for 443 and `443/udp`). `api` shows `8000/tcp`
+  and `db` `5432/tcp`: those are internal, not published.
+
+> **Who can reach the site.** `"80:80"` publishes on **every** network
+> interface, IPv4 and IPv6 (that is what `0.0.0.0` and `[::]` mean). So the
+> site is reachable from any device on the home network, not only over
+> Tailscale, and ufw does not change that (section 2). The MSI also has
+> public (global) IPv6 addresses (`ip -6 addr show scope global`). If the
+> router lets incoming IPv6 connections through, ports 80 and 443 are open to
+> the internet **without** any port forwarding. Most home routers block
+> incoming IPv6 by default; check yours (look for an IPv6 firewall setting),
+> or test from a phone on mobile data, Wi-Fi off, while the stack runs.
+> Status: published on IPv6 **verified** in a rehearsal on the MSI
+> (2026-11-02); reachable from outside **not verified**.
+
 ---
 
 ## 7. Update to a new version
@@ -355,8 +379,9 @@ and `git pull`.
 
 ## 10. Later: a public domain with HTTPS
 
-Today the site is plain HTTP, reachable over Tailscale. To serve it publicly
-over HTTPS:
+Today the site is plain HTTP, reachable from the home network and over
+Tailscale (and maybe over IPv6, see the note in section 6). To serve it
+publicly over HTTPS:
 
 1. [ ] Get a domain and create a DNS **A** record (and **AAAA** for IPv6)
        pointing to your home's **public** IP.
