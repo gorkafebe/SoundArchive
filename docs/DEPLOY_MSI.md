@@ -264,6 +264,36 @@ curl http://localhost/api/health/db
 `make prod-up` re-creates only the containers whose image or configuration
 changed. The database data is untouched.
 
+What each kind of change needs (checked in a rehearsal on the MSI,
+2026-11-02):
+
+| What changed in the pull | What applies it |
+|---|---|
+| `web/` (the page) | Nothing: it is live as soon as `git pull` finishes, because Caddy serves the folder directly. |
+| `backend/`, dependencies, migrations | `make prod-up` |
+| `.env` or a `compose*.yaml` file | `make prod-up` |
+| `infra/caddy/Caddyfile` | **also** `docker compose -f compose.yaml -f compose.prod.yaml restart caddy` (see below) |
+
+- **Caddyfile changes are not picked up by `make prod-up`.** The Caddyfile is
+  mounted into the container as a single file. `git pull` replaces that file
+  with a new one, and the running container keeps reading the old one; Caddy
+  also does not reload its configuration by itself. `make prod-up` does not
+  re-create Caddy, because its Compose settings did not change. So after a
+  pull that touches the Caddyfile, restart Caddy:
+
+  ```sh
+  docker compose -f compose.yaml -f compose.prod.yaml restart caddy
+  ```
+
+  To see which files a pull changed, run `git diff --stat HEAD@{1} HEAD`
+  right after it.
+
+- **The API restarts on every `make prod-up`, even with no changes.** Every
+  build produces a new image ID, so Compose re-creates `api` and `migrate`
+  each time. Measured: during a `make prod-up` with nothing to change,
+  `/api/*` answered `502` for about 3 seconds; the page itself stayed up.
+  Harmless today; worth knowing once people use the site.
+
 To also pick up bug-fix releases of the Postgres/PostGIS and Caddy images
 (same version line, see `docs/ARCHITECTURE.md`), run this before
 `make prod-up`:
@@ -300,6 +330,10 @@ git log --oneline                 # find the last good commit, e.g. a1b2c3d
 git switch --detach a1b2c3d       # check out that exact version
 make prod-up                      # rebuild and restart with the old code
 ```
+
+If the commits you are undoing changed `infra/caddy/Caddyfile`, also run
+`docker compose -f compose.yaml -f compose.prod.yaml restart caddy`, for the
+reason given in section 7. Without it, Caddy keeps the newer configuration.
 
 When the fix is pushed, return to normal updates with `git switch main`
 and `git pull`.
