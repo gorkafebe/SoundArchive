@@ -1,0 +1,16 @@
+# Override for a TEST restore (restore-test.sh, project sa-restore):
+#   docker compose -p sa-restore -f compose.yaml -f ops/backup/compose.restore.yaml ...
+#
+# Like production, but publishes NO ports at all, so it can run next to the
+# real app (ports 80/443) and the dev stack (8080/5433) without a clash.
+# Checks reach the API from inside its container. Nothing restarts by
+# itself: the test stack lives for a few minutes and is then destroyed.
+#
+# A real disaster recovery uses compose.prod.yaml instead
+# (restore.sh --compose-override compose.prod.yaml).
+
+services:
+  api:
+    environment:
+      API_DOCS_ENABLED: "false"
+      ALLOW_ANONYMOUS_WRITES: "false"

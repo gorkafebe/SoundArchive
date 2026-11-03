@@ -24,7 +24,7 @@ NODE = docker run --rm -u "$$(id -u):$$(id -g)" -v "$(CURDIR)/web:/app" -w /app 
 .PHONY: help up down ps logs test migrate seed-dev psql reset-db \
         web-install web-check web-build web-dev check e2e e2e-real-tiles \
         prod-config prod-check prod-up prod-down prod-ps prod-logs \
-        msi-check msi-snapshot shellcheck
+        msi-check msi-snapshot shellcheck backup restore-test need-backup-vars
 
 # The first target is the default: `make` alone prints this list.
 # It reads the "## description" comments on the target lines below.
@@ -158,5 +158,33 @@ msi-snapshot: ## MSI: save a dated, redacted snapshot of the state (LABEL=...)
 # ShellCheck (a linter for shell scripts) in a pinned Docker image, so
 # nothing is installed on the machine. -x follows the files a script sources.
 SHELLCHECK_IMAGE = koalaman/shellcheck:v0.11.0
+# --- Backups (restic) ------------------------------------------------------------
+# See docs/BACKUP_AND_RESTORE.md. Nothing has a default destination: the
+# repository, the password FILE and the project are always given, e.g.
+#   make backup RESTIC_REPO=/mnt/usb/sound-archive-restic \
+#        RESTIC_PASSWORD_FILE=~/.config/sound-archive/restic-password \
+#        BACKUP_PROJECT=sound-archive MEDIA_DIR=/srv/sound-archive-media
+#   make restore-test RESTIC_REPO=... RESTIC_PASSWORD_FILE=... BACKUP_PROJECT=sa-ops
+# restore-test compares with the RUNNING stack of BACKUP_PROJECT (SOURCE_URL,
+# default the dev stack) and always destroys its sa-restore copy.
+RESTIC_REPO ?=
+RESTIC_PASSWORD_FILE ?=
+BACKUP_PROJECT ?=
+MEDIA_DIR ?=
+SOURCE_URL ?= http://127.0.0.1:8080
+BACKUP_ARGS ?=
+need-backup-vars:
+	@[ -n "$(RESTIC_REPO)" ] || { echo "Set RESTIC_REPO=<restic repository> (no default, on purpose)"; exit 1; }
+	@[ -n "$(RESTIC_PASSWORD_FILE)" ] || { echo "Set RESTIC_PASSWORD_FILE=<file with the restic password>"; exit 1; }
+	@[ -n "$(BACKUP_PROJECT)" ] || { echo "Set BACKUP_PROJECT=<Compose project> (sound-archive = the real app)"; exit 1; }
+
+backup: need-backup-vars ## Ops: back up a project with restic (RESTIC_REPO=, RESTIC_PASSWORD_FILE=, BACKUP_PROJECT=)
+	ops/backup/backup.sh --repo "$(RESTIC_REPO)" --password-file "$(RESTIC_PASSWORD_FILE)" \
+	  --project "$(BACKUP_PROJECT)" $(if $(MEDIA_DIR),--media "$(MEDIA_DIR)") $(BACKUP_ARGS)
+
+restore-test: need-backup-vars ## Ops: restore the latest backup into sa-restore, compare, destroy it
+	ops/backup/restore-test.sh --repo "$(RESTIC_REPO)" --password-file "$(RESTIC_PASSWORD_FILE)" \
+	  --source-project "$(BACKUP_PROJECT)" --source-url "$(SOURCE_URL)" $(if $(MEDIA_DIR),--media "$(MEDIA_DIR)")
+
 shellcheck: ## Ops: lint every script in ops/ with ShellCheck (in Docker)
 	docker run --rm -v "$(CURDIR):/mnt:ro" -w /mnt $(SHELLCHECK_IMAGE) -x $$(cd $(CURDIR) && find ops -name '*.sh' | sort)
