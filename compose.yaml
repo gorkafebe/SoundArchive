@@ -22,7 +22,11 @@ x-backend: &backend
   # api and migrate use the same image: same code, different command.
   build:
     context: ./backend
-  image: sound-archive-backend:prod
+  # The tag starts with the Compose project name: sound-archive-backend:prod
+  # for the real app, sa-dev-backend:prod for a test copy started with
+  # COMPOSE_PROJECT_NAME=sa-dev (or -p sa-dev). So a copy never overwrites the
+  # image the real app runs. Compose sets this variable from -p or name:.
+  image: ${COMPOSE_PROJECT_NAME:-sound-archive}-backend:prod
 
 services:
   db:
