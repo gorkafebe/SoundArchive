@@ -93,6 +93,8 @@
 .workspace__view {
   height: 100%;
 }
+/* [hidden] must win over the display: grid above. */
+.workspace[hidden],
 .workspace__view[hidden] {
   display: none;
 }

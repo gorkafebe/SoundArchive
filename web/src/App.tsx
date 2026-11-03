@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAnnounce } from "./components/Announcer";
+import { AddPlaceFlow } from "./features/add-place/AddPlaceFlow";
 import { Preferences } from "./components/Preferences";
 import { MapView, type Camera, type MapViewHandle } from "./features/map/MapView";
 import { PlaceList, type PlaceListHandle } from "./features/places/PlaceList";
@@ -25,6 +26,12 @@ const PLACE_ZOOM = 17;
 // are expected (so the first screen is not an empty map).
 export const DEFAULT_CAMERA: Camera = { lon: -3.7, lat: 40.2, zoom: 5 };
 
+function initialCameraFrom(url: UrlState): Camera {
+  return url.lat !== undefined && url.lon !== undefined
+    ? { lon: url.lon, lat: url.lat, zoom: url.zoom ?? 13 }
+    : DEFAULT_CAMERA;
+}
+
 export function App() {
   const { t } = useI18n();
   const announce = useAnnounce();
@@ -32,17 +39,17 @@ export function App() {
   const [url, setUrl] = useState<UrlState>(() => parseUrlState(window.location.search));
   const [attempt, setAttempt] = useState(0);
   const config: ConfigState = loaded?.attempt === attempt ? loaded.config : { status: "loading" };
-  const [reloadKey] = useState(0);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [adding, setAdding] = useState(false);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
   const mapRef = useRef<MapViewHandle>(null);
   const listRef = useRef<PlaceListHandle>(null);
   // A shared link with a place but no position: centre on the place once loaded.
   const centreOnLoad = useRef(url.place !== undefined && url.lat === undefined);
 
-  const [initialCamera] = useState<Camera>(() =>
-    url.lat !== undefined && url.lon !== undefined
-      ? { lon: url.lon, lat: url.lat, zoom: url.zoom ?? 13 }
-      : DEFAULT_CAMERA,
-  );
+  const [initialCamera] = useState<Camera>(() => initialCameraFrom(url));
+  // Where the map is now: the add-place map starts there.
+  const [camera, setCamera] = useState<Camera>(initialCamera);
 
   // /api/config is read once at start-up: map style and whether writes are on.
   useEffect(() => {
@@ -65,6 +72,7 @@ export function App() {
 
   const setView = useCallback(
     (view: View) => {
+      setAdding(false);
       setUrl((current) => ({ ...current, view }));
       announce(t(view === "map" ? "view.mapShown" : "view.listShown"));
     },
@@ -86,10 +94,23 @@ export function App() {
     }
   }, [url.place, url.view, announce, t]);
 
-  const onCameraChange = useCallback(
-    (camera: Camera) => setUrl((current) => ({ ...current, lon: camera.lon, lat: camera.lat, zoom: camera.zoom })),
-    [],
-  );
+  const onCameraChange = useCallback((next: Camera) => {
+    setCamera(next);
+    setUrl((current) => ({ ...current, lon: next.lon, lat: next.lat, zoom: next.zoom }));
+  }, []);
+
+  const cancelAdding = useCallback(() => {
+    setAdding(false);
+    window.setTimeout(() => addButtonRef.current?.focus(), 0);
+  }, []);
+
+  // A new place: back to the map, reload pins and list, open its panel.
+  const onCreated = useCallback((place: Place) => {
+    setAdding(false);
+    setReloadKey((n) => n + 1);
+    setUrl((current) => ({ ...current, view: "map", place: place.id }));
+    window.setTimeout(() => mapRef.current?.centerOn(place.longitude, place.latitude, PLACE_ZOOM), 50);
+  }, []);
 
   const showOnMap = useCallback(
     (place: Place) => {
@@ -132,7 +153,12 @@ export function App() {
             </button>
           ))}
         </div>
-        <button type="button" className="button button--primary">
+        <button
+          ref={addButtonRef}
+          type="button"
+          className="button button--primary"
+          onClick={() => setAdding(true)}
+        >
           {t("nav.add")}
         </button>
       </nav>
@@ -148,8 +174,12 @@ export function App() {
             </button>
           </div>
         )}
+        {config.status === "ready" && adding && (
+          <AddPlaceFlow config={config.config} initialCamera={camera} onCancel={cancelAdding} onCreated={onCreated} />
+        )}
         {config.status === "ready" && (
-          <div className={`workspace${url.place ? " workspace--with-panel" : ""}`}>
+          // Hidden, not removed, while adding: the map keeps its position.
+          <div hidden={adding} className={`workspace${url.place ? " workspace--with-panel" : ""}`}>
             <div className="workspace__content">
               {/* The map stays mounted while the list is shown (hidden, not
                   removed), so switching back keeps its position. */}
