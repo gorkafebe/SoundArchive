@@ -11,7 +11,7 @@ PROD = docker compose -f compose.yaml -f compose.prod.yaml
 SERVICE ?=
 
 # These targets are command names, not files to build.
-.PHONY: help up down ps logs test migrate psql reset-db \
+.PHONY: help up down ps logs test migrate seed-dev psql reset-db \
         prod-config prod-check prod-up prod-down prod-ps prod-logs
 
 # The first target is the default: `make` alone prints this list.
@@ -38,6 +38,11 @@ test: ## Dev: run the test suite inside the api container
 
 migrate: ## Dev: apply database migrations (alembic upgrade head)
 	$(DEV) run --rm migrate
+
+# Runs only against the dev stack ($(DEV)); the prod image does not even
+# contain backend/scripts/. SEED_DEV=1 is the script's second safety catch.
+seed-dev: ## Dev: add a few hundred made-up places (replaces earlier ones)
+	$(DEV) run --rm -e SEED_DEV=1 api python -m scripts.seed_dev
 
 psql: ## Dev: open a SQL shell in the database as the admin user
 	$(DEV) exec db sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
