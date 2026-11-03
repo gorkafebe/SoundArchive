@@ -30,6 +30,10 @@ services:
   api:
     <<: *logging
     restart: unless-stopped
+    environment:
+      # No interactive docs (/api/docs) in prod: the page loads its script
+      # from a public CDN, and the API needs no public manual.
+      API_DOCS_ENABLED: "false"
 
   caddy:
     <<: *logging

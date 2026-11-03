@@ -1,0 +1,12 @@
+# What the web image build may see. The build context is the whole
+# repository, so start by excluding EVERYTHING (.env with passwords included)
+# and let back in only what web/Dockerfile copies.
+*
+!web/
+!infra/caddy/Caddyfile
+
+# Inside web/: never the local installs or build outputs.
+web/node_modules/
+web/dist/
+web/playwright-report/
+web/test-results/

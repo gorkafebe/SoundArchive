@@ -1,0 +1,173 @@
+{
+  "app": {
+    "title": "Sound Archive",
+    "tagline": "How a place sounded, kept in time."
+  },
+  "skip": {
+    "toMain": "Skip to content"
+  },
+  "settings": {
+    "label": "Preferences",
+    "language": {
+      "switchTo": "Español",
+      "switchToLabel": "Change the language:"
+    },
+    "theme": {
+      "label": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "Same as system"
+    }
+  },
+  "nav": {
+    "label": "Views and actions",
+    "views": "View",
+    "map": "Map",
+    "list": "List",
+    "add": "Add place"
+  },
+  "common": {
+    "loading": "Loading…",
+    "retry": "Try again",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "cancel": "Cancel"
+  },
+  "config": {
+    "error": "Could not reach the server. Check your connection and try again."
+  },
+  "map": {
+    "label": "Map of places",
+    "canvasLabel": "Map. Use the arrow keys to move and the plus and minus keys to zoom.",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "resetBearing": "Reset to north",
+    "toggleAttribution": "Show or hide the map attribution",
+    "pinSelected": "{name}, selected",
+    "cluster_one": "Group of {count} place. Zoom in to see it",
+    "cluster_other": "Group of {count} places. Zoom in to see them",
+    "status": {
+      "loading": "Loading places…",
+      "empty": "No places in this area. Zoom out or use the list.",
+      "error": "Could not load the places in this area.",
+      "count_one": "{count} place in this area",
+      "count_other": "{count} places in this area",
+      "truncated": "There are more places than shown: zoom in to see them all."
+    },
+    "styleError": "Could not load the base map. The places are still available in the list.",
+    "osmAttribution": "© OpenStreetMap",
+    "osmAttributionLink": "https://www.openstreetmap.org/copyright"
+  },
+  "coords": {
+    "value": "{lat}° {ns}, {lon}° {ew}",
+    "north": "N",
+    "south": "S",
+    "east": "E",
+    "west": "W"
+  },
+  "place": {
+    "panelLabel": "Place details",
+    "coordinates": "Coordinates",
+    "created": "Added on {date}",
+    "noDescription": "No description.",
+    "recordings": "Recordings",
+    "noRecordingsYet": "No recordings yet",
+    "recordingsPlaceholder": "Recordings of this place will appear here.",
+    "showOnMap": "Show on map",
+    "loading": "Loading the place…",
+    "error": "Could not load this place.",
+    "notFound": "This place does not exist or was deleted.",
+    "opened": "Opened: {name}",
+    "closed": "Details closed"
+  },
+  "sheet": {
+    "handle": "Panel height: {height}. Press to change it.",
+    "peek": "small",
+    "half": "medium",
+    "full": "full"
+  },
+  "list": {
+    "label": "List of places",
+    "search": "Search places",
+    "searchHint": "Searches the name and the description.",
+    "searchButton": "Search",
+    "loading": "Loading the list…",
+    "empty": "No places yet.",
+    "noResults": "No place matches “{q}”.",
+    "error": "Could not load the list.",
+    "results_one": "{count} place",
+    "results_other": "{count} places",
+    "page": "Page {page} of {pages}",
+    "pagination": "Result pages",
+    "previous": "Previous page",
+    "next": "Next page"
+  },
+  "view": {
+    "mapShown": "Map view",
+    "listShown": "List view"
+  },
+  "add": {
+    "title": "Add a place",
+    "step": "Step {step} of {total}: {name}",
+    "steps": {
+      "location": "Location",
+      "details": "Name and description",
+      "confirm": "Confirm"
+    },
+    "location": {
+      "intro": "Choose where the place is: tap the map, type the coordinates or use your location.",
+      "mapLabel": "Map for choosing the location. Tap or click to place the pin.",
+      "pinLabel": "Chosen location",
+      "latitude": "Latitude",
+      "latitudeHint": "Between −90 and 90. For example: 43.2630.",
+      "longitude": "Longitude",
+      "longitudeHint": "Between −180 and 180. West of Greenwich it is negative, for example: −2.9350.",
+      "useMine": "Use my location",
+      "useMineExplain": "Your browser will ask for permission. Your location only fills in these fields: nothing is saved until you confirm.",
+      "locating": "Finding your location…",
+      "found": "Location found (accuracy about {meters} m).",
+      "denied": "Your browser blocks access to your location on this site.",
+      "deniedHelp": "To allow it, open the site settings (the icon next to the web address), find “Location” and choose “Allow”, then try again. Meanwhile, you can tap the map or type the coordinates.",
+      "unavailable": "Your location is not available right now. Try again or choose the point on the map.",
+      "timeout": "Finding your location took too long. Try again or choose the point on the map.",
+      "unsupported": "This browser cannot share your location. Choose the point on the map or type the coordinates."
+    },
+    "details": {
+      "name": "Name",
+      "nameHint": "Up to {max} characters.",
+      "description": "Description (optional)",
+      "descriptionHint": "What you can hear, or why this place. Up to {max} characters.",
+      "charCount": "{count} of {max} characters"
+    },
+    "confirm": {
+      "intro": "Check the details before creating the place.",
+      "submit": "Create place",
+      "submitting": "Creating the place…"
+    },
+    "success": "Place created: {name}",
+    "error": {
+      "network": "Could not reach the server. What you typed is still here: try again.",
+      "server": "The server could not save the place (error {status}). What you typed is still here: try again.",
+      "validation": "The server did not accept the details. Go back and check the fields."
+    },
+    "disabled": {
+      "title": "Creating places is disabled on this server",
+      "body": "There are no user accounts yet, so this server does not let just anyone create places. You can keep exploring the map and the list.",
+      "back": "Back"
+    }
+  },
+  "validation": {
+    "summary_one": "There is {count} field to check.",
+    "summary_other": "There are {count} fields to check.",
+    "nameRequired": "Type a name.",
+    "nameTooLong": "The name has {count} characters; the maximum is {max}.",
+    "descriptionTooLong": "The description has {count} characters; the maximum is {max}.",
+    "latitudeRequired": "Type the latitude or choose a point on the map.",
+    "latitudeNumber": "The latitude must be a number, for example 43.2630.",
+    "latitudeRange": "The latitude must be between −90 and 90.",
+    "longitudeRequired": "Type the longitude or choose a point on the map.",
+    "longitudeNumber": "The longitude must be a number, for example −2.9350.",
+    "longitudeRange": "The longitude must be between −180 and 180."
+  }
+}

@@ -20,6 +20,25 @@ class Settings(BaseSettings):
     # SecretStr hides the value when the settings are printed or logged.
     db_password: SecretStr
 
+    # Write protection. There are no user accounts yet (phase 6), so anyone
+    # who reaches the site could create places. Off unless set to true on
+    # purpose: the dev stack turns it on, prod leaves it off. When off,
+    # POST /api/places answers 403 and /api/config tells the web app.
+    allow_anonymous_writes: bool = False
+
+    # Basemap styles (MapLibre style JSON URLs), one per theme. They live in
+    # configuration, not in the web app's code, so the map provider can change
+    # without rebuilding anything: edit .env and restart the api.
+    # OpenFreeMap needs no key and no sign-up. A relative URL (starting with /)
+    # is resolved against the site itself, e.g. a local test style.
+    map_style_url: str = "https://tiles.openfreemap.org/styles/positron"
+    map_style_url_dark: str = "https://tiles.openfreemap.org/styles/dark"
+
+    # Interactive API docs at /api/docs. On in dev; compose.prod.yaml turns it
+    # off, because the docs page loads its script from a public CDN and
+    # there is no need to publish it.
+    api_docs_enabled: bool = True
+
     @property
     def database_url(self) -> URL:
         # URL.create escapes special characters in the password for us,
@@ -35,3 +54,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def get_settings() -> Settings:
+    """FastAPI dependency. Tests replace it to try other settings."""
+    return settings

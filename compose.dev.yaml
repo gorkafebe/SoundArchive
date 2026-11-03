@@ -8,7 +8,7 @@ x-backend-dev: &backend-dev
     # The "dev" stage of backend/Dockerfile: includes pytest, runs with --reload.
     target: dev
   # A different tag, so the dev image never overwrites the prod one.
-  image: sound-archive-backend:dev
+  image: ${COMPOSE_PROJECT_NAME:-sound-archive}-backend:dev
   volumes:
     # Use the code from this laptop instead of the copy inside the image.
     # Edit a .py file, and the API reloads; add a migration, and the next
@@ -35,9 +35,39 @@ services:
       # these, and prod never sets them.
       TEST_ADMIN_DB_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
       TEST_ADMIN_DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      # Dev creates places freely (prod defaults to false, see compose.yaml).
+      # ALLOW_ANONYMOUS_WRITES=false in .env tries the "disabled" state.
+      ALLOW_ANONYMOUS_WRITES: ${ALLOW_ANONYMOUS_WRITES:-true}
 
   caddy:
+    # Same build as prod, under a dev tag. After editing web/ or the
+    # Caddyfile, `make up` rebuilds it (or use `make web-dev` for instant reload).
+    image: ${COMPOSE_PROJECT_NAME:-sound-archive}-web:dev
     ports:
-      # 0.0.0.0 = all network interfaces, so a phone on the same Wi-Fi can open
-      # http://<this-laptop's-IP>:8080. Use 127.0.0.1 here to keep it private.
-      - "0.0.0.0:${DEV_HTTP_PORT:-8080}:80"
+      # DEV_HTTP_BIND picks the network interface. The default, 127.0.0.1,
+      # means this computer only. Set DEV_HTTP_BIND=0.0.0.0 in .env (all
+      # interfaces) on the dev laptop to open http://<laptop-IP>:8080 from a
+      # phone on the same Wi-Fi. Never do that on the MSI: ports 80/443 there
+      # belong to the real app, and anything else stays private.
+      - "${DEV_HTTP_BIND:-127.0.0.1}:${DEV_HTTP_PORT:-8080}:80"
+
+  # Optional: Vite's dev server, with instant reload when you save a file in
+  # web/. Not started by `make up`; run `make web-dev` (after `make up`) and
+  # open http://localhost:5173. It forwards /api to Caddy, like production.
+  # Needs `make web-install` once (it uses web/node_modules from your disk).
+  web-dev:
+    profiles: [web-dev]
+    image: node:26.13.0-alpine3.24  # same as NODE_IMAGE in the Makefile
+    working_dir: /app
+    # The node image's own user (uid 1000), usually the same as yours on Linux.
+    user: node
+    command: ["npm", "run", "dev"]
+    environment:
+      VITE_API_PROXY: http://caddy:80
+    volumes:
+      - ./web:/app
+    ports:
+      - "${DEV_HTTP_BIND:-127.0.0.1}:${DEV_WEB_PORT:-5173}:5173"
+    depends_on:
+      caddy:
+        condition: service_healthy

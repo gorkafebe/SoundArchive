@@ -15,8 +15,11 @@ venv/
 .coverage
 htmlcov/
 
-# --- JavaScript (for the React app in a later phase) -----------------------
+# --- JavaScript (the React app in web/) ------------------------------------
 node_modules/
+web/dist/
+web/playwright-report/
+web/test-results/
 
 # --- Local data directories ------------------------------------------------
 # If you point DB_DATA_DIR (or later, file storage) inside the repo, use one of

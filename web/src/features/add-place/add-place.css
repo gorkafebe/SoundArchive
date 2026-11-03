@@ -1,0 +1,88 @@
+/* The add-place flow: a full screen inside <main>, scrolling on its own. */
+
+.add-place {
+  height: 100%;
+  overflow-y: auto;
+  background: var(--color-bg);
+}
+.add-place__inner {
+  display: grid;
+  gap: var(--space-4);
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding: var(--space-5) var(--space-4) var(--space-7);
+}
+.add-place h2 {
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--text-xl);
+}
+.add-place__step {
+  font-size: var(--text-m);
+  font-weight: var(--weight-normal);
+  color: var(--color-text-muted);
+}
+.add-place__form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+/* Two classes: it also has .map-view (for the control styles), whose
+   height: 100% must not win here. */
+.location-picker.map-view {
+  position: relative;
+  height: min(45dvh, 360px);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+.add-place__coords {
+  display: grid;
+  gap: var(--space-4);
+}
+@media (min-width: 40rem) {
+  .add-place__coords {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.add-place__geo {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border-subtle);
+  border-radius: var(--radius-m);
+}
+
+.add-place__summary {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+.add-place__summary dt {
+  font-size: var(--text-s);
+  color: var(--color-text-muted);
+}
+.add-place__summary dd {
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.add-place__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.add-place__disabled {
+  display: grid;
+  gap: var(--space-2);
+}
+.add-place__disabled-title {
+  font-weight: var(--weight-strong);
+}

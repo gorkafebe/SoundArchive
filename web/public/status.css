@@ -1,0 +1,11 @@
+/* Styles of the system check page (/status.html). Deliberately separate
+   from the app's design tokens: this page is a diagnostic tool and must keep
+   working even if the app's build is broken. The check-tokens script only
+   scans the app (src/ and index.html), not this file. */
+body { font-family: sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+.check { border: 3px solid #999; padding: 1rem; margin: 1rem 0; }
+.ok { border-color: #1a7f37; background: #dafbe1; }
+.fail { border-color: #cf222e; background: #ffebe9; }
+.label { font-weight: bold; font-size: 1.2rem; }
+pre { white-space: pre-wrap; word-break: break-word; font-size: 0.8rem; }
+button { min-height: 44px; padding: 0 1rem; font: inherit; }

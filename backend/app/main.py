@@ -6,22 +6,29 @@ service and serves everything else (the web page) itself.
 
 import logging
 
-from fastapi import APIRouter, FastAPI
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
+from app import places
+from app.config import Settings, get_settings, settings
 from app.db import engine
+from app.schemas import PublicConfig
 
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Sound Archive API",
     # Put the interactive docs under /api too, so they are reachable through
-    # Caddy: http://localhost:8080/api/docs
-    docs_url="/api/docs",
+    # Caddy: http://localhost:8080/api/docs. Caddy forwards every /api/ path
+    # unchanged, so whether the docs exist is decided here: API_DOCS_ENABLED
+    # (off in compose.prod.yaml). None = the route does not exist (404).
+    docs_url="/api/docs" if settings.api_docs_enabled else None,
     redoc_url=None,
-    openapi_url="/api/openapi.json",
+    openapi_url="/api/openapi.json" if settings.api_docs_enabled else None,
 )
 
 router = APIRouter(prefix="/api")
@@ -63,4 +70,18 @@ def health_db():
     }
 
 
+@router.get("/config", response_model=PublicConfig)
+def public_config(settings: Annotated[Settings, Depends(get_settings)]) -> PublicConfig:
+    """Settings the web app needs, read once when it starts.
+
+    Only public values: never put a secret here, every visitor can read it.
+    """
+    return PublicConfig(
+        writes_enabled=settings.allow_anonymous_writes,
+        map_style_url=settings.map_style_url,
+        map_style_url_dark=settings.map_style_url_dark,
+    )
+
+
 app.include_router(router)
+app.include_router(places.router)

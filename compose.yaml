@@ -22,7 +22,11 @@ x-backend: &backend
   # api and migrate use the same image: same code, different command.
   build:
     context: ./backend
-  image: sound-archive-backend:prod
+  # The tag starts with the Compose project name: sound-archive-backend:prod
+  # for the real app, sa-dev-backend:prod for a test copy started with
+  # COMPOSE_PROJECT_NAME=sa-dev (or -p sa-dev). So a copy never overwrites the
+  # image the real app runs. Compose sets this variable from -p or name:.
+  image: ${COMPOSE_PROJECT_NAME:-sound-archive}-backend:prod
 
 services:
   db:
@@ -84,6 +88,13 @@ services:
       # The limited app user: can read and write data, cannot change the schema.
       DB_USER: ${APP_DB_USER:?set APP_DB_USER in .env}
       DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
+      # Anyone may create places? Off (false) unless .env says true. See
+      # .env.example; compose.dev.yaml turns it on for development.
+      ALLOW_ANONYMOUS_WRITES: ${ALLOW_ANONYMOUS_WRITES:-false}
+      # Basemap styles for the light and dark themes, sent to the browser by
+      # /api/config. Change them in .env to switch map provider, no rebuild.
+      MAP_STYLE_URL: ${MAP_STYLE_URL:-https://tiles.openfreemap.org/styles/positron}
+      MAP_STYLE_URL_DARK: ${MAP_STYLE_URL_DARK:-https://tiles.openfreemap.org/styles/dark}
     # No "ports:" on purpose. Only Caddy reaches the API, over Compose's
     # internal network.
     depends_on:
@@ -104,13 +115,21 @@ services:
       start_interval: 1s
 
   caddy:
-    image: caddy:2.11.7-alpine
+    # Caddy with the web app inside: web/Dockerfile builds the React app with
+    # Node, then copies dist/ and infra/caddy/Caddyfile into the official
+    # Caddy image. The context is the repository root because the build needs
+    # both folders; web/Dockerfile.dockerignore lets only those in.
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    image: ${COMPOSE_PROJECT_NAME:-sound-archive}-web:prod
     environment:
       # Read by the Caddyfile. ":80" = plain HTTP. A domain name = automatic HTTPS.
       CADDY_SITE_ADDRESS: ${CADDY_SITE_ADDRESS:-:80}
+      # Basemap server(s) the page may contact (Content-Security-Policy in the
+      # Caddyfile). Must match MAP_STYLE_URL's server; see .env.example.
+      MAP_TILE_ORIGINS: ${MAP_TILE_ORIGINS:-https://tiles.openfreemap.org}
     volumes:
-      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./web:/srv/web:ro
       # /data holds HTTPS certificates and keys. It must survive container
       # re-creation, or Caddy would request new certificates every time
       # (and Let's Encrypt rate-limits that).

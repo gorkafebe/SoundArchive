@@ -1,7 +1,14 @@
 # Caddy configuration: the only service reachable from outside.
 #
 #   /api/*        -> forwarded to the FastAPI service (api:8000)
-#   everything    -> static files from web/ (mounted at /srv/web)
+#   /assets/*     -> the web app's built files (names contain a content hash)
+#   everything    -> a file from the web app if it exists (e.g. /status.html),
+#                    otherwise index.html, so React handles the address
+#                    ("single-page app": /anything opens the app)
+#
+# This file is copied into the caddy image by web/Dockerfile, together with
+# the built app in /srv/web. Change it, then `make up` (dev) or
+# `make prod-up` (prod) rebuilds the image and re-creates Caddy.
 #
 # The site address comes from the CADDY_SITE_ADDRESS environment variable;
 # {$NAME:default} means "use $NAME, or the default if it is unset".
@@ -13,9 +20,50 @@
 # Caddy's admin API stays on its default, localhost:2019 inside the container.
 # It is not published; the Docker healthcheck uses it.
 
+# Security headers for the web app's pages and files (not for /api/*, which
+# returns JSON, and whose dev-only /api/docs page loads from a CDN).
+(web_headers) {
+	header {
+		# Content-Security-Policy: what the page may load and from where. It is
+		# the main defence if someone ever manages to inject HTML into a page.
+		#   default-src 'self'   by default, only from this site
+		#   script-src 'self'    no inline <script> and no other site's scripts
+		#   style-src 'self'     only our CSS files (styles set from JavaScript
+		#                        are still allowed; MapLibre positions markers so)
+		#   connect-src          fetch() targets: our API, plus the basemap
+		#                        server for the map style, tiles, fonts, icons
+		#   img-src              images: ours, data: and blob: URLs that MapLibre
+		#                        makes internally, and the basemap server
+		#   worker-src           MapLibre's background worker (a file of ours)
+		#   object-src 'none'    no plugins
+		#   base-uri / form-action / frame-ancestors  no hijacked links or forms,
+		#                        and no other site may show us inside a frame
+		# MAP_TILE_ORIGINS must list the basemap server(s) of MAP_STYLE_URL
+		# (space-separated). If you change map provider, change both.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org}; img-src 'self' data: blob: {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org}; font-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		# Do not let the browser guess a file's type (a text file run as a script).
+		X-Content-Type-Options "nosniff"
+		# Send no address to other sites (e.g. the tile server): the address
+		# can contain which place someone is looking at. Some tile providers
+		# with API keys require "strict-origin-when-cross-origin" instead.
+		Referrer-Policy "same-origin"
+		# Browser features: location and microphone only for this site (the
+		# add-place flow, and recording in phase 5), never for embedded pages;
+		# no camera, payments or USB.
+		Permissions-Policy "geolocation=(self), microphone=(self), camera=(), payment=(), usb=()"
+		# Keep other sites' windows from scripting ours (window.opener).
+		Cross-Origin-Opener-Policy "same-origin"
+		# Strict-Transport-Security is NOT set: over plain HTTP browsers ignore
+		# it. Add it once the site has a domain with HTTPS (docs/DEPLOY_MSI.md).
+	}
+}
+
 {$CADDY_SITE_ADDRESS::80} {
-	# Compress responses (HTML, JSON) when the browser supports it.
+	# Compress responses (HTML, JSON, JavaScript) when the browser supports it.
 	encode zstd gzip
+
+	# Do not advertise the server software.
+	header -Server
 
 	# "handle" blocks are tried in order and only the first match runs,
 	# so /api/... never falls through to the file server.
@@ -25,8 +73,23 @@
 		reverse_proxy api:8000
 	}
 
-	handle {
+	# Built files have a hash in their name (index-3f9a2c.js): a new version
+	# gets a new name, so browsers may keep these for a year. A missing file
+	# here is a real 404, not the app.
+	handle /assets/* {
+		import web_headers
+		header Cache-Control "public, max-age=31536000, immutable"
 		root * /srv/web
+		file_server
+	}
+
+	handle {
+		import web_headers
+		# index.html and the other files keep their names between versions,
+		# so the browser must check for a new version each time.
+		header Cache-Control "no-cache"
+		root * /srv/web
+		try_files {path} /index.html
 		file_server
 	}
 

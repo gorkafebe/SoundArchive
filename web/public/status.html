@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<!--
+  System check page from the walking skeleton, now at /status.html.
+  Plain HTML + JavaScript, no build step, independent of the React app: it
+  still works when the app is broken, which is the point.
+  On load it calls the two API health checks (through Caddy, same origin)
+  and shows a green or red box for each. Its style and script are separate
+  files because the Content-Security-Policy (Caddyfile) forbids inline code.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sound Archive - system check</title>
+  <link rel="stylesheet" href="/status.css">
+  <script src="/status.js" defer></script>
+</head>
+<body>
+  <h1>Sound Archive - system check</h1>
+  <p>Browser &rarr; Caddy &rarr; API &rarr; PostgreSQL/PostGIS</p>
+
+  <div id="api" class="check">
+    <div class="label">API <code>/api/health</code>: <span class="status">checking...</span></div>
+    <pre class="body"></pre>
+  </div>
+
+  <div id="db" class="check">
+    <div class="label">Database <code>/api/health/db</code>: <span class="status">checking...</span></div>
+    <p>PostgreSQL version: <strong class="pg">-</strong></p>
+    <p>PostGIS version: <strong class="postgis">-</strong></p>
+    <pre class="body"></pre>
+  </div>
+
+  <button id="again" type="button">Check again</button>
+</body>
+</html>

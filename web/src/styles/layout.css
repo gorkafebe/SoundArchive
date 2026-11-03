@@ -1,0 +1,109 @@
+/*
+ * The app's frame: header, navigation bar, main area. Mobile first; from
+ * 48rem (768 px) up, the place panel moves from a bottom sheet to a side
+ * panel (see features/places/place-sheet.css).
+ */
+
+.app {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  height: 100%;
+  /* dvh = the visible height on phones, excluding the browser's own bars. */
+  height: 100dvh;
+}
+
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface);
+  border-bottom: var(--border-width) solid var(--color-border-subtle);
+}
+
+/* The name is plain text: no logo yet (the design will decide). */
+.app-header__name {
+  font-size: var(--text-l);
+  font-weight: var(--weight-strong);
+}
+
+.preferences {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.preferences__theme {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.preferences__label {
+  font-size: var(--text-s);
+  color: var(--color-text-muted);
+}
+
+.app-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-bg);
+  border-bottom: var(--border-width) solid var(--color-border-subtle);
+}
+.app-nav__views {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.app-main {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+.app-main:focus {
+  outline: none;
+}
+/* Map or list, plus the place panel. The panel takes its own space in the
+   grid (below on phones, to the right on wide screens) instead of covering
+   the map, so the attribution and the controls stay visible. */
+.workspace {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  height: 100%;
+}
+.workspace--with-panel {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+@media (min-width: 48rem) {
+  .workspace--with-panel {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) min(var(--panel-width), 45%);
+  }
+}
+.workspace__content {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+}
+.workspace__view {
+  height: 100%;
+}
+/* [hidden] must win over the display: grid above. */
+.workspace[hidden],
+.workspace__view[hidden] {
+  display: none;
+}
+
+.app-main__message {
+  max-width: var(--content-max);
+  margin: var(--space-6) auto;
+  padding: 0 var(--space-4);
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}

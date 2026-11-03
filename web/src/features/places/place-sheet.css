@@ -1,0 +1,118 @@
+/* The place panel: bottom sheet on phones, side panel from 48rem up.
+   It sits NEXT TO the map in the page grid (layout.css, .workspace), never on
+   top of it, so it can never cover the map attribution. */
+
+.place-sheet {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.place-sheet--bottom {
+  border-top: var(--border-width) solid var(--color-border-subtle);
+  border-radius: var(--radius-l) var(--radius-l) 0 0;
+  box-shadow: var(--shadow-panel);
+  transition: height var(--duration-normal) var(--easing);
+}
+/* Three heights, as fractions of the visible screen height (dvh). */
+.place-sheet--peek {
+  height: 28dvh;
+}
+.place-sheet--half {
+  height: 50dvh;
+}
+.place-sheet--full {
+  height: 68dvh;
+}
+
+.place-sheet--side {
+  height: 100%;
+  border-inline-start: var(--border-width) solid var(--color-border-subtle);
+}
+
+.place-sheet__handle {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: var(--target-min);
+  border: 0;
+  background: transparent;
+  cursor: grab;
+  touch-action: none; /* the drag is ours, not the page's scroll */
+}
+.place-sheet__grip {
+  width: 3rem;
+  height: 5px;
+  border-radius: var(--radius-round);
+  background: var(--color-border);
+}
+
+.place-sheet__body {
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4) var(--space-5);
+  overflow-y: auto;
+  min-height: 0;
+}
+.place-sheet--side .place-sheet__body {
+  padding-block-start: var(--space-4);
+}
+
+.place-sheet__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.place-sheet__title {
+  font-size: var(--text-xl);
+  padding-block-start: var(--space-1);
+  overflow-wrap: anywhere;
+}
+.place-sheet__description {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.place-sheet__muted {
+  color: var(--color-text-muted);
+}
+.place-sheet__message {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.place-sheet__facts {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+.place-sheet__facts dt {
+  font-size: var(--text-s);
+  color: var(--color-text-muted);
+}
+.place-sheet__facts dd {
+  margin: 0;
+}
+
+.place-sheet__recordings {
+  display: grid;
+  gap: var(--space-2);
+}
+.place-sheet__recordings h3 {
+  font-size: var(--text-l);
+}
+/* Reserved space for phase 4, clearly an empty placeholder (dashed box). */
+.place-sheet__placeholder {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-m);
+}
+.place-sheet__placeholder-title {
+  font-weight: var(--weight-strong);
+}
