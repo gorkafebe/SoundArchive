@@ -22,7 +22,7 @@ NODE = docker run --rm -u "$$(id -u):$$(id -g)" -v "$(CURDIR)/web:/app" -w /app 
 
 # These targets are command names, not files to build.
 .PHONY: help up down ps logs test migrate seed-dev psql reset-db \
-        web-install web-check web-build web-dev check \
+        web-install web-check web-build web-dev check e2e \
         prod-config prod-check prod-up prod-down prod-ps prod-logs
 
 # The first target is the default: `make` alone prints this list.
@@ -75,6 +75,26 @@ web-dev: ## Web: live-reloading dev server on port 5173 (after make up)
 	$(DEV) --profile web-dev run --rm --service-ports web-dev
 
 check: test web-check ## Dev: every check (API tests + web checks)
+
+# End-to-end tests in a real (headless) browser, inside Docker:
+#   1. start the dev stack (rebuilding the web image) and add the example places;
+#   2. run the official Playwright image (same version as @playwright/test in
+#      web/package.json) on the stack's network, so it reaches Caddy as
+#      http://caddy. The container is named sa-e2e-playwright and removed
+#      when it finishes (--rm).
+# The tests answer every request to other sites locally: no internet needed.
+# Screenshots go to web/test-results/screens/. Extra options:
+#   make e2e E2E_ARGS="--grep keyboard"
+E2E_IMAGE = mcr.microsoft.com/playwright:v1.64.1-noble
+E2E_ARGS ?=
+# Compose names the network <project>_default.
+E2E_NETWORK = $(or $(COMPOSE_PROJECT_NAME),sound-archive)_default
+e2e: ## Dev: end-to-end browser tests (Playwright in Docker)
+	$(DEV) up -d --build --wait
+	$(DEV) run --rm -e SEED_DEV=1 api python -m scripts.seed_dev
+	docker run --rm --name sa-e2e-playwright --network $(E2E_NETWORK) --shm-size=1g \
+	  -u "$$(id -u):$$(id -g)" -e HOME=/tmp -v "$(CURDIR)/web:/app" -w /app \
+	  $(E2E_IMAGE) npx playwright test $(E2E_ARGS)
 
 reset-db: ## Dev: DELETE all database data and volumes, then start fresh
 	@printf 'This deletes ALL database data in the dev Docker volumes. Type y to continue: '; \
