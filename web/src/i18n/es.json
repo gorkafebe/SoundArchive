@@ -55,7 +55,9 @@
       "count_other": "{count} lugares en esta zona",
       "truncated": "Hay más lugares de los que se muestran: acércate para verlos todos."
     },
-    "styleError": "No se pudo cargar el mapa base. Los lugares siguen disponibles en la lista."
+    "styleError": "No se pudo cargar el mapa base. Los lugares siguen disponibles en la lista.",
+    "osmAttribution": "© OpenStreetMap",
+    "osmAttributionLink": "https://www.openstreetmap.org/copyright"
   },
   "coords": {
     "value": "{lat}° {ns}, {lon}° {ew}",

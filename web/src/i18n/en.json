@@ -55,7 +55,9 @@
       "count_other": "{count} places in this area",
       "truncated": "There are more places than shown: zoom in to see them all."
     },
-    "styleError": "Could not load the base map. The places are still available in the list."
+    "styleError": "Could not load the base map. The places are still available in the list.",
+    "osmAttribution": "© OpenStreetMap",
+    "osmAttributionLink": "https://www.openstreetmap.org/copyright"
   },
   "coords": {
     "value": "{lat}° {ns}, {lon}° {ew}",
