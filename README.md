@@ -4,9 +4,12 @@ A web app with an interactive map where people pin a place and attach an audio
 recording (plus optional photos), so the sound of a place at a given moment is
 preserved. Sound is the main content.
 
-**Current state: walking skeleton.** No product features yet. The whole
-infrastructure runs end to end: a browser opens a test page, the page calls the
-API, and the API reads from the database, all in Docker Compose.
+**Current state: phase 3 foundations.** A map and a list of places (with
+search), a place panel, and a form to add a place, in Spanish and English,
+light and dark. No audio yet (phases 4 and 5), no accounts (phase 6), no
+photos. The visual design is provisional: colours, fonts and spacing live in
+one file of tokens (`web/src/styles/tokens.css`) until the real design
+arrives. Everything runs in Docker Compose.
 
 ## Quick start (development)
 
@@ -18,7 +21,9 @@ cp .env.example .env     # local config; the placeholder values work for dev
 make up                  # build, start, wait until every service is healthy
 ```
 
-Open <http://localhost:8080>. Both boxes should be green.
+Open <http://localhost:8080> for the app (`make seed-dev` adds made-up
+places to look at) and <http://localhost:8080/status.html> for the system
+check: both boxes should be green.
 
 ```sh
 curl http://localhost:8080/api/health       # {"status":"ok"}
@@ -36,7 +41,15 @@ Run `make` with no arguments to print this list. Each command prints the real
 | `make down` | Dev: stop and remove containers (database data is kept) |
 | `make ps` | Dev: show containers and their health |
 | `make logs` | Dev: follow logs (`make logs SERVICE=api` for one service) |
-| `make test` | Dev: run the test suite inside the api container |
+| `make test` | Dev: run the API tests inside the api container |
+| `make seed-dev` | Dev: add a few hundred made-up places (dev database only) |
+| `make web-install` | Web: install the exact npm dependencies (in a Node container) |
+| `make web-check` | Web: types, lint, translations, tokens, contrast, unit tests |
+| `make web-build` | Web: build the app into `web/dist` |
+| `make web-dev` | Web: live-reload server on port 5173 (after `make up`) |
+| `make check` | Dev: API tests + every web check |
+| `make e2e` | Dev: browser tests with Playwright, in Docker |
+| `make e2e-real-tiles` | Dev: one manual browser check with the real map tiles (internet) |
 | `make migrate` | Dev: apply database migrations |
 | `make psql` | Dev: SQL shell in the database, as the admin user |
 | `make reset-db` | Dev: **delete all database data** and start fresh (asks first) |
@@ -64,7 +77,12 @@ Run `make` with no arguments to print this list. Each command prints the real
 │   ├── Dockerfile        builds the dev and prod images
 │   ├── pyproject.toml    Python dependencies...
 │   └── uv.lock           ...and their exact pinned versions
-├── web/                  static test page (replaced by React in phase 3)
+├── web/                  the web app (React + TypeScript + Vite + MapLibre)
+│   ├── src/              code; styles/tokens.css = provisional design tokens
+│   ├── public/           copied as-is: status.html (system check), theme-init.js
+│   ├── e2e/              Playwright browser tests
+│   ├── scripts/          checks: translations, tokens, contrast
+│   └── Dockerfile        builds the app into the Caddy image
 ├── infra/
 │   ├── caddy/Caddyfile   web server / reverse proxy configuration
 │   └── postgres/init/    runs once when the database is first created
@@ -73,5 +91,5 @@ Run `make` with no arguments to print this list. Each command prints the real
     ├── DEV_SETUP.md      setting up and working on a development machine
     ├── MSI_SERVER_SETUP.md  turning the MSI laptop into the server (OS, network, SSH, battery)
     ├── DEPLOY_MSI.md     deploying to the Ubuntu server, step by step
-    └── design/           interface research and design brief (no screens designed yet)
+    └── design/           research and brief; IMPLEMENTATION_NOTES.md (what is built, what the design will replace)
 ```

@@ -182,7 +182,14 @@ reboot too.
     `DB_DATA_DIR=/mnt/bigdisk/sound-archive/postgres`. Create the folder first
     (`sudo mkdir -p /mnt/bigdisk/sound-archive/postgres`). The Postgres
     container sets its owner itself. Use an **absolute** path.
-  - `DEV_HTTP_PORT` and `DEV_DB_PORT` are ignored in prod.
+  - `DEV_HTTP_PORT`, `DEV_HTTP_BIND`, `DEV_WEB_PORT` and `DEV_DB_PORT` are
+    ignored in prod.
+  - Leave `ALLOW_ANONYMOUS_WRITES` unset (it defaults to `false`): with it,
+    anyone who reaches the site could create places, and there are no
+    accounts yet. See "Who may create places" in `.env.example` and the note
+    in section 6 about who can reach the site.
+  - `MAP_STYLE_URL`, `MAP_STYLE_URL_DARK` and `MAP_TILE_ORIGINS` can stay
+    unset (OpenFreeMap).
 
 > Passwords and `DB_DATA_DIR` take effect only when the database is created
 > for the first time. Decide them **before** the first start. Changing them
@@ -288,29 +295,61 @@ curl http://localhost/api/health/db
 `make prod-up` re-creates only the containers whose image or configuration
 changed. The database data is untouched.
 
-What each kind of change needs (checked in a rehearsal on the MSI,
-2026-11-02):
+What each kind of change needs (since the version with the React app; the
+older table, where `web/` was live after `git pull` and the Caddyfile needed a
+manual restart, no longer applies):
 
 | What changed in the pull | What applies it |
 |---|---|
-| `web/` (the page) | Nothing: it is live as soon as `git pull` finishes, because Caddy serves the folder directly. |
+| `web/` (the app) or `infra/caddy/Caddyfile` | `make prod-up`: both are built into the Caddy image (`web/Dockerfile`), so a change means a new image and a re-created Caddy |
 | `backend/`, dependencies, migrations | `make prod-up` |
 | `.env` or a `compose*.yaml` file | `make prod-up` |
-| `infra/caddy/Caddyfile` | **also** `docker compose -f compose.yaml -f compose.prod.yaml restart caddy` (see below) |
 
-- **Caddyfile changes are not picked up by `make prod-up`.** The Caddyfile is
-  mounted into the container as a single file. `git pull` replaces that file
-  with a new one, and the running container keeps reading the old one; Caddy
-  also does not reload its configuration by itself. `make prod-up` does not
-  re-create Caddy, because its Compose settings did not change. So after a
-  pull that touches the Caddyfile, restart Caddy:
+To see which files a pull changed, run `git diff --stat HEAD@{1} HEAD` right
+after it.
 
-  ```sh
-  docker compose -f compose.yaml -f compose.prod.yaml restart caddy
-  ```
+### First deployment of the places version (phase 3 foundations)
 
-  To see which files a pull changed, run `git diff --stat HEAD@{1} HEAD`
-  right after it.
+What is new compared with the walking skeleton, and what to check:
+
+1. **The web app is inside the Caddy image.** The first `make prod-up` after
+   the pull builds it with Node (inside Docker: a few minutes and a few
+   hundred MB of downloads the first time). The `caddy` service now has a
+   `build:` section and the image `sound-archive-web:prod`; the old mounts of
+   `web/` and the Caddyfile are gone.
+2. **A new migration, `0002` (places table).** The `migrate` service applies
+   it during `make prod-up`, before the API starts. It only adds a table and
+   indexes. To undo it: section 9 (`alembic downgrade -1`), which deletes the
+   table and every place in it.
+3. **`ALLOW_ANONYMOUS_WRITES` stays `false`.** The site shows the map and the
+   list (empty at first), and "Add place" explains that creating places is
+   disabled on this server. `POST /api/places` answers 403.
+4. **`/api/docs` is off in prod** (`API_DOCS_ENABLED=false` in
+   `compose.prod.yaml`): 404.
+5. **Visitors' browsers load the basemap from `tiles.openfreemap.org`.** The
+   Content-Security-Policy allows only that server (`MAP_TILE_ORIGINS`).
+
+Checks after `make prod-up` and `make prod-ps` (all on the MSI):
+
+```sh
+curl -s http://localhost/api/health                       # {"status":"ok"}
+curl -s http://localhost/api/config                       # "writes_enabled":false
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost/                 # 200 (the app)
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost/status.html      # 200 (system check)
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost/api/docs         # 404
+curl -sI http://localhost/ | grep -i content-security-policy                # present
+curl -s -X POST -H 'Content-Type: application/json' \
+  -d '{"name":"x","latitude":0,"longitude":0}' \
+  -o /dev/null -w '%{http_code}\n' http://localhost/api/places              # 403
+docker compose -f compose.yaml -f compose.prod.yaml run --rm migrate alembic current   # 0002 (head)
+```
+
+Then open `http://<msi-tailscale-name>/` from the laptop: the map with
+OpenFreeMap tiles, the attribution at the bottom right, "Add place" showing
+the disabled message, and `/status.html` with both boxes green.
+
+Never run `make seed-dev` on the MSI: it is for the dev database only (and
+the prod image does not contain the script).
 
 - **The API restarts on every `make prod-up`, even with no changes.** Every
   build produces a new image ID, so Compose re-creates `api` and `migrate`
@@ -377,9 +416,10 @@ git switch --detach a1b2c3d       # check out that exact version
 make prod-up                      # rebuild and restart with the old code
 ```
 
-If the commits you are undoing changed `infra/caddy/Caddyfile`, also run
-`docker compose -f compose.yaml -f compose.prod.yaml restart caddy`, for the
-reason given in section 7. Without it, Caddy keeps the newer configuration.
+`make prod-up` rebuilds the Caddy image too, so the web app and the
+Caddyfile go back with the code. (Rolling back to a commit from before the web
+app was in the image also works: Caddy's image changes back to
+`caddy:2.11.7-alpine` with mounted files, so Compose re-creates it.)
 
 When the fix is pushed, return to normal updates with `git switch main`
 and `git pull`.
@@ -467,9 +507,10 @@ The last command must print `name: sa-test`. Then `make prod-check`,
 
 - `make` prints the `docker compose` command **without** the variable. If you
   copy that command into another terminal, `export` the variable there too.
-- Image names are fixed in the Compose files, not prefixed: the copy builds
-  `sound-archive-backend:prod`, the same tag as the real app. That is harmless
-  (the real `make prod-up` rebuilds it), but it is shared.
+- Image tags start with the project name too
+  (`${COMPOSE_PROJECT_NAME:-sound-archive}-backend:prod`), so the copy builds
+  `sa-test-backend:prod` and `sa-test-web:prod` and never overwrites the real
+  app's images. (Before 2026-11-03 the names were fixed and shared.)
 - The prod setup publishes ports 80 and 443, so a prod copy cannot start
   while the real app is running.
 - Clean up with the project name, so only the copy's containers, network and
