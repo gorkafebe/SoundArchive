@@ -11,25 +11,36 @@ from alembic import context
 from sqlalchemy import create_engine, pool
 
 from app.config import settings
+from app.models import Base
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# There are no SQLAlchemy models yet. When tables arrive (next phase), set this
-# to the models' MetaData so `alembic revision --autogenerate` can compare them.
-target_metadata = None
+# The tables as the code describes them (app/models.py), so
+# `alembic revision --autogenerate` can compare them with the database.
+target_metadata = Base.metadata
+
+
+def run_migrations(connection) -> None:
+    context.configure(connection=connection, target_metadata=target_metadata)
+    # Each migration runs inside a transaction: if it fails half-way,
+    # Postgres rolls back everything it did.
+    with context.begin_transaction():
+        context.run_migrations()
 
 
 def run_migrations_online() -> None:
+    # The tests pass their own connection (to a separate test database);
+    # see backend/tests/conftest.py. Otherwise connect with the settings.
+    connection = config.attributes.get("connection")
+    if connection is not None:
+        run_migrations(connection)
+        return
     # NullPool: a one-shot command needs one connection, not a pool.
     engine = create_engine(settings.database_url, poolclass=pool.NullPool)
     with engine.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
-        # Each migration runs inside a transaction: if it fails half-way,
-        # Postgres rolls back everything it did.
-        with context.begin_transaction():
-            context.run_migrations()
+        run_migrations(connection)
 
 
 if context.is_offline_mode():
