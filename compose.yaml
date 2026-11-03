@@ -88,6 +88,13 @@ services:
       # The limited app user: can read and write data, cannot change the schema.
       DB_USER: ${APP_DB_USER:?set APP_DB_USER in .env}
       DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
+      # Anyone may create places? Off (false) unless .env says true. See
+      # .env.example; compose.dev.yaml turns it on for development.
+      ALLOW_ANONYMOUS_WRITES: ${ALLOW_ANONYMOUS_WRITES:-false}
+      # Basemap styles for the light and dark themes, sent to the browser by
+      # /api/config. Change them in .env to switch map provider, no rebuild.
+      MAP_STYLE_URL: ${MAP_STYLE_URL:-https://tiles.openfreemap.org/styles/positron}
+      MAP_STYLE_URL_DARK: ${MAP_STYLE_URL_DARK:-https://tiles.openfreemap.org/styles/dark}
     # No "ports:" on purpose. Only Caddy reaches the API, over Compose's
     # internal network.
     depends_on:

@@ -35,6 +35,9 @@ services:
       # these, and prod never sets them.
       TEST_ADMIN_DB_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
       TEST_ADMIN_DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      # Dev creates places freely (prod defaults to false, see compose.yaml).
+      # ALLOW_ANONYMOUS_WRITES=false in .env tries the "disabled" state.
+      ALLOW_ANONYMOUS_WRITES: ${ALLOW_ANONYMOUS_WRITES:-true}
 
   caddy:
     ports:
