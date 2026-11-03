@@ -187,7 +187,11 @@ check_listeners() {
             case "$addr" in
                 127.*|'[::1]'|'[::ffff:127.'*) continue ;;          # loopback
                 *%lo) continue ;;                                     # loopback interface
-                *%tailscale0) tailnet="$tailnet $port"; continue ;;   # Tailscale only
+                # Tailscale only: bound to its interface, or to an address of
+                # its ranges (100.64.0.0/10, fd7a:115c:a1e0::/48), as a
+                # "tailscale serve" listener may be.
+                *%tailscale0|100.6[4-9].*|100.[7-9][0-9].*|100.1[01][0-9].*|100.12[0-7].*|'[fd7a:115c:a1e0:'*)
+                    tailnet="$tailnet $port"; continue ;;
             esac
             exposed="$exposed $port"
             [[ "$allowed" == *" $port "* ]] || bad="$bad $addr:$port"
