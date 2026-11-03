@@ -23,7 +23,8 @@ NODE = docker run --rm -u "$$(id -u):$$(id -g)" -v "$(CURDIR)/web:/app" -w /app 
 # These targets are command names, not files to build.
 .PHONY: help up down ps logs test migrate seed-dev psql reset-db \
         web-install web-check web-build web-dev check e2e e2e-real-tiles \
-        prod-config prod-check prod-up prod-down prod-ps prod-logs
+        prod-config prod-check prod-up prod-down prod-ps prod-logs \
+        msi-check msi-snapshot shellcheck
 
 # The first target is the default: `make` alone prints this list.
 # It reads the "## description" comments on the target lines below.
@@ -141,3 +142,21 @@ prod-ps: ## Prod: show containers and their health
 
 prod-logs: ## Prod: follow logs (all, or SERVICE=...)
 	$(PROD) logs -f --tail=100 $(SERVICE)
+
+# --- MSI operations (read-only checks) -----------------------------------------
+# Scripts in ops/check/. They change nothing, need no sudo and print no
+# secrets (see docs/MSI_REBOOT_AND_POWER_TESTS.md).
+
+msi-check: ## MSI: read-only health checklist (containers, ports, battery...)
+	ops/check/verify-msi.sh
+
+# LABEL names the snapshot folder, e.g. make msi-snapshot LABEL=antes-reinicio
+LABEL ?= foto
+msi-snapshot: ## MSI: save a dated, redacted snapshot of the state (LABEL=...)
+	ops/check/snapshot-state.sh $(LABEL)
+
+# ShellCheck (a linter for shell scripts) in a pinned Docker image, so
+# nothing is installed on the machine. -x follows the files a script sources.
+SHELLCHECK_IMAGE = koalaman/shellcheck:v0.11.0
+shellcheck: ## Ops: lint every script in ops/ with ShellCheck (in Docker)
+	docker run --rm -v "$(CURDIR):/mnt:ro" -w /mnt $(SHELLCHECK_IMAGE) -x $$(cd $(CURDIR) && find ops -name '*.sh' | sort)
