@@ -1,0 +1,171 @@
+{
+  "app": {
+    "title": "Sound Archive",
+    "tagline": "Cómo sonaba un lugar, guardado en el tiempo."
+  },
+  "skip": {
+    "toMain": "Saltar al contenido"
+  },
+  "settings": {
+    "label": "Preferencias",
+    "language": {
+      "switchTo": "English",
+      "switchToLabel": "Cambiar el idioma a inglés"
+    },
+    "theme": {
+      "label": "Tema",
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Como el sistema"
+    }
+  },
+  "nav": {
+    "label": "Vistas y acciones",
+    "views": "Vista",
+    "map": "Mapa",
+    "list": "Lista",
+    "add": "Añadir lugar"
+  },
+  "common": {
+    "loading": "Cargando…",
+    "retry": "Reintentar",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "cancel": "Cancelar"
+  },
+  "config": {
+    "error": "No se pudo conectar con el servidor. Comprueba la conexión y vuelve a intentarlo."
+  },
+  "map": {
+    "label": "Mapa de lugares",
+    "canvasLabel": "Mapa. Usa las flechas para moverte y las teclas más y menos para acercar o alejar.",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "resetBearing": "Orientar al norte",
+    "toggleAttribution": "Mostrar u ocultar la atribución del mapa",
+    "pinSelected": "{name}, seleccionado",
+    "cluster_one": "Grupo de {count} lugar. Acercar para verlo",
+    "cluster_other": "Grupo de {count} lugares. Acercar para verlos",
+    "status": {
+      "loading": "Cargando lugares…",
+      "empty": "No hay lugares en esta zona. Aléjate o usa la lista.",
+      "error": "No se pudieron cargar los lugares de esta zona.",
+      "count_one": "{count} lugar en esta zona",
+      "count_other": "{count} lugares en esta zona",
+      "truncated": "Hay más lugares de los que se muestran: acércate para verlos todos."
+    },
+    "styleError": "No se pudo cargar el mapa base. Los lugares siguen disponibles en la lista."
+  },
+  "coords": {
+    "value": "{lat}° {ns}, {lon}° {ew}",
+    "north": "N",
+    "south": "S",
+    "east": "E",
+    "west": "O"
+  },
+  "place": {
+    "panelLabel": "Ficha del lugar",
+    "coordinates": "Coordenadas",
+    "created": "Añadido el {date}",
+    "noDescription": "Sin descripción.",
+    "recordings": "Grabaciones",
+    "noRecordingsYet": "Aún sin grabaciones",
+    "recordingsPlaceholder": "Las grabaciones de este lugar aparecerán aquí.",
+    "showOnMap": "Ver en el mapa",
+    "loading": "Cargando el lugar…",
+    "error": "No se pudo cargar este lugar.",
+    "notFound": "Este lugar no existe o se ha borrado.",
+    "opened": "Ficha abierta: {name}",
+    "closed": "Ficha cerrada"
+  },
+  "sheet": {
+    "handle": "Altura del panel: {height}. Pulsa para cambiarla.",
+    "peek": "pequeña",
+    "half": "media",
+    "full": "completa"
+  },
+  "list": {
+    "label": "Lista de lugares",
+    "search": "Buscar lugares",
+    "searchHint": "Busca en el nombre y en la descripción.",
+    "searchButton": "Buscar",
+    "loading": "Cargando la lista…",
+    "empty": "Todavía no hay lugares.",
+    "noResults": "Ningún lugar coincide con «{q}».",
+    "error": "No se pudo cargar la lista.",
+    "results_one": "{count} lugar",
+    "results_other": "{count} lugares",
+    "page": "Página {page} de {pages}",
+    "pagination": "Páginas de resultados",
+    "previous": "Página anterior",
+    "next": "Página siguiente"
+  },
+  "view": {
+    "mapShown": "Vista de mapa",
+    "listShown": "Vista de lista"
+  },
+  "add": {
+    "title": "Añadir un lugar",
+    "step": "Paso {step} de {total}: {name}",
+    "steps": {
+      "location": "Ubicación",
+      "details": "Nombre y descripción",
+      "confirm": "Confirmar"
+    },
+    "location": {
+      "intro": "Elige dónde está el lugar: toca el mapa, escribe las coordenadas o usa tu ubicación.",
+      "mapLabel": "Mapa para elegir la ubicación. Toca o haz clic para colocar la chincheta.",
+      "pinLabel": "Ubicación elegida",
+      "latitude": "Latitud",
+      "latitudeHint": "Entre −90 y 90. Por ejemplo: 43,2630.",
+      "longitude": "Longitud",
+      "longitudeHint": "Entre −180 y 180. Al oeste de Greenwich es negativa, por ejemplo: −2,9350.",
+      "useMine": "Usar mi ubicación",
+      "useMineExplain": "Tu navegador te pedirá permiso. La ubicación solo rellena estos campos: no se guarda nada hasta que confirmes.",
+      "locating": "Buscando tu ubicación…",
+      "found": "Ubicación encontrada (precisión aproximada: {meters} m).",
+      "denied": "El navegador tiene bloqueado el acceso a tu ubicación en este sitio.",
+      "deniedHelp": "Para permitirlo, abre los ajustes del sitio (el icono junto a la dirección web), busca «Ubicación» y elige «Permitir»; después vuelve a intentarlo. Mientras tanto, puedes tocar el mapa o escribir las coordenadas.",
+      "unavailable": "No se pudo saber tu ubicación ahora mismo. Inténtalo de nuevo o elige el punto en el mapa.",
+      "timeout": "La búsqueda de tu ubicación tardó demasiado. Inténtalo de nuevo o elige el punto en el mapa.",
+      "unsupported": "Este navegador no puede compartir tu ubicación. Elige el punto en el mapa o escribe las coordenadas."
+    },
+    "details": {
+      "name": "Nombre",
+      "nameHint": "Hasta {max} caracteres.",
+      "description": "Descripción (opcional)",
+      "descriptionHint": "Qué se oye o por qué este lugar. Hasta {max} caracteres.",
+      "charCount": "{count} de {max} caracteres"
+    },
+    "confirm": {
+      "intro": "Revisa los datos antes de crear el lugar.",
+      "submit": "Crear el lugar",
+      "submitting": "Creando el lugar…"
+    },
+    "success": "Lugar creado: {name}",
+    "error": {
+      "network": "No se pudo conectar con el servidor. Lo que escribiste sigue aquí: inténtalo de nuevo.",
+      "server": "El servidor no pudo guardar el lugar (error {status}). Lo que escribiste sigue aquí: inténtalo de nuevo.",
+      "validation": "El servidor no aceptó los datos. Vuelve atrás y revisa los campos."
+    },
+    "disabled": {
+      "title": "La creación de lugares está desactivada en este servidor",
+      "body": "Todavía no hay cuentas de usuario, así que este servidor no deja crear lugares a cualquiera. Puedes seguir explorando el mapa y la lista.",
+      "back": "Volver"
+    }
+  },
+  "validation": {
+    "summary_one": "Hay {count} campo que revisar.",
+    "summary_other": "Hay {count} campos que revisar.",
+    "nameRequired": "Escribe un nombre.",
+    "nameTooLong": "El nombre tiene {count} caracteres; el máximo es {max}.",
+    "descriptionTooLong": "La descripción tiene {count} caracteres; el máximo es {max}.",
+    "latitudeRequired": "Escribe la latitud o elige un punto en el mapa.",
+    "latitudeNumber": "La latitud debe ser un número, por ejemplo 43,2630.",
+    "latitudeRange": "La latitud debe estar entre −90 y 90.",
+    "longitudeRequired": "Escribe la longitud o elige un punto en el mapa.",
+    "longitudeNumber": "La longitud debe ser un número, por ejemplo −2,9350.",
+    "longitudeRange": "La longitud debe estar entre −180 y 180."
+  }
+}

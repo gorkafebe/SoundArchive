@@ -1,0 +1,134 @@
+/*
+ * PROVISIONAL design tokens. The only file with colours, fonts, sizes,
+ * spacing, radii, shadows and motion timings.
+ *
+ * The real design is being made in Claude Design. When it is ready, this
+ * file is replaced by the exported tokens, keeping the variable NAMES (or
+ * mapping the new names onto them), and no component has to change.
+ * scripts/check-tokens.mjs fails the build if a colour or a font name
+ * appears anywhere else in src/.
+ *
+ * Mood (owner's decision): calm and natural. Warm, soft background; dark
+ * grey-green text; ONE muted accent (moss), reserved for sound/places and the
+ * main action; lots of air. Contrast is checked by scripts/check-contrast.mjs:
+ * text 4.5:1 and interface parts 3:1, in both themes.
+ *
+ * Themes: <html data-theme="light"> (default) or "dark". "System" in the
+ * theme menu just picks one of the two from prefers-color-scheme.
+ */
+
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Surfaces */
+  --color-bg: #f5f1e8; /* page background, warm paper */
+  --color-surface: #fbf9f3; /* panels, sheets, inputs */
+  --color-surface-sunken: #ebe6da; /* hover, selected rows */
+  --color-overlay-shadow: rgb(36 51 43 / 0.18);
+
+  /* Text */
+  --color-text: #24332b; /* dark grey-green */
+  --color-text-muted: #4e5d54;
+  --color-text-on-accent: #fbf9f3;
+
+  /* Lines and controls (3:1 against the background) */
+  --color-border: #7c877f;
+  --color-border-subtle: #d6d0c2; /* decoration only, never the only cue */
+
+  /* Accent: moss. Pins, clusters, the main button, links */
+  --color-accent: #4a6340;
+  --color-accent-hover: #3c5234;
+  --color-accent-soft: #dfe6d4; /* selected pin halo, info boxes */
+
+  /* Feedback */
+  --color-focus: #1f3d2e; /* focus ring */
+  --color-danger: #9a2f24;
+  --color-danger-soft: #f6e1dc;
+
+  /* Map attribution box (must stay readable over any map) */
+  --color-attribution-bg: rgb(251 249 243 / 0.92);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: #151b17;
+  --color-surface: #1d2520;
+  --color-surface-sunken: #27312b;
+  --color-overlay-shadow: rgb(0 0 0 / 0.5);
+
+  --color-text: #e3e8e0;
+  --color-text-muted: #aab6ad;
+  --color-text-on-accent: #121a15;
+
+  --color-border: #7f8c83;
+  --color-border-subtle: #36423a;
+
+  --color-accent: #a3bf93; /* sage, lighter so it stands out on dark */
+  --color-accent-hover: #b8d1a9;
+  --color-accent-soft: #2c3a2c;
+
+  --color-focus: #d4e8c8;
+  --color-danger: #f0a497;
+  --color-danger-soft: #3a2420;
+
+  --color-attribution-bg: rgb(29 37 32 / 0.92);
+}
+
+:root {
+  /* Type: the system font stack. No web fonts (they would be an external
+     request, and the design will choose the real typeface). */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial,
+    sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --text-xs: 0.8125rem;
+  --text-s: 0.9375rem;
+  --text-m: 1rem;
+  --text-l: 1.25rem;
+  --text-xl: 1.625rem;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --weight-normal: 400;
+  --weight-strong: 600;
+
+  /* Spacing: a 4 px scale */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  /* Radii */
+  --radius-s: 6px;
+  --radius-m: 12px;
+  --radius-l: 20px;
+  --radius-round: 999px;
+
+  /* Sizes */
+  --target-min: 44px; /* every control is at least 44 x 44 px */
+  --focus-width: 3px; /* visible focus ring (the rule asks for 2 px or more) */
+  --border-width: 1px;
+  --pin-dot: 18px; /* visible dot; the button around it is --target-min */
+  --pin-selected-scale: 1.6;
+  --panel-width: 400px; /* side panel on wide screens */
+  --content-max: 46rem; /* readable line length for forms and lists */
+
+  /* Elevation */
+  --shadow-panel: 0 2px 12px var(--color-overlay-shadow);
+
+  /* Motion: calm and short. Zero when the user asks for reduced motion. */
+  --duration-fast: 120ms;
+  --duration-normal: 220ms;
+  --easing: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+  }
+}
