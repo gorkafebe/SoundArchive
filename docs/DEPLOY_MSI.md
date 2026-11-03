@@ -7,6 +7,15 @@ The MSI runs the **same containers** as the dev laptop, combined with
 `compose.prod.yaml` instead of `compose.dev.yaml`. Code arrives through git,
 never by copying files.
 
+Related documents:
+
+| Document | For |
+|---|---|
+| [MSI_SERVER_SETUP.md](MSI_SERVER_SETUP.md) | the machine itself: OS, network, SSH, lid, battery limit, Secure Boot, what is still to do |
+| [MSI_REBOOT_AND_POWER_TESTS.md](MSI_REBOOT_AND_POWER_TESTS.md) | the reboot, cold boot, on-battery, IPv6 and Tailscale tests, with `make msi-check` / `make msi-snapshot` |
+| [BACKUP_AND_RESTORE.md](BACKUP_AND_RESTORE.md) | backups with restic, the restore order, `make backup` / `make restore-test` (section 12 below) |
+| [POWER_TUNING_PLAN.md](POWER_TUNING_PLAN.md) | saving power, step by step (not applied) |
+
 ---
 
 ## 0. Prerequisites (do these yourself first)
@@ -524,3 +533,41 @@ The last command must print `name: sa-test`. Then `make prod-check`,
 Used on 2026-11-02 for a full rehearsal of this checklist on the MSI, with the
 project name `sa-rehearsal`, before the real deployment. That rehearsal found
 the Caddyfile and network notes in sections 6 and 7.
+
+On 2026-11-03 the same rule was used for the backup rehearsal: the dev stack
+ran as `sa-ops` (every command with `COMPOSE_PROJECT_NAME=sa-ops`), and the
+restore tests as `sa-restore`. `make restore-test` uses
+`ops/backup/compose.restore.yaml`, which publishes **no** ports, so it can
+run next to the real app.
+
+---
+
+## 12. Backups and checks after a restart
+
+Status (2026-11-03): scripts ready and rehearsed on dev data; **no real
+backup yet** (the device is still to be chosen). Everything is in
+[BACKUP_AND_RESTORE.md](BACKUP_AND_RESTORE.md).
+
+Once the device is chosen and this branch is deployed:
+
+```sh
+cd /srv/sound-archive
+make backup RESTIC_REPO=<repository> RESTIC_PASSWORD_FILE=<file> \
+     BACKUP_PROJECT=sound-archive MEDIA_DIR=/srv/sound-archive-media \
+     BACKUP_ARGS=--init                      # --init only the very first time
+```
+
+`make restore-test` compares a restore with the **running** project it was
+taken from and then deletes its copy; on the MSI, pass
+`SOURCE_URL=http://127.0.0.1` (the real Caddy) instead of the dev default.
+
+After any reboot, update or change on the MSI (no `sudo` needed, changes
+nothing, prints no secrets):
+
+```sh
+make msi-check                               # ✔/✘ table: containers, ports, battery, Tailscale...
+make msi-snapshot LABEL=<name>               # the same, saved with the date, to compare
+```
+
+The procedures for the reboot, cold boot and power tests are in
+[MSI_REBOOT_AND_POWER_TESTS.md](MSI_REBOOT_AND_POWER_TESTS.md).

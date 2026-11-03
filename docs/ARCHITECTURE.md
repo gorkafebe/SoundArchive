@@ -230,6 +230,33 @@ Image tags start with the Compose project name
 test copy started with `COMPOSE_PROJECT_NAME=sa-dev` never overwrites the
 images of the real app (see `docs/DEPLOY_MSI.md`, section 11).
 
+## Backups and restore
+
+Summary; the full design, the reasons and the rehearsal figures are in
+[BACKUP_AND_RESTORE.md](BACKUP_AND_RESTORE.md). Status (2026-11-03):
+scripts ready and rehearsed on dev data, **no real backup yet** (the device
+is an open owner decision).
+
+```
+db container ──pg_dump -Fc──▶ dump ─┐
+media folder (MEDIA_DIR) ───────────┼─▶ restic (container, --network none) ──▶ encrypted repository
+metadata (commit, alembic, names) ──┘                                          (USB disk / SSD / remote)
+```
+
+- **What:** a `pg_dump` in custom format, made **inside** the `db` container
+  with its own variables (no password passes through the scripts), plus the
+  media folder (none yet: no audio in production before accounts) and a small
+  metadata file. Secrets (`.env`, the restic password) are **not** in the
+  automatic backup; they live in the owner's password manager.
+- **How:** restic, pinned image `restic/restic:0.19.1`, encrypted and
+  incremental; `restic check` after every backup; a status file for the
+  monitoring panel.
+- **Restore order:** restic → `db` alone (its first start creates the
+  limited app user) → `pg_restore` as admin → media → `alembic` → `api` (on
+  the **limited** user) → `caddy`. `make restore-test` proves it end to end
+  in a throwaway project (`sa-restore`) and deletes it.
+- **Measured:** about 20 s to restore 2.2 GB from a local repository.
+
 ## Technology choices
 
 - **uv** manages the Python dependencies. One fast tool creates the
