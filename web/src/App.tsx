@@ -1,27 +1,56 @@
 // The app shell: skip link, header (name + preferences), the navigation bar
-// (map/list switch and "Add place"), and the main area.
-import { useCallback, useEffect, useState } from "react";
+// (map/list switch and "Add place"), and the main area with the map or the
+// list, plus the place panel beside them.
+//
+// State that matters for sharing lives in the address (lib/urlState.ts):
+// view, map centre and zoom, selected place, list search and page.
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useAnnounce } from "./components/Announcer";
 import { Preferences } from "./components/Preferences";
+import { MapView, type Camera, type MapViewHandle } from "./features/map/MapView";
+import { PlaceList, type PlaceListHandle } from "./features/places/PlaceList";
+import { PlaceSheet } from "./features/places/PlaceSheet";
 import { useI18n } from "./i18n/i18n";
-import { getConfig, isAbort, type PublicConfig } from "./lib/api";
+import { getConfig, isAbort, type Place, type PublicConfig } from "./lib/api";
 import { parseUrlState, toSearch, type UrlState, type View } from "./lib/urlState";
 
 type ConfigState = { status: "loading" } | { status: "error" } | { status: "ready"; config: PublicConfig };
 
+// Zoom used to show one place: above the clustering limit (clusters.ts,
+// maxZoom 16), so the place always appears as its own pin.
+const PLACE_ZOOM = 17;
+
+// First view when the link has no position: Spain, where the first places
+// are expected (so the first screen is not an empty map).
+export const DEFAULT_CAMERA: Camera = { lon: -3.7, lat: 40.2, zoom: 5 };
+
 export function App() {
   const { t } = useI18n();
-  const [config, setConfig] = useState<ConfigState>({ status: "loading" });
+  const announce = useAnnounce();
+  const [loaded, setLoaded] = useState<{ attempt: number; config: ConfigState } | null>(null);
   const [url, setUrl] = useState<UrlState>(() => parseUrlState(window.location.search));
   const [attempt, setAttempt] = useState(0);
+  const config: ConfigState = loaded?.attempt === attempt ? loaded.config : { status: "loading" };
+  const [reloadKey] = useState(0);
+  const mapRef = useRef<MapViewHandle>(null);
+  const listRef = useRef<PlaceListHandle>(null);
+  // A shared link with a place but no position: centre on the place once loaded.
+  const centreOnLoad = useRef(url.place !== undefined && url.lat === undefined);
+
+  const [initialCamera] = useState<Camera>(() =>
+    url.lat !== undefined && url.lon !== undefined
+      ? { lon: url.lon, lat: url.lat, zoom: url.zoom ?? 13 }
+      : DEFAULT_CAMERA,
+  );
 
   // /api/config is read once at start-up: map style and whether writes are on.
   useEffect(() => {
     const controller = new AbortController();
     getConfig(controller.signal)
-      .then((value) => setConfig({ status: "ready", config: value }))
+      .then((value) => setLoaded({ attempt, config: { status: "ready", config: value } }))
       .catch((error) => {
-        if (!isAbort(error)) setConfig({ status: "error" });
+        if (!isAbort(error)) setLoaded({ attempt, config: { status: "error" } });
       });
     return () => controller.abort();
   }, [attempt]);
@@ -34,7 +63,49 @@ export function App() {
     }
   }, [url]);
 
-  const setView = useCallback((view: View) => setUrl((current) => ({ ...current, view })), []);
+  const setView = useCallback(
+    (view: View) => {
+      setUrl((current) => ({ ...current, view }));
+      announce(t(view === "map" ? "view.mapShown" : "view.listShown"));
+    },
+    [announce, t],
+  );
+
+  const select = useCallback((id: string) => setUrl((current) => ({ ...current, place: id })), []);
+
+  const closePlace = useCallback(() => {
+    const id = url.place;
+    setUrl((current) => ({ ...current, place: undefined }));
+    announce(t("place.closed"));
+    // Back to where the user came from: the pin, or the row in the list.
+    if (id) {
+      window.setTimeout(() => {
+        if (url.view === "map") mapRef.current?.focusPlace(id);
+        else listRef.current?.focusPlace(id);
+      }, 0);
+    }
+  }, [url.place, url.view, announce, t]);
+
+  const onCameraChange = useCallback(
+    (camera: Camera) => setUrl((current) => ({ ...current, lon: camera.lon, lat: camera.lat, zoom: camera.zoom })),
+    [],
+  );
+
+  const showOnMap = useCallback(
+    (place: Place) => {
+      setView("map");
+      // Wait until the map is visible again (it was hidden), then move it.
+      window.setTimeout(() => mapRef.current?.centerOn(place.longitude, place.latitude, PLACE_ZOOM), 50);
+    },
+    [setView],
+  );
+
+  const onPlaceLoaded = useCallback((place: Place) => {
+    if (centreOnLoad.current) {
+      centreOnLoad.current = false;
+      mapRef.current?.centerOn(place.longitude, place.latitude, PLACE_ZOOM);
+    }
+  }, []);
 
   return (
     <div className="app">
@@ -77,7 +148,47 @@ export function App() {
             </button>
           </div>
         )}
-        {config.status === "ready" && <p className="app-main__message">{t("app.tagline")}</p>}
+        {config.status === "ready" && (
+          <div className={`workspace${url.place ? " workspace--with-panel" : ""}`}>
+            <div className="workspace__content">
+              {/* The map stays mounted while the list is shown (hidden, not
+                  removed), so switching back keeps its position. */}
+              <div className="workspace__view" hidden={url.view !== "map"}>
+                <MapView
+                  ref={mapRef}
+                  config={config.config}
+                  initialCamera={initialCamera}
+                  selectedId={url.place ?? null}
+                  onSelect={select}
+                  onCameraChange={onCameraChange}
+                  reloadKey={reloadKey}
+                />
+              </div>
+              {url.view === "list" && (
+                <div className="workspace__view">
+                  <PlaceList
+                    ref={listRef}
+                    query={url.q ?? ""}
+                    page={url.page ?? 1}
+                    onQueryChange={(q, page) => setUrl((current) => ({ ...current, q: q || undefined, page }))}
+                    selectedId={url.place ?? null}
+                    onSelect={select}
+                    reloadKey={reloadKey}
+                  />
+                </div>
+              )}
+            </div>
+            {url.place && (
+              <PlaceSheet
+                key={url.place}
+                placeId={url.place}
+                onClose={closePlace}
+                onShowOnMap={url.view === "list" ? showOnMap : undefined}
+                onLoaded={onPlaceLoaded}
+              />
+            )}
+          </div>
+        )}
       </main>
     </div>
   );

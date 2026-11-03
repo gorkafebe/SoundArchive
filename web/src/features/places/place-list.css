@@ -1,0 +1,82 @@
+.place-list {
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+.place-list > * {
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+}
+.place-list__heading {
+  font-size: var(--text-xl);
+}
+.place-list__search-row {
+  display: flex;
+  gap: var(--space-2);
+}
+.place-list__muted,
+.place-list__count {
+  color: var(--color-text-muted);
+}
+.place-list__message {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.place-list__items {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+.place-list__item {
+  display: grid;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: var(--target-min);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-border-subtle);
+  border-radius: var(--radius-m);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.place-list__item:hover {
+  background: var(--color-surface-sunken);
+}
+/* The open place: thicker accent edge, not colour alone. */
+.place-list__item[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  box-shadow: inset 4px 0 0 var(--color-accent);
+}
+.place-list__name {
+  font-weight: var(--weight-strong);
+  overflow-wrap: anywhere;
+}
+.place-list__description {
+  color: var(--color-text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.place-list__coords {
+  color: var(--color-text-muted);
+  font-size: var(--text-s);
+}
+
+.place-list__pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
