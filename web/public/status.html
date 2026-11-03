@@ -1,22 +1,19 @@
 <!DOCTYPE html>
 <!--
-  Walking-skeleton test page. Plain HTML + JavaScript, no build step.
+  System check page from the walking skeleton, now at /status.html.
+  Plain HTML + JavaScript, no build step, independent of the React app: it
+  still works when the app is broken, which is the point.
   On load it calls the two API health checks (through Caddy, same origin)
-  and shows a green or red box for each. React replaces this in phase 3.
+  and shows a green or red box for each. Its style and script are separate
+  files because the Content-Security-Policy (Caddyfile) forbids inline code.
 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sound Archive - system check</title>
-  <style>
-    body { font-family: sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
-    .check { border: 3px solid #999; padding: 1rem; margin: 1rem 0; }
-    .ok { border-color: #1a7f37; background: #dafbe1; }
-    .fail { border-color: #cf222e; background: #ffebe9; }
-    .label { font-weight: bold; font-size: 1.2rem; }
-    pre { white-space: pre-wrap; word-break: break-word; font-size: 0.8rem; }
-  </style>
+  <link rel="stylesheet" href="/status.css">
+  <script src="/status.js" defer></script>
 </head>
 <body>
   <h1>Sound Archive - system check</h1>
@@ -34,43 +31,6 @@
     <pre class="body"></pre>
   </div>
 
-  <button onclick="runChecks()">Check again</button>
-
-  <script>
-    // Calls one endpoint and paints its box green (HTTP 2xx and status "ok") or red.
-    async function check(boxId, url) {
-      const box = document.getElementById(boxId);
-      box.className = "check";
-      box.querySelector(".status").textContent = "checking...";
-      let data = null;
-      try {
-        // Relative URL: the page and the API share the same origin (Caddy),
-        // so this works on localhost, a LAN IP, Tailscale or a domain.
-        const response = await fetch(url, { cache: "no-store" });
-        const text = await response.text();
-        try { data = JSON.parse(text); } catch { data = null; }
-        const ok = response.ok && data && data.status === "ok";
-        box.classList.add(ok ? "ok" : "fail");
-        box.querySelector(".status").textContent = (ok ? "OK" : "FAIL") + " (HTTP " + response.status + ")";
-        box.querySelector(".body").textContent = data ? JSON.stringify(data, null, 2) : text;
-      } catch (err) {
-        // fetch itself failed: Caddy unreachable, network down, etc.
-        box.classList.add("fail");
-        box.querySelector(".status").textContent = "FAIL (no response)";
-        box.querySelector(".body").textContent = String(err);
-      }
-      return data;
-    }
-
-    async function runChecks() {
-      check("api", "/api/health");
-      const db = await check("db", "/api/health/db");
-      const box = document.getElementById("db");
-      box.querySelector(".pg").textContent = (db && db.postgresql_version) || "-";
-      box.querySelector(".postgis").textContent = (db && db.postgis_version) || "-";
-    }
-
-    runChecks();
-  </script>
+  <button id="again" type="button">Check again</button>
 </body>
 </html>

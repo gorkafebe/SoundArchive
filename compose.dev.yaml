@@ -40,6 +40,9 @@ services:
       ALLOW_ANONYMOUS_WRITES: ${ALLOW_ANONYMOUS_WRITES:-true}
 
   caddy:
+    # Same build as prod, under a dev tag. After editing web/ or the
+    # Caddyfile, `make up` rebuilds it (or use `make web-dev` for instant reload).
+    image: ${COMPOSE_PROJECT_NAME:-sound-archive}-web:dev
     ports:
       # DEV_HTTP_BIND picks the network interface. The default, 127.0.0.1,
       # means this computer only. Set DEV_HTTP_BIND=0.0.0.0 in .env (all
@@ -47,3 +50,24 @@ services:
       # phone on the same Wi-Fi. Never do that on the MSI: ports 80/443 there
       # belong to the real app, and anything else stays private.
       - "${DEV_HTTP_BIND:-127.0.0.1}:${DEV_HTTP_PORT:-8080}:80"
+
+  # Optional: Vite's dev server, with instant reload when you save a file in
+  # web/. Not started by `make up`; run `make web-dev` (after `make up`) and
+  # open http://localhost:5173. It forwards /api to Caddy, like production.
+  # Needs `make web-install` once (it uses web/node_modules from your disk).
+  web-dev:
+    profiles: [web-dev]
+    image: node:26.13.0-alpine3.24  # same as NODE_IMAGE in the Makefile
+    working_dir: /app
+    # The node image's own user (uid 1000), usually the same as yours on Linux.
+    user: node
+    command: ["npm", "run", "dev"]
+    environment:
+      VITE_API_PROXY: http://caddy:80
+    volumes:
+      - ./web:/app
+    ports:
+      - "${DEV_HTTP_BIND:-127.0.0.1}:${DEV_WEB_PORT:-5173}:5173"
+    depends_on:
+      caddy:
+        condition: service_healthy

@@ -115,13 +115,21 @@ services:
       start_interval: 1s
 
   caddy:
-    image: caddy:2.11.7-alpine
+    # Caddy with the web app inside: web/Dockerfile builds the React app with
+    # Node, then copies dist/ and infra/caddy/Caddyfile into the official
+    # Caddy image. The context is the repository root because the build needs
+    # both folders; web/Dockerfile.dockerignore lets only those in.
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    image: ${COMPOSE_PROJECT_NAME:-sound-archive}-web:prod
     environment:
       # Read by the Caddyfile. ":80" = plain HTTP. A domain name = automatic HTTPS.
       CADDY_SITE_ADDRESS: ${CADDY_SITE_ADDRESS:-:80}
+      # Basemap server(s) the page may contact (Content-Security-Policy in the
+      # Caddyfile). Must match MAP_STYLE_URL's server; see .env.example.
+      MAP_TILE_ORIGINS: ${MAP_TILE_ORIGINS:-https://tiles.openfreemap.org}
     volumes:
-      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./web:/srv/web:ro
       # /data holds HTTPS certificates and keys. It must survive container
       # re-creation, or Caddy would request new certificates every time
       # (and Let's Encrypt rate-limits that).
