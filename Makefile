@@ -22,7 +22,7 @@ NODE = docker run --rm -u "$$(id -u):$$(id -g)" -v "$(CURDIR)/web:/app" -w /app 
 
 # These targets are command names, not files to build.
 .PHONY: help up down ps logs test migrate seed-dev psql reset-db \
-        web-install web-check web-build web-dev check e2e \
+        web-install web-check web-build web-dev check e2e e2e-real-tiles \
         prod-config prod-check prod-up prod-down prod-ps prod-logs
 
 # The first target is the default: `make` alone prints this list.
@@ -95,6 +95,14 @@ e2e: ## Dev: end-to-end browser tests (Playwright in Docker)
 	docker run --rm --name sa-e2e-playwright --network $(E2E_NETWORK) --shm-size=1g \
 	  -u "$$(id -u):$$(id -g)" -e HOME=/tmp -v "$(CURDIR)/web:/app" -w /app \
 	  $(E2E_IMAGE) npx playwright test $(E2E_ARGS)
+
+# A manual check against the REAL basemap provider (internet needed): the
+# style, tiles and fonts load and the attribution shows. Not part of `e2e`.
+e2e-real-tiles: ## Dev: one manual browser check with the real map tiles
+	$(DEV) up -d --build --wait
+	docker run --rm --name sa-e2e-real-tiles --network $(E2E_NETWORK) --shm-size=1g \
+	  -u "$$(id -u):$$(id -g)" -e HOME=/tmp -e E2E_REAL_TILES=1 -v "$(CURDIR)/web:/app" -w /app \
+	  $(E2E_IMAGE) npx playwright test real-tiles
 
 reset-db: ## Dev: DELETE all database data and volumes, then start fresh
 	@printf 'This deletes ALL database data in the dev Docker volumes. Type y to continue: '; \

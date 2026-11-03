@@ -6,6 +6,9 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
+  // The real-basemap check talks to the tile provider on the internet, so it
+  // only runs when asked for: make e2e-real-tiles (see that file).
+  testIgnore: process.env.E2E_REAL_TILES ? [] : ["**/*.manual.spec.ts"],
   // One worker: the tests share the dev database, and the machine is a laptop.
   workers: 1,
   fullyParallel: false,
