@@ -90,8 +90,9 @@ t_all="$(now)"
 
 # --- 1. which snapshot ---------------------------------------------------------------
 if [ -z "$snapshot" ]; then
-    snapshot="$(restic_run "$repo" "$pwfile" -- snapshots --json --latest 1 --tag "project=$source_project" |
-        python3 -c 'import json,sys; s=json.load(sys.stdin); print(s[-1]["short_id"] if s else "")')"
+    snapshots_json="$(restic_run "$repo" "$pwfile" -- snapshots --json --latest 1 --tag "project=$source_project")" ||
+        die "cannot open the repository $repo (wrong password, or not a restic repository?)"
+    snapshot="$(python3 -c 'import json,sys; s=json.loads(sys.argv[1]); print(s[-1]["short_id"] if s else "")' "$snapshots_json")"
     [ -n "$snapshot" ] || die "no snapshot with tag project=$source_project in the repository"
 fi
 log "1/7 snapshot $snapshot"

@@ -135,8 +135,8 @@ repository, and deleted at the end.
 nightly backup, at most **24 hours** of new places and recordings.
 
 **RTO (recovery time objective):** how long getting back takes. The
-rehearsal measured the restore of the database and the files themselves
-(section 8); a real restore after a disk failure adds the time to get
+rehearsal measured the restore of the database and the files themselves:
+about **20 s** for 2.2 GB from a local repository (section 8); a real restore after a disk failure adds the time to get
 hardware, install Ubuntu and Docker (MSI_SERVER_SETUP.md and DEPLOY_MSI.md,
 a few hours by hand), and to download the data if it comes from a remote
 copy (a home connection: about **1 hour per 10 GB at 25 Mbit/s**, an
@@ -237,6 +237,59 @@ node_exporter's textfile collector and an alert is in the session's
 
 ---
 
-## 8. Rehearsal (2026-11-03)
+## 8. Rehearsal (2026-11-03, verified)
 
-See the results below (filled in after the rehearsal).
+Against the **dev** stack (`sa-ops`, 322–323 made-up places from
+`make seed-dev`) and **synthetic media** made by
+`ops/backup/make-test-media.sh` (random bytes, the worst case: like real
+compressed audio, it neither compresses nor deduplicates). Repository and
+throwaway password in `~/sa-ops-ensayo-copias/`, on the MSI's own disk:
+**not a backup**, deleted afterwards. Production was not touched. Same
+disk for source and repository, so the speeds below are an upper bound.
+
+| # | Test | Result | Measured |
+|---|---|---|---|
+| 1 | First backup (`--init`), 21 files, 196 MiB + dump | ✔, `restic check`: no errors | **6 s** total; repository 197 MB; dump 29 KiB, 33 entries |
+| 2 | Second backup after changes (+2 files of 4 MiB, −1 file of 11 MiB, +1 place) | ✔ incremental: `2 new files, 2 changed ... 8.1MiB added`; `restic diff` shows exactly the changes | **2.7 s**; repository 205.1 → 213.6 MB (+8.4 MB) |
+| 3 | `make restore-test` into `sa-restore` | ✔ all 11 checks: rows 323 = 323; `/api/places` identical (same hash); `alembic current` `0002 (head)`; API connected as `sound_app`, not a superuser; it reads, inserts, updates and deletes but cannot `ALTER`, `DROP`, `TRUNCATE` or `CREATE`; SHA-256 of 21 files identical | restore **17 s** (restic 3, db start 4, pg_restore 1, migrate 6, api 2); 20.7 s with teardown |
+| 4 | One 2 GiB file (D-48) | ✔ backup and restore, SHA-256 identical | generate 4.2 s; backup **7.5 s** (restic 5 s, ≈ 430 MB/s); repository +2.15 GB; restore **19 s** (restic 5 s); free disk back to 421 GB after teardown |
+| 5 | One byte changed in one repository file (a pack holding part of one recording) | ✔ detected by `restic check --read-data` (`ciphertext verification failed`, exit 1); **not** by plain `restic check` (exit 0) | `--read-data` over 2.3 GB: 3.5 s |
+| 6 | Wrong password | ✔ the repository does not open: `Fatal: wrong password or no key found` (exit 12) for restic, `make backup` and `make restore-test`; the status file records the failure | — |
+
+After all tests, `make restore-test` passed again from start to end (19 s
+restore). Retention (`--forget`) was also tried: of 7 snapshots of the same
+day, 2 were kept (the newest, and the oldest daily one, a restic 0.19 rule).
+
+**First real value of the RTO:** about **20 seconds** to restore a
+database of a few hundred rows and 2.2 GB of media, from a local repository,
+onto a machine that already has Docker, the images and the code. Add the
+transfer time from the real device (USB 3: minutes for hundreds of GB; a
+remote copy over a home connection: hours) and, after a disk failure, the
+reinstall.
+
+**What the corruption test teaches.**
+
+- Plain `restic check` (after every backup) checks the structure: it would
+  not have noticed. The monthly `restic check --read-data-subset=10%` (or a
+  full `--read-data` on a local disk, where it is fast) is what finds damaged
+  bytes. On a remote repository `--read-data` downloads everything, so use a
+  subset there.
+- To recover, restic says what to do, and it was done in the rehearsal:
+  1. `restic repair packs <id>`: keeps the intact parts of the damaged file
+     and removes it (it saves a copy first in the **current folder**, which
+     must be writable: in the container, mount a folder and use `-w`; the
+     first attempt without it failed with `permission denied`);
+  2. **back up again while the originals still exist**: the missing piece
+     has the same content, so the same ID, and the old snapshots become
+     complete again. After that, `restic check --read-data`: no errors.
+  3. If the original is gone too, `restic repair snapshots --forget` removes
+     the damaged file from the old snapshots: that recording is lost from
+     this repository, and only the **second** backup can bring it back.
+     That is why 3-2-1 asks for two backups.
+- During the repair, `backup.sh` reported the run as **failed** (restic
+  exited non-zero on the half-repaired repository; the exact reason was not
+  captured) and kept the time of the last success in the status file. That
+  is the behaviour the alert relies on.
+
+Evidence (commands and trimmed output): the session's `evidencias/`
+folder, files `h4-*.txt`.
