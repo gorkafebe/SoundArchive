@@ -43,6 +43,12 @@
 
 /* --- Pins ------------------------------------------------------------------- */
 
+/* MapLibre fades markers with a fixed 0.2 s; use our token, which is 0 when
+   the user prefers reduced motion. */
+.map-view .maplibregl-marker {
+  transition: opacity var(--duration-normal) var(--easing);
+}
+
 /* The button is 44 x 44 px (easy to hit); the visible dot is smaller. */
 .map-pin,
 .map-cluster {

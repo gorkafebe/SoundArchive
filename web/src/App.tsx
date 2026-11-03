@@ -146,7 +146,8 @@ export function App() {
               key={view}
               type="button"
               className="button"
-              aria-pressed={url.view === view}
+              // While adding a place neither view is the current screen.
+              aria-pressed={!adding && url.view === view}
               onClick={() => setView(view)}
             >
               {t(`nav.${view}`)}

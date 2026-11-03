@@ -21,10 +21,10 @@ describe("Preferences", () => {
     renderPreferences();
     expect(document.documentElement.lang).toBe("es");
 
-    await userEvent.click(screen.getByRole("button", { name: "Cambiar el idioma a inglés" }));
+    await userEvent.click(screen.getByRole("button", { name: /Cambiar el idioma:\s*English/ }));
 
     expect(document.documentElement.lang).toBe("en");
-    expect(screen.getByRole("button", { name: "Switch the language to Spanish" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Change the language:\s*Español/ })).toBeInTheDocument();
     expect(window.localStorage.getItem("sa.language")).toBe("en");
   });
 

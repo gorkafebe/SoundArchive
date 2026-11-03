@@ -13,13 +13,12 @@ export function Preferences() {
   return (
     <div className="preferences" role="group" aria-label={t("settings.label")}>
       {/* The button shows the OTHER language's name, written in that
-          language (lang attribute), which is how people look for it. */}
-      <button
-        type="button"
-        className="button button--quiet"
-        onClick={() => setLanguage(other)}
-        aria-label={t("settings.language.switchToLabel")}
-      >
+          language (lang attribute), which is how people look for it. Its
+          spoken name starts with a hidden "Change language:" and then the
+          visible word, so voice control ("click English") finds it too
+          (WCAG 2.5.3, label in name). */}
+      <button type="button" className="button button--quiet" onClick={() => setLanguage(other)}>
+        <span className="visually-hidden">{t("settings.language.switchToLabel")} </span>
         <span lang={other}>{t("settings.language.switchTo")}</span>
       </button>
 

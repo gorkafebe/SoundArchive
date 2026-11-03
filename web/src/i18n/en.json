@@ -10,7 +10,7 @@
     "label": "Preferences",
     "language": {
       "switchTo": "Español",
-      "switchToLabel": "Switch the language to Spanish"
+      "switchToLabel": "Change the language:"
     },
     "theme": {
       "label": "Theme",

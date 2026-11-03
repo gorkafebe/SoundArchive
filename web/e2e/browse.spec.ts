@@ -79,7 +79,7 @@ test.describe("browsing (en)", () => {
   test("the language switch changes the texts and <html lang>", async ({ page }) => {
     await prepare(page);
     await page.goto("/");
-    await page.getByRole("button", { name: "Cambiar el idioma a inglés" }).click();
+    await page.getByRole("button", { name: "Cambiar el idioma: English" }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page.getByRole("button", { name: "Add place" })).toBeVisible();
     await page.reload();

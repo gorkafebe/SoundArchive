@@ -135,6 +135,16 @@ describe("PlaceSheet", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
+  it("closes with Escape", async () => {
+    fakeServer([place]);
+    const onClose = vi.fn();
+    render(wrap(<PlaceSheet placeId={place.id} onClose={onClose} />));
+    const heading = await screen.findByRole("heading", { level: 2, name: "Old market" });
+    await waitFor(() => expect(heading).toHaveFocus());
+    await userEvent.keyboard("{Escape}");
+    expect(onClose).toHaveBeenCalled();
+  });
+
   it("says when the place does not exist", async () => {
     fakeServer([]);
     render(wrap(<PlaceSheet placeId={place.id} onClose={() => {}} />));

@@ -139,6 +139,13 @@ export function PlaceSheet({ placeId, onClose, onShowOnMap, onLoaded }: PlaceShe
       ref={sheetRef}
       className={`place-sheet ${wide ? "place-sheet--side" : `place-sheet--bottom place-sheet--${height}`}`}
       aria-label={t("place.panelLabel")}
+      // Escape closes the panel from anywhere inside it, like the Close button.
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.stopPropagation();
+          onClose();
+        }
+      }}
     >
       {!wide && (
         <button
