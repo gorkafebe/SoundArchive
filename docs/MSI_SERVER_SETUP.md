@@ -358,8 +358,9 @@ Lenovo.
 
 ## 8. Run it headless with the lid closed
 
-Status: lid and screen settings **done and verified** 2026-11-02; BIOS settings
-and closed-lid temperatures **pending**.
+Status: lid and screen settings **done and verified** 2026-11-02; closed-lid
+temperatures **measured** over one day (2026-11-03, see
+[Temperatures](#temperatures)); BIOS settings **pending**.
 
 ### Ignore the lid
 
@@ -475,6 +476,35 @@ meaningless value). The two values to watch are **`Package id 0`** and
 **`Composite`**. Rough rule: 40–60 °C at idle is normal; above about 85–90 °C
 for a sustained time, improve the cooling.
 
+**One day with the lid closed (verified 2026-11-03, from Prometheus).** The
+monitoring panel keeps every reading, so this is measured, not guessed. Data
+from 2026-11-02 15:10 UTC (when Prometheus started) to 2026-11-03 15:05 UTC,
+about 24 hours. The lid read `closed` at the end
+(`cat /proc/acpi/button/lid/*/state`); its state is not recorded over time,
+so "closed the whole day" rests on the owner's word.
+
+| Sensor | Max | Average | Median | Min | Night (00–06 UTC, average) |
+|---|---|---|---|---|---|
+| CPU `Package id 0` | **95 °C** | 33.7 °C | 33 °C | 26 °C | 29.2 °C |
+| SSD `Composite` | 30.9 °C | 24.5 °C | | 18.9 °C | 21.5 °C |
+| `acpitz` | 96 °C | 37.8 °C | | 30 °C | |
+
+The CPU spent **1.25 minutes** in total above 90 °C and 5.25 minutes above
+80 °C that day (99 % of the time below 67 °C). The 95 °C peaks match the
+Docker builds and browser tests of the work sessions (2026-11-02 around
+16–17 h and 20–21 h UTC, 2026-11-03 around 09–10 h UTC). PromQL used, for
+reference:
+
+```promql
+max_over_time(node_hwmon_temp_celsius{chip="platform_coretemp_0",sensor="temp1"}[2d])
+avg_over_time(node_hwmon_temp_celsius{chip="nvme_nvme0",sensor="temp1"}[2d])
+count_over_time((node_hwmon_temp_celsius{chip="platform_coretemp_0",sensor="temp1"} > 90)[2d:15s]) * 15 / 60
+```
+
+Reading: at idle the closed lid is no problem; under a long heavy load the
+CPU reaches its limit region within minutes. Audio processing (phase 5)
+should be measured the same way before it runs unattended.
+
 ### Cooling
 
 With the lid closed the laptop cools less well. Keep the air vents free, put
@@ -525,10 +555,12 @@ The SSD is **not a backup**. Before storing any real recording, set up backups
 
 ## 10. Battery charge limit (msi-ec)
 
-Status: limit **done and verified** 2026-11-02 (start 50%, end 60%).
-Survives reboots: **verified for two reboots** without any extra service
-(see "Does it survive a reboot?" below); **not verified** after a cold boot
-with all power removed.
+Status: limit **done and verified** 2026-11-02 (start 50%, end 60%), and
+again 2026-11-03 at 15:04 UTC. Survives reboots: **verified for two reboots**
+without any extra service (see "Does it survive a reboot?" below); **not
+verified** after a cold boot with all power removed. A boot-time service
+that re-applies it **exists and is enabled** since 2026-11-03, but has **not
+yet run at a real boot** (see "The boot service").
 
 *Why:* a server that is always plugged in keeps its battery at 100%, and a
 lithium battery held full and warm wears out faster. Holding it at 60% slows
@@ -597,6 +629,17 @@ Readings on 2026-11-02 at 17:20 UTC (verified): `50` and `60`;
 module file `/lib/modules/6.8.0-147-generic/updates/dkms/msi-ec.ko.zst`;
 firmware `1583EMS1.109`.
 
+Readings on 2026-11-03 at 15:04 UTC (verified, same commands): `50` and
+`60`; `Not charging`, **91%**; the same DKMS line and module file; firmware
+`1583EMS1.109`; `modinfo -F signer msi_ec` →
+`soundarchive Secure Boot Module Signature key`.
+
+Why 91% and not 95%: the EC stops charging but does not discharge, and the
+battery loses charge slowly by itself. Prometheus shows the drift: 95% on
+2026-11-02, 93% at 18:10 UTC, 92% at 00:10, 91% from 06:10 on 2026-11-03,
+with the charger connected the whole time (`node_power_supply_online` for
+`ADP1` never left 1). It will start charging again only below 50%.
+
 ### Battery health
 
 The battery reports charge in ampere-hours (`charge_full`,
@@ -606,10 +649,13 @@ that is **66% of its design capacity**. `upower` gives the same in energy:
 34.36 Wh against 52.01 Wh. At the 60% limit that is about **20 Wh**. The
 cycle count always reads 0 (the firmware does not report it).
 
+Verified again on 2026-11-03 at 15:04 UTC: the same two values (66.1%);
+`upower` reports `capacity: 66.0675%` and 31.4 Wh stored at 91%.
+
 ### Does it survive a reboot?
 
-There is no service that writes the limit at boot
-(`systemctl status battery-charge-limit.service` says the unit could not be
+On 2026-11-02 there was no service that wrote the limit at boot
+(`systemctl status battery-charge-limit.service` said the unit could not be
 found). Even so, the system log shows the limit was written **once**, at
 12:19 UTC, and the machine then went through an abrupt stop (12:45), a boot
 (13:20) and a clean reboot (14:58), with no later command touching it. At
@@ -618,19 +664,87 @@ while the charger is connected.
 
 **Not verified:** a cold boot after removing all power, a fully drained
 battery, or a BIOS update; any of them might reset the EC to its default (no
-limit, so charging to 100%). A small boot-time service would re-apply 60%
-just in case. It is a proposal in [section 14](#14-still-to-do).
+limit, so charging to 100%). That is why the boot service below exists.
 
-What to watch: after a kernel update, DKMS rebuilds the module by itself
-(with the same signing key, so no new MOK enrolment). If the
-`charge_control_*` files disappear, look at `dkms status` first.
+### The boot service
+
+`/etc/systemd/system/battery-charge-limit.service` writes `60` to the end
+threshold at every boot. It was created and enabled by the owner on
+**2026-11-03 at 08:41 UTC** (`systemctl enable --now`); the file is the one
+proposed in the first version of section 14:
+
+```ini
+[Unit]
+Description=Limit battery charge to 60 percent (msi-ec)
+After=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'for i in $$(seq 1 30); do [ -w /sys/class/power_supply/BAT1/charge_control_end_threshold ] && break; sleep 1; done; echo 60 > /sys/class/power_supply/BAT1/charge_control_end_threshold'
+
+[Install]
+WantedBy=multi-user.target
+```
+
+It waits up to 30 s for the driver's file to appear (the module may load a
+little later than the service starts), then writes 60. `$$` is how a unit
+file writes a literal `$` (systemd itself expands `$NAME`). The start value
+follows by itself (end − 10 = 50).
+
+State on 2026-11-03 at 15:04 UTC (verified): `enabled`, `active (exited)`
+since 08:41:56 UTC, `status=0/SUCCESS`. The last boot was on 2026-11-02 at
+14:58 UTC, **before** the service existed, so it has **never run at a
+boot**: the reboot test (docs/MSI_REBOOT_AND_POWER_TESTS.md, test 1) is what
+verifies it. Check after any boot:
+
+```sh
+systemctl status battery-charge-limit.service     # active (exited) since <this boot>
+journalctl -b -u battery-charge-limit.service     # "Finished ..." in this boot
+make msi-check                                    # thresholds and service, ✔/✘
+```
+
+### After a kernel update: is DKMS still working?
+
+Ubuntu installs updates by itself on the MSI (unattended upgrades on,
+automatic reboot off: verified 2026-11-03), so a new kernel can arrive any
+night and runs from the next reboot. DKMS should rebuild `msi_ec` for it and
+sign it with the same MOK key, so no new enrolment is needed. If that fails,
+this is what you see **after the reboot into the new kernel**:
+
+| Where | Working | DKMS did not build the module |
+|---|---|---|
+| `ls /sys/class/power_supply/BAT1/charge_control_*` | two files | **missing**: no limit, the battery charges to 100% |
+| `dkms status` | `msi_ec/0.13, <new kernel>, x86_64: installed` | no line for the new kernel, or `built` without `installed`, or an error |
+| `lsmod \| grep msi_ec` | one line | nothing, or the kernel's own old `msi_ec` refused the firmware: `journalctl -k -b \| grep -i msi` shows `Firmware version is not supported: '1583EMS1.109'` |
+| `systemctl status battery-charge-limit.service` | `active (exited)` | **failed** (after its 30 s wait it could not write the file) |
+| `make msi-check` | ✔ | ✘ on thresholds, the service, `msi_ec` and DKMS |
+
+Fix (with `sudo`): make sure the headers for the running kernel exist, then
+build, load and re-apply:
+
+```sh
+uname -r                                          # the new kernel
+sudo apt install linux-headers-$(uname -r)        # usually already there via linux-headers-generic
+sudo dkms install msi_ec/0.13 -k "$(uname -r)"
+sudo modprobe msi_ec
+sudo systemctl restart battery-charge-limit.service
+cat /sys/class/power_supply/BAT1/charge_control_{start,end}_threshold   # 50, 60
+```
+
+If `modprobe` answers `Key was rejected by service`, the module is signed
+with a key the firmware does not trust: the MOK enrolment was lost (section
+11). Until it is fixed, booting the previous kernel from the GRUB menu
+(*Advanced options*) brings the limit back.
 
 ---
 
 ## 11. Secure Boot and the MOK
 
 Status: **done and verified** 2026-11-02 (`mokutil --sb-state` →
-`SecureBoot enabled`; the msi-ec module is signed and loads).
+`SecureBoot enabled`; the msi-ec module is signed and loads). Verified again
+2026-11-03 at 15:04 UTC: `SecureBoot enabled`, `msi_ec` loaded, signer
+`soundarchive Secure Boot Module Signature key`.
 
 **Secure Boot** stays on, on purpose: the firmware only starts a boot loader
 and kernel signed by a trusted key, and the kernel only loads signed modules.
@@ -691,49 +805,47 @@ towards the load average without using CPU. At boot the kernel also logs
 `usb usb1-port8: connect-debounce failed`. No effect has been measured;
 **to confirm** whether it costs power (step 3).
 
-### Proposed order
+### The plan
 
-1. **Confirm and make the 60% limit permanent** (section 10). It protects the
-   battery, which matters more than a few watts.
-2. **GPU:** it is already powered down while unused, with the open-source
-   `nouveau` driver. Do **not** install NVIDIA's proprietary driver: the
-   server does not need the GPU, the driver is large, and its kernel module
-   would also need MOK signing. Check the state above now and then.
-3. **Baseline with a plug-in power meter** (a "wattmeter" between the wall
-   and the charger): note the watts at idle with the lid closed, and during a
-   typical task. Without that number, no saving can be shown.
-4. **TLP** (`sudo apt install tlp`), a service that applies many small
-   power settings. It has separate values for mains (`*_ON_AC`) and battery
-   (`*_ON_BAT`), and its strongest savings are in the battery values. On a
-   machine that is always plugged in, copy the battery values you want into
-   the `*_ON_AC` settings. (This is an inference from how TLP is organised;
-   check what it applies with `sudo tlp-stat`.) Do not run
-   `powertop --auto-tune` as well (the two fight over the same settings), and
-   make sure `power-profiles-daemon` is not running at the same time (the
-   two also overlap; today it is inactive).
-5. **BIOS:** look for a GPU switch (to disable the NVIDIA GPU completely) and
-   for power-on after a power cut (section 8).
-6. **Write down the numbers before and after** each step, with the date.
+The ordered plan, with the exact `sudo` commands, how to measure before and
+after, a table for the numbers and how to undo each step, is in
+[POWER_TUNING_PLAN.md](POWER_TUNING_PLAN.md) (2026-11-03). Nothing in it has
+been applied.
+
+Re-read on 2026-11-03 at 15:05 UTC (verified): the GPU still `suspended`
+(`D3cold`, 86,734 s suspended against 37 s active since boot; note that
+`lspci` itself wakes it for a few seconds); the CPU settings unchanged; the
+embedded controller in `comfort` mode (`/sys/devices/platform/msi-ec/shift_mode`,
+choices `eco`, `comfort`, `turbo`).
 
 ---
 
 ## 13. Time zone
 
-Status: **pending** (needs `sudo`).
+Status: **done** by the owner on 2026-11-03 at about 08:40 UTC, **verified**
+the same day at 15:03 UTC: `timedatectl` → `Time zone: Europe/Madrid (CET,
++0100)`, NTP synchronised; `/etc/localtime` → `/usr/share/zoneinfo/Europe/Madrid`.
+One loose end: `/etc/timezone` still says `Etc/UTC` (a few programs read that
+file instead). **To confirm** how the zone was changed; running
+`sudo timedatectl set-timezone Europe/Madrid` once more should leave both in
+agreement (not tested).
 
-The MSI runs on UTC (`timedatectl` → `Time zone: Etc/UTC (UTC, +0000)`,
-verified 2026-11-02); the Lenovo runs on Madrid time. So everything made on
+Before the change, the MSI ran on UTC (`timedatectl` → `Time zone: Etc/UTC
+(UTC, +0000)`, verified 2026-11-02); the Lenovo runs on Madrid time. So everything made on
 the MSI shows times one hour behind Spain in winter (two in summer): logs,
 `date`, and the dates of git commits made there. The two commits of the
 guide's repository show it: one made on the MSI is dated `+0000`, one made on
 the Lenovo `+0100`, so their times look out of order.
 
-Planned fix:
+The fix (as applied):
 
 ```sh
 sudo timedatectl set-timezone Europe/Madrid
 timedatectl        # Time zone: Europe/Madrid (CET, +0100)
 ```
+
+`last`, `uptime` and `journalctl` now print Madrid time; the session logs of
+the agent keep writing UTC (`date -u`) and say so.
 
 Containers keep their own time zone (UTC) unless told otherwise. That is
 fine: Grafana shows times in the browser's zone.
@@ -751,95 +863,68 @@ Done since the first version of this list (2026-11-02):
       (section 11).
 - [x] Sleep disabled for good (section 8, "Never sleep").
 - [x] A full rehearsal of DEPLOY_MSI.md on the MSI itself, in a throwaway
-      copy that was deleted afterwards (DEPLOY_MSI.md, section 11). The real
-      app is **not** deployed yet.
+      copy that was deleted afterwards (DEPLOY_MSI.md, section 11).
+- [x] **Tailscale** installed on the MSI and in the tailnet (verified
+      2026-11-03: version 1.104.5, `Running`, MagicDNS on; two more devices
+      in the tailnet, a Linux laptop and an Android phone). The MSI's node
+      shows no key expiry (it looks disabled; inferred from
+      `tailscale status --json`).
+- [x] **The real app deployed** (walking skeleton) in `/srv/sound-archive`,
+      project `sound-archive`: `caddy`, `api` and `db` healthy, only Caddy
+      publishing 80/443 (verified 2026-11-03). The places interface (phase
+      3b) is **not** deployed yet.
+- [x] **Time zone** Europe/Madrid (section 13), with one loose end
+      (`/etc/timezone`).
+- [x] **Battery service** `battery-charge-limit.service` created and
+      enabled (section 10); **not yet run at a boot**.
+- [x] **Firewall: declared enabled by the owner**, 2026-11-03. Without `sudo`
+      only indirect signs can be read (verified 2026-11-03):
+      `/etc/ufw/ufw.conf` has `ENABLED=yes` (changed 08:42 UTC), `ufw.service`
+      is active, `/etc/default/ufw` has `DEFAULT_INPUT_POLICY="DROP"` and
+      `IPV6=yes`. **The rules themselves are not verified**: run
+      `sudo ufw status verbose`. Remember: ports published by Docker bypass
+      ufw. That is why production publishes only Caddy's ports (see
+      [DEPLOY_MSI.md](DEPLOY_MSI.md#2-firewall-docker-ports-bypass-ufw)).
+- [x] **Backups designed and rehearsed** on dev data:
+      [BACKUP_AND_RESTORE.md](BACKUP_AND_RESTORE.md). **No real backup yet**:
+      the device is an open owner decision.
+- [x] Temperatures with the lid closed for a day (section 8, measured from
+      Prometheus).
+- [x] Read-only checks for after a reboot: `make msi-check` and
+      `make msi-snapshot` (`ops/check/`).
 
 Not done yet, roughly in order. Tick them as they are completed, and record
 each one in the project log.
 
-- [ ] **Full reboot test.** Before: note `docker ps`, `uptime` and the two
-      charge thresholds. Then `sudo reboot`, log in again and check: every
-      monitoring container `healthy`, thresholds still 50/60, `dkms status`
-      without errors, both network interfaces up (`ip -br a`),
-      `systemctl --failed` empty. Then a **cold boot** (power off, wait 30 s,
-      power button). *Why:* nothing has proved yet that everything comes back
-      by itself after a restart.
-- [ ] **Battery limit at boot (optional insurance, not verified).** The EC
-      kept the limit through two reboots (section 10). If it is ever lost, a
-      small service re-applies it at every boot. Proposed
-      `/etc/systemd/system/battery-charge-limit.service`:
-
-  ```ini
-  [Unit]
-  Description=Limit battery charge to 60 percent (msi-ec)
-  After=multi-user.target
-
-  [Service]
-  Type=oneshot
-  RemainAfterExit=yes
-  ExecStart=/bin/sh -c 'for i in $$(seq 1 30); do [ -w /sys/class/power_supply/BAT1/charge_control_end_threshold ] && break; sleep 1; done; echo 60 > /sys/class/power_supply/BAT1/charge_control_end_threshold'
-
-  [Install]
-  WantedBy=multi-user.target
-  ```
-
-  It waits up to 30 s for the driver's file to appear, then writes 60.
-  `$$` is how a unit file writes a literal `$` (systemd itself expands
-  `$NAME`). `systemd-analyze verify` accepts the file; it has not run at a
-  real boot. Enable it with
-  `sudo systemctl daemon-reload && sudo systemctl enable --now battery-charge-limit.service`,
-  then check the thresholds, and again after the reboot test.
-
-- [ ] **Time zone** (section 13): `sudo timedatectl set-timezone Europe/Madrid`.
-- [ ] Firewall (allow SSH **before** enabling, or you lock yourself out):
-
-  ```sh
-  sudo ufw allow OpenSSH
-  sudo ufw enable
-  sudo ufw status verbose
-  ```
-
-  Remember: ports published by Docker bypass ufw. That is why production
-  publishes only Caddy's ports (see [DEPLOY_MSI.md](DEPLOY_MSI.md#2-firewall-docker-ports-bypass-ufw)).
-
-- [ ] **Tailscale:** install it on the MSI (<https://tailscale.com/download/linux>),
-      run `sudo tailscale up`, install it on the Lenovo and the phone. Consider
-      disabling key expiry for the MSI in the Tailscale admin console, so it
-      does not drop off the network every few months.
-- [ ] **Read-only deploy key** so the MSI can clone the private repository:
-
-  ```sh
-  ssh-keygen -t ed25519 -C "msi-deploy" -f ~/.ssh/sound_archive_deploy
-  cat ~/.ssh/sound_archive_deploy.pub
-  ```
-
-  Add the public key on GitHub under the repository's **Settings → Deploy
-  keys**, **without** write access. Because the key does not have the default
-  name, tell SSH to use it for GitHub, in `~/.ssh/config`:
-
-  ```
-  Host github.com
-      IdentityFile ~/.ssh/sound_archive_deploy
-  ```
-
-- [ ] **Deploy the real app:** continue with [DEPLOY_MSI.md](DEPLOY_MSI.md)
-      from section 3 (`git clone` into `/srv/sound-archive`, `.env`, first
-      run). Docker is already installed. The rehearsal already found and fixed
-      the unclear parts (Caddyfile updates, who can reach the site).
-- [ ] **Incoming IPv6:** once the app runs, check that the router blocks
-      incoming IPv6, or ports 80/443 are open to the internet (DEPLOY_MSI.md,
-      section 6).
+- [ ] **Reboot, cold boot and on-battery tests**, then the IPv6 test from
+      mobile data and the phone over Tailscale: step by step in
+      [MSI_REBOOT_AND_POWER_TESTS.md](MSI_REBOOT_AND_POWER_TESTS.md). The
+      last boot was 2026-11-02 14:58 UTC; nothing has been rebooted since
+      (verified with Prometheus: `changes(node_boot_time_seconds[3d])` = 0).
+      These tests also verify the battery service at a real boot.
+- [ ] **Check the ufw rules** (`sudo ufw status verbose`): SSH allowed, and
+      nothing else needed outside Docker.
+- [ ] **Choose the backup device** and make the first real backup and
+      restore test (BACKUP_AND_RESTORE.md, section 5). **Before any real
+      recording is stored**, and after accounts exist (no audio in
+      production without accounts).
+- [ ] **Incoming IPv6:** ports 80/443 (and 22) listen on IPv6 on every
+      interface. Check from a phone on mobile data that they are closed
+      (MSI_REBOOT_AND_POWER_TESTS.md, test 4).
+- [ ] **Wired network:** on 2026-11-03 `enp4s0` was `down` and the server ran
+      on Wi-Fi (`wlo1`). If the cable is meant to be connected, check it;
+      a cable is more reliable for a server.
 - [ ] Router: reserve a fixed IP for each interface by MAC address (or rely on
       Tailscale names).
 - [ ] Back up the Lenovo's SSH private key and/or authorize a second key.
-- [ ] External USB disk for backups, before any real recording is stored.
 - [ ] Check whether there is a free second M.2 slot.
-- [ ] Temperatures with the lid closed for a while, and under audio
-      processing load. Also unplug the charger for a minute and watch the
-      monitoring panel show "on battery".
+- [ ] Temperatures under audio processing load (phase 5).
 - [ ] BIOS: look for an automatic power-on option after a power cut, and for
       a switch that turns the NVIDIA GPU off completely.
-- [ ] Power saving, in the order of section 12, starting with a wattmeter.
+- [ ] Power saving: [POWER_TUNING_PLAN.md](POWER_TUNING_PLAN.md), starting
+      with a wattmeter.
+- [ ] NVMe health (SMART): `sudo smartctl -a /dev/nvme0` (needs
+      `smartmontools`; phase B, owner approval pending).
 - [ ] Battery: check now and then that it is not swelling (a swollen battery
       lifts the case or the touchpad).
 - [ ] If the MSI stops responding again (as at 12:45 UTC on 2026-11-02,

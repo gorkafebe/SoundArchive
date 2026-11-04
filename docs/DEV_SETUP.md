@@ -108,6 +108,38 @@ make web-dev       # live-reload server at http://localhost:5173 (needs make up 
 make e2e           # browser tests (Playwright in Docker)
 ```
 
+Operations scripts (`ops/`, bash):
+
+```sh
+make shellcheck    # lint every script in ops/ (ShellCheck in Docker); must print nothing
+make msi-check     # on the MSI: read-only health checklist (works on any Linux, many lines ✘ there)
+make backup ...    # see docs/BACKUP_AND_RESTORE.md; always give the destination
+make restore-test ...
+```
+
+**A second dev stack on the same machine** (for example on the MSI, next to
+the real app): give it its own project name in **every** command, because
+`compose.yaml` fixes `name: sound-archive`:
+
+```sh
+export COMPOSE_PROJECT_NAME=sa-ops     # this terminal only
+make up && make seed-dev
+```
+
+The backup rehearsal of 2026-11-03 used exactly that (docs/DEPLOY_MSI.md,
+section 11). A backup rehearsal with the dev stack:
+
+```sh
+mkdir -p ~/rehearsal/secret && chmod 700 ~/rehearsal/secret
+(umask 077; openssl rand -base64 32 > ~/rehearsal/secret/restic-password)
+ops/backup/make-test-media.sh ~/rehearsal/media 20 20       # synthetic "recordings"
+make backup RESTIC_REPO=$HOME/rehearsal/repo RESTIC_PASSWORD_FILE=$HOME/rehearsal/secret/restic-password \
+     BACKUP_PROJECT=sa-ops MEDIA_DIR=$HOME/rehearsal/media BACKUP_ARGS="--init --status-file $HOME/rehearsal/backup.prom"
+make restore-test RESTIC_REPO=$HOME/rehearsal/repo RESTIC_PASSWORD_FILE=$HOME/rehearsal/secret/restic-password \
+     BACKUP_PROJECT=sa-ops MEDIA_DIR=$HOME/rehearsal/media
+rm -rf ~/rehearsal                                          # it is NOT a backup: same disk
+```
+
 **Editing code:**
 
 - `backend/` is mounted into the api container, and the server restarts

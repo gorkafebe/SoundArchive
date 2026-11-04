@@ -59,6 +59,14 @@ Run `make` with no arguments to print this list. Each command prints the real
 | `make prod-down` | Prod: stop and remove containers (data is kept) |
 | `make prod-ps` | Prod: show containers and their health |
 | `make prod-logs` | Prod: follow logs |
+| `make msi-check` | MSI: read-only health checklist (containers, ports, battery, Tailscale, disk, temperatures); no `sudo`, no secrets |
+| `make msi-snapshot LABEL=...` | MSI: the same state, saved with the date, to compare before and after a test |
+| `make backup RESTIC_REPO=... RESTIC_PASSWORD_FILE=... BACKUP_PROJECT=...` | Backup with restic (database dump + `MEDIA_DIR`); **no default destination** |
+| `make restore-test RESTIC_REPO=... RESTIC_PASSWORD_FILE=... BACKUP_PROJECT=...` | Restore the latest backup into `sa-restore`, compare it with the running project, delete it |
+| `make shellcheck` | Lint every script in `ops/` with ShellCheck (in Docker) |
+
+Backups and the MSI checks: [docs/BACKUP_AND_RESTORE.md](docs/BACKUP_AND_RESTORE.md),
+[docs/MSI_REBOOT_AND_POWER_TESTS.md](docs/MSI_REBOOT_AND_POWER_TESTS.md).
 
 ## Repository map
 
@@ -86,10 +94,17 @@ Run `make` with no arguments to print this list. Each command prints the real
 ├── infra/
 │   ├── caddy/Caddyfile   web server / reverse proxy configuration
 │   └── postgres/init/    runs once when the database is first created
+├── ops/                  operations scripts (bash, checked with ShellCheck)
+│   ├── check/            verify-msi.sh, snapshot-state.sh: read-only server checks
+│   ├── backup/           backup.sh, restore.sh, restore-test.sh (restic)
+│   └── lib/redact.sed    hides addresses, MACs and the tailnet name in their output
 └── docs/
     ├── ARCHITECTURE.md   what each service does and how a request flows
     ├── DEV_SETUP.md      setting up and working on a development machine
     ├── MSI_SERVER_SETUP.md  turning the MSI laptop into the server (OS, network, SSH, battery)
     ├── DEPLOY_MSI.md     deploying to the Ubuntu server, step by step
+    ├── BACKUP_AND_RESTORE.md  backups with restic: what, why, how to restore, rehearsal
+    ├── MSI_REBOOT_AND_POWER_TESTS.md  reboot, power and network tests (owner)
+    ├── POWER_TUNING_PLAN.md   saving power on the MSI, step by step (not applied)
     └── design/           research and brief; IMPLEMENTATION_NOTES.md (what is built, what the design will replace)
 ```
