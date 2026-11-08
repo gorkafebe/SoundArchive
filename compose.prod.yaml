@@ -1,5 +1,5 @@
 # Prod overrides for the MSI, used together with compose.yaml:
-#   docker compose -f compose.yaml -f compose.prod.yaml up -d --build   (make prod-up)
+#   make prod-up   (only from /srv/sound-archive; it sets the project name)
 # Only what differs from the base file is here.
 #
 # Note what is NOT here: no "ports" for db or api. Only Caddy is reachable

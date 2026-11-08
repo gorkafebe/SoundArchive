@@ -1,6 +1,6 @@
 # Tailnet-only instance, used together with compose.yaml:
 #   make tailnet-up
-#   (docker compose -p sa-tailnet -f compose.yaml -f compose.tailnet.yaml up -d)
+#   (COMPOSE_PROJECT_NAME=sa-tailnet docker compose -p sa-tailnet -f compose.yaml -f compose.tailnet.yaml up -d)
 #
 # Not combined with compose.prod.yaml: Compose ADDS the "ports" of every file,
 # so that file's 80/443 on all interfaces could not be removed from here.

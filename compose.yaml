@@ -1,8 +1,8 @@
 # Base Compose file: everything that is the SAME in dev and prod.
 #
 # Never run this file alone. Always combine it with one override:
-#   dev:   docker compose -f compose.yaml -f compose.dev.yaml  ...   (make up)
-#   prod:  docker compose -f compose.yaml -f compose.prod.yaml ...   (make prod-up)
+#   dev:   make up        (project from COMPOSE_PROJECT_NAME: sa-dev, sa-test-*...)
+#   prod:  make prod-up   (project sound-archive, only from /srv/sound-archive)
 # Later files add to or replace settings from earlier ones.
 #
 # Values like ${POSTGRES_USER} come from the .env file next to this file.
@@ -12,9 +12,11 @@
 # Startup order (enforced by depends_on + healthchecks):
 #   db (healthy) -> migrate (finished OK) -> api (healthy) -> caddy
 
-# Prefix for container, network and volume names (e.g. sound-archive-db-1),
-# the same whatever the folder is called.
-name: sound-archive
+# Prefix for container, network and volume names (e.g. sa-dev-db-1), the same
+# whatever the folder is called. There is NO default on purpose: this file used
+# to say "sound-archive", so a copy with an ordinary .env took over the real
+# app. The real app's name is given only by the prod-* targets of the Makefile.
+name: "${COMPOSE_PROJECT_NAME:?set COMPOSE_PROJECT_NAME in .env, see .env.example}"
 
 # "x-" blocks are ignored by Compose itself; they hold settings that several
 # services share. "&backend" names the block, "<<: *backend" pastes it in.
@@ -30,10 +32,9 @@ x-backend: &backend
   build:
     context: ./backend
   # The tag starts with the Compose project name: sound-archive-backend:prod
-  # for the real app, sa-dev-backend:prod for a test copy started with
-  # COMPOSE_PROJECT_NAME=sa-dev (or -p sa-dev). So a copy never overwrites the
-  # image the real app runs. Compose sets this variable from -p or name:.
-  image: ${COMPOSE_PROJECT_NAME:-sound-archive}-backend:prod
+  # for the real app, sa-dev-backend:prod for a test copy. So a copy never
+  # overwrites the image the real app runs. The Makefile sets the variable.
+  image: ${COMPOSE_PROJECT_NAME:?set COMPOSE_PROJECT_NAME in .env, see .env.example}-backend:prod
 
 services:
   db:
@@ -148,7 +149,7 @@ services:
     build:
       context: ./backend
       target: worker
-    image: ${COMPOSE_PROJECT_NAME:-sound-archive}-worker:prod
+    image: ${COMPOSE_PROJECT_NAME:?set COMPOSE_PROJECT_NAME in .env, see .env.example}-worker:prod
     environment:
       <<: *app-env
       DB_USER: ${APP_DB_USER:?set APP_DB_USER in .env}
@@ -176,7 +177,7 @@ services:
     build:
       context: ./backend
       target: worker
-    image: ${COMPOSE_PROJECT_NAME:-sound-archive}-worker:prod
+    image: ${COMPOSE_PROJECT_NAME:?set COMPOSE_PROJECT_NAME in .env, see .env.example}-worker:prod
     command: ["python", "-m", "app.worker.maintenance"]
     environment:
       <<: *app-env
@@ -207,7 +208,7 @@ services:
     build:
       context: .
       dockerfile: web/Dockerfile
-    image: ${COMPOSE_PROJECT_NAME:-sound-archive}-web:prod
+    image: ${COMPOSE_PROJECT_NAME:?set COMPOSE_PROJECT_NAME in .env, see .env.example}-web:prod
     environment:
       # Read by the Caddyfile. ":80" = plain HTTP. A domain name = automatic HTTPS.
       CADDY_SITE_ADDRESS: ${CADDY_SITE_ADDRESS:-:80}

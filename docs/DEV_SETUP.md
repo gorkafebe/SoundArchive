@@ -53,6 +53,9 @@ cp .env.example .env
 make up
 ```
 
+`.env` also gives this copy its project name, `sa-dev`, without which `make`
+refuses to run (see [The project-name guard](#the-project-name-guard)).
+
 `make up` builds the API image and the web image (Caddy with the React app
 inside; Node runs inside Docker, you do not need it installed), starts
 everything in order and waits until all services are healthy. The first run
@@ -93,7 +96,8 @@ make ps        # what is running, and is it healthy?
 make logs                  # follow all logs (Ctrl+C to stop following)
 make logs SERVICE=api      # just one service: api, db, caddy, migrate
 make test      # API tests
-make check     # API tests + every web check
+make check     # guard tests + API tests + every web check
+make guard-test # just the Compose guards (fake docker, a second or two)
 make seed-dev  # replace the made-up example places
 make psql      # SQL shell in the database (type \q to leave)
 ```
@@ -118,25 +122,26 @@ make restore-test ...
 ```
 
 **A second dev stack on the same machine** (for example on the MSI, next to
-the real app): give it its own project name in **every** command, because
-`compose.yaml` fixes `name: sound-archive`:
+the real app): give it its own name from the allowed list, in `.env` or in the
+terminal:
 
 ```sh
-export COMPOSE_PROJECT_NAME=sa-ops     # this terminal only
+export COMPOSE_PROJECT_NAME=sa-test-ops     # this terminal only
 make up && make seed-dev
 ```
 
-The backup rehearsal of 2026-11-03 used exactly that (docs/DEPLOY_MSI.md,
-section 11). A backup rehearsal with the dev stack:
+The backup rehearsal of 2026-11-03 did the same, under a name that the guard
+would now refuse (docs/DEPLOY_MSI.md, section 11). A backup rehearsal with the
+dev stack:
 
 ```sh
 mkdir -p ~/rehearsal/secret && chmod 700 ~/rehearsal/secret
 (umask 077; openssl rand -base64 32 > ~/rehearsal/secret/restic-password)
 ops/backup/make-test-media.sh ~/rehearsal/media 20 20       # synthetic "recordings"
 make backup RESTIC_REPO=$HOME/rehearsal/repo RESTIC_PASSWORD_FILE=$HOME/rehearsal/secret/restic-password \
-     BACKUP_PROJECT=sa-ops MEDIA_DIR=$HOME/rehearsal/media BACKUP_ARGS="--init --status-file $HOME/rehearsal/backup.prom"
+     BACKUP_PROJECT=sa-test-ops MEDIA_DIR=$HOME/rehearsal/media BACKUP_ARGS="--init --status-file $HOME/rehearsal/backup.prom"
 make restore-test RESTIC_REPO=$HOME/rehearsal/repo RESTIC_PASSWORD_FILE=$HOME/rehearsal/secret/restic-password \
-     BACKUP_PROJECT=sa-ops MEDIA_DIR=$HOME/rehearsal/media
+     BACKUP_PROJECT=sa-test-ops MEDIA_DIR=$HOME/rehearsal/media
 rm -rf ~/rehearsal                                          # it is NOT a backup: same disk
 ```
 
@@ -217,6 +222,60 @@ it ends. Nothing is installed on the machine. Inside:
 provider (internet needed): style, tiles and fonts load, the CSP lets them
 through, and the attribution shows.
 
+## The project-name guard
+
+A Compose *project name* decides which containers, networks and volumes a
+command acts on. `sound-archive` is the real app on the MSI. `compose.yaml` used
+to say `name: sound-archive`, so in any other copy of the repository, with a
+`.env` made the documented way, `make up` meant "re-create the real app's
+containers with the dev settings", and `make reset-db` meant "delete its data".
+
+Now that is impossible by construction:
+
+- `compose.yaml` has no default name. Without one, Compose stops.
+- Every `make` target that runs Compose passes `-p` explicitly, after a guard
+  that runs first and stops make before any docker command.
+
+| Guard | Used by | Refuses when |
+|---|---|---|
+| `guard-project` | everything except `prod-*` | `COMPOSE_PROJECT_NAME` is missing, is `sound-archive`, or is not on the allowed list; or `E2E_PROJECT` is not `sa-test-*` / `sa-e2e-*` |
+| `guard-prod` | `prod-*` | the current folder is not exactly `/srv/sound-archive`, or `.env` is missing there |
+
+**The allowed list:** exactly `sa-dev` or `sa-tailnet`, or anything starting
+with `sa-test-` or `sa-e2e-` (lowercase letters, digits, `-` and `_`).
+
+**Where the name comes from**, same order as Compose: the `make` command line,
+the environment, then `.env`. The Makefile reads only that one line of `.env`.
+
+| Name | What it is | Set by |
+|---|---|---|
+| `sa-dev` | a normal development copy | `.env`, from `.env.example` |
+| `sa-test-dev` | the checkout `~/sa-dev` on the MSI | `.env`, from `ops/tailnet/make-env.sh` |
+| `sa-tailnet` | the persistent instance | fixed by the `tailnet-*` and administrator targets; `.env` does not change it |
+| `sa-test-e2e` | the throwaway browser-test stack | `E2E_PROJECT` |
+| `sound-archive` | **the real app (reserved)** | fixed by the `prod-*` targets |
+
+**In a new copy:** `cp .env.example .env`. That gives it `sa-dev`.
+
+**Adding a target that runs Compose:** make the guard its *first* prerequisite,
+because make runs prerequisites in order:
+
+```make
+my-target: guard-project ## Dev: what it does
+	$(DEV) ...
+```
+
+Use `guard-prod` if it uses `$(PROD)`. `make guard-test` fails if you forget:
+`scripts/check-make-guards.sh` finds every recipe that runs Compose, also through
+a variable, and `scripts/test-make-guard.sh` then runs each one against a fake
+`docker` that only writes down its arguments. A new target using `$(TAILNET)` or
+a new macro also needs a line in `project_for` in that script.
+
+What the guard does not cover: a `docker compose` command typed by hand with
+`-p sound-archive`, and a Compose command inside a script that a recipe calls
+(`ops/backup/` fixes its own project). `make -i` (ignore errors) would run a
+target after its guard failed.
+
 ## Database access from a GUI tool
 
 | Setting | Value |
@@ -258,12 +317,15 @@ Delete that folder yourself while the stack is down.
   the failing migration.
 - **"set POSTGRES_USER in .env"**: you have no `.env` yet. Run
   `cp .env.example .env`.
+- **"ERROR: missing COMPOSE_PROJECT_NAME"** or **"is not allowed"**: see
+  [The project-name guard](#the-project-name-guard). An older `.env` may need
+  the line `COMPOSE_PROJECT_NAME=sa-dev`.
 - **Linux: "permission denied ... docker.sock"**: you are not in the `docker`
   group yet. Run the `usermod` command above, then log out and back in.
 
 ## Working on the tailnet branch (added 2026-11-08)
 
-`compose.yaml` says `name: sound-archive`, which is the real app on the MSI. **`ops/tailnet/make-env.sh` puts `COMPOSE_PROJECT_NAME=sa-test-dev` in `.env`** so that a plain `make up` in a checkout cannot reach it. Check with:
+`ops/tailnet/make-env.sh` puts `COMPOSE_PROJECT_NAME=sa-test-dev` in `.env`. Check which name a command will use with:
 
 ```sh
 docker compose -f compose.yaml -f compose.dev.yaml config 2>/dev/null | grep -m1 '^name:'
