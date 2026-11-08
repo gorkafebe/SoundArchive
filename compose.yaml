@@ -18,6 +18,13 @@ name: sound-archive
 
 # "x-" blocks are ignored by Compose itself; they hold settings that several
 # services share. "&backend" names the block, "<<: *backend" pastes it in.
+x-app-env: &app-env
+  DB_HOST: db
+  DB_NAME: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+  REDIS_HOST: redis
+  REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+  MEDIA_ROOT: /media
+
 x-backend: &backend
   # api and migrate use the same image: same code, different command.
   build:
@@ -72,6 +79,8 @@ services:
     environment:
       DB_HOST: db
       DB_NAME: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      # Migrations import the settings; they never connect to Redis.
+      REDIS_PASSWORD: unused
       # The admin user: migrations create extensions and tables, and the
       # tables then belong to this user (see infra/postgres/init/).
       DB_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
@@ -83,8 +92,7 @@ services:
   api:
     <<: *backend
     environment:
-      DB_HOST: db
-      DB_NAME: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      <<: *app-env
       # The limited app user: can read and write data, cannot change the schema.
       DB_USER: ${APP_DB_USER:?set APP_DB_USER in .env}
       DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
@@ -95,10 +103,14 @@ services:
       # /api/config. Change them in .env to switch map provider, no rebuild.
       MAP_STYLE_URL: ${MAP_STYLE_URL:-https://tiles.openfreemap.org/styles/positron}
       MAP_STYLE_URL_DARK: ${MAP_STYLE_URL_DARK:-https://tiles.openfreemap.org/styles/dark}
+    volumes:
+      - media:/media
     # No "ports:" on purpose. Only Caddy reaches the API, over Compose's
     # internal network.
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       migrate:
         # Start only after migrations ran and exited with code 0.
@@ -113,6 +125,79 @@ services:
       retries: 3
       start_period: 20s
       start_interval: 1s
+
+  redis:
+    # Two uses: the queue of audio jobs and the login attempt counters. Neither
+    # needs to survive a restart (see app/worker/maintenance.py), so nothing
+    # is written to disk. noeviction: never silently drop a queued job.
+    image: redis:8.4.0-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+    # In a shell so that the password comes from the environment and not from
+    # the command line, which `ps` and `docker inspect` would show.
+    command: ["sh", "-c", "exec redis-server --requirepass \"$$REDIS_PASSWORD\" --save '' --appendonly no --maxmemory 128mb --maxmemory-policy noeviction"]
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+      start_interval: 1s
+
+  worker:
+    build:
+      context: ./backend
+      target: worker
+    image: ${COMPOSE_PROJECT_NAME:-sound-archive}-worker:prod
+    environment:
+      <<: *app-env
+      DB_USER: ${APP_DB_USER:?set APP_DB_USER in .env}
+      DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
+    volumes:
+      - media:/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      # The worker writes a heartbeat file while it is alive.
+      test: ["CMD", "python", "-m", "app.worker.health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+      start_interval: 2s
+
+  # Periodic housekeeping: abandoned uploads, stuck jobs, expired sessions.
+  maintenance:
+    build:
+      context: ./backend
+      target: worker
+    image: ${COMPOSE_PROJECT_NAME:-sound-archive}-worker:prod
+    command: ["python", "-m", "app.worker.maintenance"]
+    environment:
+      <<: *app-env
+      DB_USER: ${APP_DB_USER:?set APP_DB_USER in .env}
+      DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
+    volumes:
+      - media:/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-m", "app.worker.health", "/tmp/maintenance-heartbeat", "900"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+      start_interval: 2s
 
   caddy:
     # Caddy with the web app inside: web/Dockerfile builds the React app with
@@ -156,3 +241,5 @@ volumes:
   db_data:
   caddy_data:
   caddy_config:
+  # Uploaded audio and photos.
+  media:

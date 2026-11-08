@@ -21,6 +21,12 @@ x-logging: &logging
       max-size: "10m"
       max-file: "5"
 
+# Containers that run our code: no extra Linux capabilities, and no way to
+# gain any later (a setuid binary, for instance).
+x-hardened: &hardened
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
 services:
   db:
     <<: *logging
@@ -30,12 +36,35 @@ services:
     networks: [backend]
 
   migrate:
-    <<: *logging
+    <<: [*logging, *hardened]
     restart: "no"
     networks: [backend]
 
-  api:
+  redis:
     <<: *logging
+    restart: unless-stopped
+    mem_limit: 192m
+    cpus: 0.5
+    networks: [backend]
+
+  worker:
+    <<: [*logging, *hardened]
+    restart: unless-stopped
+    # Decoding long files is the heaviest thing on this machine.
+    mem_limit: 2g
+    cpus: 2.0
+    pids_limit: 200
+    networks: [backend]
+
+  maintenance:
+    <<: [*logging, *hardened]
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.5
+    networks: [backend]
+
+  api:
+    <<: [*logging, *hardened]
     restart: unless-stopped
     mem_limit: 768m
     cpus: 2.0

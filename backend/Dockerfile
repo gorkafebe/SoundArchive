@@ -52,12 +52,25 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH"
 # Run as an unprivileged user, not root: if the app were ever compromised,
 # the attacker would not be root inside the container.
-RUN groupadd --system app && useradd --system --gid app --no-create-home app
+# Fixed ids: the api and the worker share the media volume, so both images
+# must agree on who owns the files.
+RUN groupadd --system --gid 10001 app \
+ && useradd --system --uid 10001 --gid app --no-create-home app \
+ && mkdir -p /media \
+ && chown app:app /media
 WORKDIR /app
 EXPOSE 8000
 
+# --- media tools: the worker's ffmpeg and ffprobe ---------------------------------
+# Only in the worker and dev images: the api never touches an audio file's
+# contents, so it has no audio parser to attack.
+FROM runtime AS media-tools
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ffmpeg \
+ && rm -rf /var/lib/apt/lists/*
+
 # --- dev ------------------------------------------------------------------------
-FROM runtime AS dev
+FROM media-tools AS dev
 COPY --from=dev-deps /opt/venv /opt/venv
 COPY . .
 USER app
@@ -67,6 +80,13 @@ USER app
 # for Windows and macOS (file-change events don't always cross into containers).
 # --reload-dir app: watch only our code, not e.g. a local .venv folder.
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "app"]
+
+# --- worker: audio processing ------------------------------------------------------
+FROM media-tools AS worker
+COPY --from=deps /opt/venv /opt/venv
+COPY app ./app
+USER app
+CMD ["python", "-m", "app.worker"]
 
 # --- prod (last stage = what `docker build` produces by default) -----------------
 FROM runtime AS prod
