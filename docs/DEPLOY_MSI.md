@@ -211,6 +211,16 @@ reboot too.
 
 ## 5. Start
 
+> **Why `make prod-*` refuses to run elsewhere.** The `prod-*` targets act on
+> the project `sound-archive`, the real app. They always pass that name
+> themselves (a `COMPOSE_PROJECT_NAME` in `.env` is ignored), and they stop
+> before any docker command unless the current folder is exactly
+> `/srv/sound-archive` and its `.env` exists. Every other target refuses the
+> name `sound-archive`. `compose.yaml` has no default name, so a command typed
+> by hand needs `-p sound-archive` and the variable, as in the examples below.
+> The reasons, and how to add a target: "The project-name guard" in
+> [DEV_SETUP.md](DEV_SETUP.md#the-project-name-guard).
+
 - [ ] Check the configuration first:
 
   ```sh
@@ -350,7 +360,7 @@ curl -sI http://localhost/ | grep -i content-security-policy                # pr
 curl -s -X POST -H 'Content-Type: application/json' \
   -d '{"name":"x","latitude":0,"longitude":0}' \
   -o /dev/null -w '%{http_code}\n' http://localhost/api/places              # 403
-docker compose -f compose.yaml -f compose.prod.yaml run --rm migrate alembic current   # 0002 (head)
+COMPOSE_PROJECT_NAME=sound-archive docker compose -p sound-archive -f compose.yaml -f compose.prod.yaml run --rm migrate alembic current   # 0002 (head)
 ```
 
 Then open `http://<msi-tailscale-name>/` from the laptop: the map with
@@ -371,7 +381,7 @@ To also pick up bug-fix releases of the Postgres/PostGIS and Caddy images
 `make prod-up`:
 
 ```sh
-docker compose -f compose.yaml -f compose.prod.yaml pull db caddy
+COMPOSE_PROJECT_NAME=sound-archive docker compose -p sound-archive -f compose.yaml -f compose.prod.yaml pull db caddy
 ```
 
 Old images pile up over time. Clean them now and then with
@@ -384,7 +394,7 @@ Old images pile up over time. Clean them now and then with
 ```sh
 make prod-logs                    # all services, follow (Ctrl+C to stop)
 make prod-logs SERVICE=api        # one service: api, db, caddy, migrate
-docker compose -f compose.yaml -f compose.prod.yaml logs --since 1h caddy   # last hour
+COMPOSE_PROJECT_NAME=sound-archive docker compose -p sound-archive -f compose.yaml -f compose.prod.yaml logs --since 1h caddy   # last hour
 ```
 
 Logs are rotated: at most 5 files × 10 MB per container (set in
@@ -439,7 +449,7 @@ and `git pull`.
 > about it):
 >
 > ```sh
-> docker compose -f compose.yaml -f compose.prod.yaml run --rm migrate alembic downgrade -1
+> COMPOSE_PROJECT_NAME=sound-archive docker compose -p sound-archive -f compose.yaml -f compose.prod.yaml run --rm migrate alembic downgrade -1
 > ```
 >
 > Then do the `git switch --detach` steps above. Some migrations cannot be
@@ -494,39 +504,38 @@ Notes:
 
 ## 11. Testing a copy on the MSI without touching the real one
 
-`compose.yaml` fixes the project name: `name: sound-archive`. Compose uses it
-as the prefix of every container, network and volume
-(`sound-archive-db-1`, `sound-archive_db_data`). So a **second copy** of the
-repository in another folder, started with `make prod-up`, would take over
-the real containers and open the real database volume.
+The project name is the prefix of every container, network and volume
+(`sound-archive-db-1`, `sound-archive_db_data`). A **second copy** of the
+repository using the name `sound-archive` would take over the real containers
+and open the real database volume. So `make prod-*` refuses to run outside
+`/srv/sound-archive`.
 
-To try something in a copy, give the copy its own project name in every
-command. The `COMPOSE_PROJECT_NAME` variable wins over `name:`:
+To try the prod configuration in a copy, call Compose directly, with the copy's
+own name:
 
 ```sh
 git clone /srv/sound-archive /tmp/sa-test
 cd /tmp/sa-test
 cp .env.example .env && chmod 600 .env     # then set new test passwords
-export COMPOSE_PROJECT_NAME=sa-test        # only for this terminal
+export COMPOSE_PROJECT_NAME=sa-test-copy   # only for this terminal
 docker compose -f compose.yaml -f compose.prod.yaml config | grep -m1 '^name:'
 ```
 
-The last command must print `name: sa-test`. Then `make prod-check`,
-`make prod-up`, and so on, in the same terminal. Things to know:
+The last command must print `name: sa-test-copy`. Then use the same
+`docker compose -f compose.yaml -f compose.prod.yaml ...` command, with `up -d
+--build --wait` and so on, in the same terminal. Things to know:
 
-- `make` prints the `docker compose` command **without** the variable. If you
-  copy that command into another terminal, `export` the variable there too.
+- If you copy a command into another terminal, `export` the variable there too.
 - Image tags start with the project name too
-  (`${COMPOSE_PROJECT_NAME:-sound-archive}-backend:prod`), so the copy builds
-  `sa-test-backend:prod` and `sa-test-web:prod` and never overwrites the real
-  app's images. (Before 2026-11-03 the names were fixed and shared.)
+  (`${COMPOSE_PROJECT_NAME}-backend:prod`), so the copy builds
+  `sa-test-copy-backend:prod` and never overwrites the real app's images.
 - The prod setup publishes ports 80 and 443, so a prod copy cannot start
   while the real app is running.
 - Clean up with the project name, so only the copy's containers, network and
   volumes are deleted, then delete the folder:
 
   ```sh
-  docker compose -p sa-test -f compose.yaml -f compose.prod.yaml down -v
+  docker compose -p sa-test-copy -f compose.yaml -f compose.prod.yaml down -v
   cd / && rm -rf /tmp/sa-test
   ```
 

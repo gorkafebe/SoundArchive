@@ -226,7 +226,7 @@ The code and the images are identical. Only configuration differs:
   `/api/docs`.
 
 Image tags start with the Compose project name
-(`${COMPOSE_PROJECT_NAME:-sound-archive}-backend:prod`, `...-web:prod`), so a
+(`${COMPOSE_PROJECT_NAME}-backend:prod`, `...-web:prod`; there is no default), so a
 test copy started with `COMPOSE_PROJECT_NAME=sa-dev` never overwrites the
 images of the real app (see `docs/DEPLOY_MSI.md`, section 11).
 
