@@ -260,3 +260,24 @@ Delete that folder yourself while the stack is down.
   `cp .env.example .env`.
 - **Linux: "permission denied ... docker.sock"**: you are not in the `docker`
   group yet. Run the `usermod` command above, then log out and back in.
+
+## Working on the tailnet branch (added 2026-11-08)
+
+`compose.yaml` says `name: sound-archive`, which is the real app on the MSI. **`ops/tailnet/make-env.sh` puts `COMPOSE_PROJECT_NAME=sa-test-dev` in `.env`** so that a plain `make up` in a checkout cannot reach it. Check with:
+
+```sh
+docker compose -f compose.yaml -f compose.dev.yaml config 2>/dev/null | grep -m1 '^name:'
+```
+
+| Command | What it does |
+|---|---|
+| `make test` | API tests, in the dev stack. They use real PostgreSQL and Redis, and synthesise audio with ffmpeg |
+| `make web-check` | Types, lint, translations, tokens, contrast, unit tests |
+| `make e2e` | Browser tests against a throwaway copy of the real configuration, with HTTPS. Add `E2E_ARGS="--project=chromium audio"` to narrow it |
+| `make e2e-down` | Destroys that copy |
+| `make check` | API tests and web checks |
+| `make exposure-check` | Fails if anything of ours is published beyond loopback |
+
+Playwright projects: `chromium` (fake microphone playing a known tone), `chromium-no-mic` (permission denied), `firefox` (playback), `mobile` (390 x 844, touch).
+
+Keep an eye on the CPU during builds and browser runs on the MSI (`sensors`).

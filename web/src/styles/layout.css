@@ -1,76 +1,125 @@
 /*
- * The app's frame: header, navigation bar, main area. Mobile first; from
- * 48rem (768 px) up, the place panel moves from a bottom sheet to a side
- * panel (see features/places/place-sheet.css).
+ * The app's frame. Mobile first (390 px): the top bar floats over the map and
+ * the place sheet takes its own space below. From 48rem (768 px) the sheet
+ * becomes the 420 px side panel and the top bar covers only the map.
  */
 
 .app {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  position: relative;
   height: 100%;
-  /* dvh = the visible height on phones, excluding the browser's own bars. */
   height: 100dvh;
 }
 
-.app-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-4);
-  padding: var(--space-2) var(--space-4);
-  background: var(--color-surface);
-  border-bottom: var(--border-width) solid var(--color-border-subtle);
+.app-frame {
+  height: 100%;
 }
-
-/* The name is plain text: no logo yet (the design will decide). */
-.app-header__name {
-  font-size: var(--text-l);
-  font-weight: var(--weight-strong);
+/* The mini-player floats at the bottom: keep things clear of it. */
+.app--mini .map-add {
+  inset-block-end: 88px;
 }
-
-.preferences {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
+.app--mini .place-sheet__body,
+.app--mini .place-list {
+  padding-block-end: 96px;
 }
-.preferences__theme {
+.app--mini .maplibregl-ctrl-bottom-right {
+  margin-block-end: 76px;
+}
+.offline-banner {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 50;
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--ink);
+  color: var(--surface-100);
+  font: 700 14px/20px var(--font-sans);
 }
-.preferences__label {
-  font-size: var(--text-s);
-  color: var(--color-text-muted);
+.signin {
+  overflow-y: auto;
 }
-
-.app-nav {
+.signin__grid {
+  display: grid;
+  gap: var(--space-6);
+  max-width: 75rem;
+  margin-inline: auto;
+  padding: var(--space-6) var(--space-4);
+  align-items: start;
+}
+@media (min-width: 60rem) {
+  .signin__grid {
+    grid-template-columns: 1fr 1fr;
+    padding-block-start: var(--space-8);
+  }
+}
+.signin__column {
+  display: grid;
+  gap: var(--space-3);
+}
+.signin__title {
+  font-size: 40px;
+  line-height: 44px;
+  letter-spacing: -0.01em;
+}
+.signin__subtitle {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 600;
+}
+.signin__form {
+  display: grid;
+  gap: var(--space-4);
+}
+.top-bar {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 5;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  background: var(--color-bg);
-  border-bottom: var(--border-width) solid var(--color-border-subtle);
+  padding: var(--space-3) var(--space-4);
+  /* Clicks between the controls reach the map underneath. */
+  pointer-events: none;
 }
-.app-nav__views {
-  display: flex;
-  gap: var(--space-2);
+.top-bar > * {
+  pointer-events: auto;
+}
+.top-bar__search {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 27rem;
+  position: relative;
+}
+.top-bar__search svg {
+  position: absolute;
+  inset-inline-start: var(--space-3);
+  inset-block-start: 12px;
+  color: var(--ink-muted);
+}
+.top-bar__search .input {
+  padding-inline-start: 42px;
+}
+.top-bar__spacer {
+  flex: 1 1 0;
+}
+.top-bar__lang {
+  display: none;
 }
 
 .app-main {
-  position: relative;
-  min-height: 0;
+  height: 100%;
   overflow: hidden;
 }
 .app-main:focus {
   outline: none;
 }
-/* Map or list, plus the place panel. The panel takes its own space in the
-   grid (below on phones, to the right on wide screens) instead of covering
-   the map, so the attribution and the controls stay visible. */
+
+/* Map or list, plus the place panel. The panel takes its own grid space, so
+   the attribution and the controls can never end up underneath it. */
 .workspace {
   display: grid;
   grid-template-rows: minmax(0, 1fr);
@@ -78,12 +127,6 @@
 }
 .workspace--with-panel {
   grid-template-rows: minmax(0, 1fr) auto;
-}
-@media (min-width: 48rem) {
-  .workspace--with-panel {
-    grid-template-rows: minmax(0, 1fr);
-    grid-template-columns: minmax(0, 1fr) min(var(--panel-width), 45%);
-  }
 }
 .workspace__content {
   position: relative;
@@ -93,17 +136,125 @@
 .workspace__view {
   height: 100%;
 }
-/* [hidden] must win over the display: grid above. */
 .workspace[hidden],
 .workspace__view[hidden] {
   display: none;
 }
 
+.map-add {
+  position: absolute;
+  inset-block-end: var(--space-3);
+  inset-inline-start: var(--space-3);
+  z-index: 3;
+}
+
+@media (min-width: 48rem) {
+  .top-bar__lang {
+    display: inline-flex;
+  }
+  .app--with-panel .top-bar {
+    inset-inline-end: min(420px, 45%);
+  }
+  .workspace--with-panel {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) min(420px, 45%);
+  }
+}
+
 .app-main__message {
-  max-width: var(--content-max);
-  margin: var(--space-6) auto;
+  max-width: 40rem;
+  margin: var(--space-8) auto;
   padding: 0 var(--space-4);
   display: grid;
   gap: var(--space-3);
   justify-items: start;
+}
+
+/* A full page with its own scroll: recording, record, upload, admin... */
+.page {
+  position: relative; /* hidden labels inside must scroll with the page */
+  height: 100%;
+  overflow-y: auto;
+  background: var(--surface-100);
+}
+.page__inner {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 40rem;
+  margin-inline: auto;
+  padding: var(--space-3) var(--space-4) calc(var(--space-8) + var(--space-8));
+}
+.page__inner--wide {
+  max-width: 72rem;
+}
+.page__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.page__title {
+  font-size: 28px;
+  line-height: 34px;
+  overflow-wrap: anywhere;
+}
+.page__eyebrow {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-muted);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.card {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-200);
+}
+.card__heading {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+/* Language and theme, inside the account menu. */
+.preferences {
+  display: grid;
+  gap: var(--space-2);
+}
+.preferences__theme {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.preferences__label {
+  font: 700 14px/20px var(--font-sans);
+}
+
+.menu {
+  position: relative;
+}
+.menu__panel {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-2));
+  inset-inline-end: 0;
+  z-index: 20;
+  display: grid;
+  gap: var(--space-3);
+  min-width: 15rem;
+  padding: var(--space-3);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-200);
+  box-shadow: var(--shadow-sheet);
+}
+.menu__name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }

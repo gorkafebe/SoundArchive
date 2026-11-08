@@ -1,0 +1,191 @@
+# Caddy configuration for the tailnet-only instance (compose.tailnet.yaml).
+#
+# Reachable only through 127.0.0.1 on the MSI, plus the Tailscale forward
+# (tailscale serve --tcp=8443 -> 127.0.0.1:9443). The browser therefore talks
+# to https://soundarchive:8443/ and this Caddy never sees the Internet.
+#
+# Why HTTPS at all inside a private network? Browsers expose the microphone
+# (getUserMedia) and geolocation only in a "secure context": HTTPS or
+# localhost. Plain http://soundarchive would have no recording at all.
+#
+# Why "tls internal" and not Let's Encrypt? Public certificates are logged in
+# the public Certificate Transparency logs, which would publish the machine's
+# name. Caddy's own private CA issues them instead, and the owner installs its
+# root certificate on each device (see PARA-GORKA / docs/PHONE_SETUP.md).
+
+{
+	# Never contact an ACME server, and do not try to install the root
+	# certificate into this container's own trust store.
+	local_certs
+	skip_install_trust
+
+	# Certificates are issued when a name is first requested, and only for the
+	# names this internal site approves (below).
+	#
+	# Why not simply list the names on the site? Caddy treats any *.ts.net
+	# name as belonging to Tailscale: it ignores "tls internal" for it and
+	# asks a tailscaled socket, which does not exist in this container, so
+	# the TLS handshake fails. See "get_certificate" below for the way around.
+	on_demand_tls {
+		ask http://127.0.0.1:5555/
+	}
+
+	servers {
+		# Long audio uploads must not be cut by a body timeout; slow clients
+		# are still limited while sending headers and between requests.
+		timeouts {
+			read_header 15s
+			idle 2m
+		}
+	}
+}
+
+(security_headers) {
+	header {
+		# What the page may load, and from where.
+		#   script-src 'self'  no inline scripts, nothing from other sites.
+		#                      AudioWorklet modules are covered by this too.
+		#   style-src 'self'   our CSS only (styles set from JavaScript, as
+		#                      MapLibre does, are still allowed).
+		#   connect-src        our API plus the basemap provider.
+		#   img-src            ours, MapLibre's data:/blob: images, the provider.
+		#   media-src          ours; blob: to listen before publishing.
+		#   worker-src         MapLibre's worker (a file of ours, or a blob:).
+		#   font-src 'self'    fonts are self-hosted (@fontsource).
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org}; img-src 'self' data: blob: {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org}; media-src 'self' blob:; font-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		X-Content-Type-Options "nosniff"
+		# No address is sent to other sites (such as the tile server).
+		Referrer-Policy "same-origin"
+		# Microphone, location and wake lock for this site only; never for
+		# embedded pages. Everything else this app does not use is off.
+		Permissions-Policy "microphone=(self), geolocation=(self), screen-wake-lock=(self), camera=(), payment=(), usb=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		# Strict-Transport-Security is deliberately NOT set, and should stay
+		# off for this instance:
+		#   - HSTS applies to the whole host name on every port, so it would
+		#     also force https on http://soundarchive:3000 (the monitoring
+		#     panel) and break it;
+		#   - with a private CA, a browser that loses trust in the root
+		#     (a new device, a recreated CA) would show an error that HSTS
+		#     does not allow the person to click through.
+		# Set it only for a public site with a public certificate.
+		-Server
+	}
+}
+
+# Plain HTTP: only ever a redirect to the real address.
+http:// {
+	redir https://{$TAILNET_CANONICAL_HOST:soundarchive}:{$TAILNET_CANONICAL_PORT:8443}{uri} 308
+}
+
+# Which names may get a certificate. Reachable only inside this container.
+http://127.0.0.1:5555 {
+	route {
+		# "No certificate from here": see get_certificate below.
+		respond /empty 204
+		@allowed query domain=soundarchive domain={$TAILNET_FQDN} domain=localhost
+		respond @allowed 200
+		respond 403
+	}
+}
+
+# Any HTTPS request; the matcher below refuses unknown host names.
+https:// {
+	tls internal {
+		on_demand
+		# Caddy adds its Tailscale certificate manager only when a policy has
+		# no manager of its own. This one always answers 204 (nothing to
+		# offer), so Caddy goes on to issue from the internal CA, for the
+		# *.ts.net name too, without any public certificate.
+		get_certificate http http://127.0.0.1:5555/empty
+	}
+
+	import security_headers
+
+	# encode only touches text-like types: audio passes through untouched,
+	# which keeps range requests exact.
+	encode zstd gzip
+
+	# --- Request size limits -------------------------------------------------
+	# 1 MiB by default. Larger bodies are allowed only on the two routes that
+	# need them, so a large request cannot be aimed at any other endpoint. The
+	# API counts the real bytes as well (a header can lie).
+	@audio_upload path_regexp ^/api/recordings/[^/]+/upload$
+	@photo_upload path_regexp ^/api/places/[^/]+/photos$
+
+	# Only our own names. This also blocks DNS rebinding: a hostile web page
+	# making a browser reach this address under a different name.
+	@unknown_host not host soundarchive {$TAILNET_FQDN} localhost
+
+	# "route" keeps the blocks in the order written here; otherwise Caddy
+	# moves blocks with a path before the host check.
+	route {
+	handle @unknown_host {
+		respond 421
+	}
+
+	handle @audio_upload {
+		# 2 GiB of audio, plus a margin for the size check in the API to be
+		# the one that answers with a clear message.
+		request_body {
+			max_size 2049MiB
+		}
+		reverse_proxy api:8000 {
+			# Send data on as it arrives: no buffering in the proxy.
+			flush_interval -1
+			transport http {
+				read_timeout 2h
+				write_timeout 2h
+			}
+		}
+	}
+
+	handle @photo_upload {
+		request_body {
+			max_size 21MiB
+		}
+		reverse_proxy api:8000
+	}
+
+	handle /api/* {
+		request_body {
+			max_size 1MiB
+		}
+		reverse_proxy api:8000
+	}
+
+	handle /assets/* {
+		header Cache-Control "public, max-age=31536000, immutable"
+		root * /srv/web
+		file_server
+	}
+
+	handle {
+		header Cache-Control "no-cache"
+		root * /srv/web
+		try_files {path} /index.html
+		file_server
+	}
+	}
+
+	# Access log without the request headers: no cookies, tokens or browser
+	# details in the logs, and no client address.
+	log {
+		format filter {
+			wrap json
+			fields {
+				# A sign-up link carries the invitation code in its address.
+				request>uri query {
+					delete code
+					delete caption
+					delete alt
+				}
+				request>headers delete
+				request>remote_ip delete
+				request>client_ip delete
+				request>remote_port delete
+				resp_headers delete
+			}
+		}
+	}
+}

@@ -18,7 +18,7 @@ export type ClusterItem =
 export function buildIndex(features: PlaceFeature[]): Supercluster<PlaceProps> {
   // radius: how close (in screen pixels) pins must be to merge.
   // maxZoom: from this zoom on, every place shows on its own.
-  const index = new Supercluster<PlaceProps>({ radius: 56, maxZoom: 16 });
+  const index = new Supercluster<PlaceProps>({ radius: 60, maxZoom: 16 });
   index.load(
     features.map((f) => ({
       type: "Feature" as const,

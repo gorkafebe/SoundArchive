@@ -27,6 +27,15 @@ services:
     # One-shot job: it must NOT be restarted after it exits successfully.
     restart: "no"
 
+  redis:
+    <<: *logging
+    restart: unless-stopped
+  worker:
+    <<: *logging
+    restart: unless-stopped
+  maintenance:
+    <<: *logging
+    restart: unless-stopped
   api:
     <<: *logging
     restart: unless-stopped

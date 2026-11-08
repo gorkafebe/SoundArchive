@@ -18,6 +18,14 @@ import { useI18n } from "../../i18n/i18n";
 import { ApiError, getPlace, isAbort, type Place } from "../../lib/api";
 import { useMediaQuery, WIDE_SCREEN } from "../../lib/media";
 import { formatCoordinates } from "../map/geo";
+import { Icon } from "../../components/Icon";
+import { Badge, EmptyState, Skeleton } from "../../components/ui";
+import { useRouter } from "../../lib/router";
+import { listRecordings, type Recording } from "../../lib/api";
+import { useAuth } from "../auth/AuthContext";
+import { PhotoStrip } from "../photos/PhotoStrip";
+import { RecordingCard } from "../player/components";
+import type { Language } from "../../i18n/i18n";
 
 export type SheetHeight = "peek" | "half" | "full";
 const HEIGHTS: SheetHeight[] = ["peek", "half", "full"];
@@ -35,7 +43,7 @@ interface PlaceSheetProps {
 }
 
 export function PlaceSheet({ placeId, onClose, onShowOnMap, onLoaded }: PlaceSheetProps) {
-  const { t, language, formatDate } = useI18n();
+  const { t, language } = useI18n();
   const announce = useAnnounce();
   const wide = useMediaQuery(WIDE_SCREEN);
   // The answer is stored with the request it belongs to; while the current
@@ -172,8 +180,8 @@ export function PlaceSheet({ placeId, onClose, onShowOnMap, onLoaded }: PlaceShe
           ) : (
             <span />
           )}
-          <button type="button" className="button button--quiet" onClick={onClose}>
-            {t("common.close")}
+          <button type="button" className="sa-btn sa-btn--quiet sa-btn--icon" aria-label={t("common.close")} onClick={onClose}>
+            <Icon name="close" />
           </button>
         </div>
 
@@ -183,7 +191,7 @@ export function PlaceSheet({ placeId, onClose, onShowOnMap, onLoaded }: PlaceShe
           <div ref={messageRef} tabIndex={-1} className="notice notice--error place-sheet__message">
             <p>{load.notFound ? t("place.notFound") : t("place.error")}</p>
             {!load.notFound && (
-              <button type="button" className="button" onClick={() => setAttempt((n) => n + 1)}>
+              <button type="button" className="sa-btn" onClick={() => setAttempt((n) => n + 1)}>
                 {t("common.retry")}
               </button>
             )}
@@ -192,33 +200,125 @@ export function PlaceSheet({ placeId, onClose, onShowOnMap, onLoaded }: PlaceShe
 
         {load.kind === "ready" && (
           <>
-            <p className={load.place.description ? "place-sheet__description" : "place-sheet__muted"}>
-              {load.place.description ?? t("place.noDescription")}
-            </p>
-            <dl className="place-sheet__facts">
-              <div>
-                <dt>{t("place.coordinates")}</dt>
-                <dd>{formatCoordinates(load.place.latitude, load.place.longitude, t, language)}</dd>
-              </div>
-            </dl>
-            <p className="place-sheet__muted">{t("place.created", { date: formatDate(load.place.created_at) })}</p>
-            {onShowOnMap && (
-              <button type="button" className="button" onClick={() => onShowOnMap(load.place)}>
-                {t("place.showOnMap")}
-              </button>
-            )}
-
-            {/* Placeholder: recordings arrive in phase 4. Clearly marked as empty. */}
-            <section className="place-sheet__recordings" aria-labelledby="recordings-heading">
-              <h3 id="recordings-heading">{t("place.recordings")}</h3>
-              <div className="place-sheet__placeholder" data-placeholder="recordings">
-                <p className="place-sheet__placeholder-title">{t("place.noRecordingsYet")}</p>
-                <p className="place-sheet__muted">{t("place.recordingsPlaceholder")}</p>
-              </div>
-            </section>
+            <PlaceDetails place={load.place} onShowOnMap={onShowOnMap} language={language} />
           </>
         )}
       </div>
     </aside>
+  );
+}
+
+function PlaceDetails({
+  place,
+  onShowOnMap,
+  language,
+}: {
+  place: Place;
+  onShowOnMap?: (place: Place) => void;
+  language: Language;
+}) {
+  const { t, formatDateShort } = useI18n();
+  const { navigate } = useRouter();
+  const { user } = useAuth();
+  const [recordings, setRecordings] = useState<Recording[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const ready = recordings?.filter((recording) => recording.status === "ready") ?? [];
+
+  useEffect(() => {
+    const controller = new AbortController();
+    listRecordings(place.id, controller.signal)
+      .then((list) => {
+        setFailed(false);
+        setRecordings(list.items);
+      })
+      .catch((error) => {
+        if (!isAbort(error)) setFailed(true);
+      });
+    return () => controller.abort();
+  }, [place.id, attempt]);
+
+  const accuracy = place.location_accuracy_m;
+  const count = place.recording_count ?? ready.length;
+  const latest = place.latest_recorded_at;
+
+  return (
+    <>
+      <p className="place-sheet__muted">
+        {t("place.meta", { count })}
+        {latest ? ` · ${t("place.latest", { date: formatDateShort(latest) })}` : ""}
+      </p>
+      <div className="actions">
+        <button type="button" className="sa-btn sa-btn--primary" onClick={() => navigate(`/record?place=${place.id}`)}>
+          <Icon name="record" size={20} />
+          {t("place.record")}
+        </button>
+        <button type="button" className="sa-btn" onClick={() => navigate(`/upload?place=${place.id}`)}>
+          <Icon name="upload" size={20} />
+          {t("place.upload")}
+        </button>
+      </div>
+      <div className="sa-badges">
+        <Badge icon="globe">{t("place.public")}</Badge>
+        {accuracy !== null && accuracy !== undefined && (
+          <Badge tone={accuracy <= 20 ? "success" : "warning"} icon={accuracy <= 20 ? "check" : "alert"}>
+            {t(accuracy <= 20 ? "place.accuracyPrecise" : "place.accuracyApprox", { meters: accuracy })}
+          </Badge>
+        )}
+      </div>
+      {place.description && <p className="place-sheet__description">{place.description}</p>}
+      <p className="meta">{formatCoordinates(place.latitude, place.longitude, t, language)}</p>
+      {onShowOnMap && (
+        <div className="actions">
+          <button type="button" className="sa-btn" onClick={() => onShowOnMap(place)}>
+            {t("place.showOnMap")}
+          </button>
+        </div>
+      )}
+
+      <PhotoStrip placeId={place.id} isAdmin={user?.role === "admin"} />
+
+      <section className="place-sheet__recordings" aria-labelledby="recordings-heading">
+        <div className="place-sheet__recordings-top">
+          <h3 id="recordings-heading">{t("place.recordingsCount", { count: recordings?.length ?? count })}</h3>
+          {ready.length >= 2 && (
+            <button type="button" className="sa-btn sa-btn--quiet" onClick={() => navigate(`/places/${place.id}/compare`)}>
+              <Icon name="compare" size={20} />
+              {t("place.compare")}
+            </button>
+          )}
+        </div>
+        {recordings === null && !failed && <Skeleton label={t("recording.loading")} />}
+        {failed && (
+          <div className="notice notice--error">
+            <p>{t("place.recordingsError")}</p>
+            <button type="button" className="sa-btn" onClick={() => setAttempt((n) => n + 1)}>
+              {t("common.retry")}
+            </button>
+          </div>
+        )}
+        {recordings?.length === 0 && (
+          <EmptyState
+            icon="pin"
+            title={t("place.noRecordingsTitle")}
+            action={
+              <button type="button" className="sa-btn sa-btn--primary" onClick={() => navigate(`/record?place=${place.id}`)}>
+                <Icon name="record" size={20} />
+                {t("place.addRecording")}
+              </button>
+            }
+          >
+            {t("place.noRecordingsBody")}
+          </EmptyState>
+        )}
+        {recordings && recordings.length > 0 && (
+          <div className="sa-cards">
+            {recordings.map((recording) => (
+              <RecordingCard key={recording.id} recording={recording} />
+            ))}
+          </div>
+        )}
+      </section>
+    </>
   );
 }

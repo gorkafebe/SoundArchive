@@ -57,3 +57,6 @@ SoundArchive-Guia/
 *.synctex.gz
 *.bbl
 *.blg
+
+# --- Design export kept on disk (its contents are in docs/design/handoff/) ---
+docs/design/design-handoff.zip

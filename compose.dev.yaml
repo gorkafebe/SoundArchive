@@ -25,10 +25,25 @@ services:
 
   migrate:
     <<: *backend-dev
-
+  worker:
+    <<: *backend-dev
+    command: ["python", "-m", "app.worker"]
+    volumes:
+      - ./backend:/app
+      - media:/media
+  maintenance:
+    <<: *backend-dev
+    command: ["python", "-m", "app.worker.maintenance"]
+    volumes:
+      - ./backend:/app
+      - media:/media
   api:
     <<: *backend-dev
+    volumes:
+      - ./backend:/app
+      - media:/media
     environment:
+      ALLOWED_ORIGINS: https://testserver
       # Dev only: admin credentials for the privilege test in
       # backend/tests/test_database.py, which creates a throwaway table as the
       # admin and checks the app user can use it. The API code never reads

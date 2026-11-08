@@ -6,15 +6,15 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: var(--color-surface);
-  color: var(--color-text);
+  background: var(--surface-200);
+  color: var(--ink);
 }
 
 .place-sheet--bottom {
-  border-top: var(--border-width) solid var(--color-border-subtle);
-  border-radius: var(--radius-l) var(--radius-l) 0 0;
-  box-shadow: var(--shadow-panel);
-  transition: height var(--duration-normal) var(--easing);
+  border-top: 2px solid var(--line);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--shadow-sheet);
+  transition: height 150ms ease;
 }
 /* Three heights, as fractions of the visible screen height (dvh). */
 .place-sheet--peek {
@@ -29,7 +29,7 @@
 
 .place-sheet--side {
   height: 100%;
-  border-inline-start: var(--border-width) solid var(--color-border-subtle);
+  border-inline-start: 2px solid var(--line);
 }
 
 .place-sheet__handle {
@@ -45,8 +45,8 @@
 .place-sheet__grip {
   width: 3rem;
   height: 5px;
-  border-radius: var(--radius-round);
-  background: var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--line-strong);
 }
 
 .place-sheet__body {
@@ -68,8 +68,8 @@
   gap: var(--space-3);
 }
 .place-sheet__title {
-  font-size: var(--text-xl);
-  padding-block-start: var(--space-1);
+  font-size: 28px;
+  line-height: 34px;
   overflow-wrap: anywhere;
 }
 .place-sheet__description {
@@ -77,7 +77,7 @@
   overflow-wrap: anywhere;
 }
 .place-sheet__muted {
-  color: var(--color-text-muted);
+  color: var(--ink-muted);
 }
 .place-sheet__message {
   display: grid;
@@ -91,8 +91,8 @@
   margin: 0;
 }
 .place-sheet__facts dt {
-  font-size: var(--text-s);
-  color: var(--color-text-muted);
+  font-size: 14px;
+  color: var(--ink-muted);
 }
 .place-sheet__facts dd {
   margin: 0;
@@ -103,16 +103,33 @@
   gap: var(--space-2);
 }
 .place-sheet__recordings h3 {
-  font-size: var(--text-l);
+  font-size: 20px;
 }
 /* Reserved space for phase 4, clearly an empty placeholder (dashed box). */
 .place-sheet__placeholder {
   display: grid;
   gap: var(--space-1);
   padding: var(--space-4);
-  border: 2px dashed var(--color-border);
-  border-radius: var(--radius-m);
+  border: 2px dashed var(--line-strong);
+  border-radius: var(--radius-md);
 }
 .place-sheet__placeholder-title {
-  font-weight: var(--weight-strong);
+  font-weight: 700;
+}
+
+.place-sheet__recordings {
+  display: grid;
+  gap: var(--space-3);
+}
+.place-sheet__recordings-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.place-sheet__recordings-top h3 {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
 }

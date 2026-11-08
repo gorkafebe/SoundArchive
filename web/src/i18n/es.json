@@ -32,7 +32,8 @@
     "close": "Cerrar",
     "back": "Atrás",
     "next": "Siguiente",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "save": "Guardar"
   },
   "config": {
     "error": "No se pudo conectar con el servidor. Comprueba la conexión y vuelve a intentarlo."
@@ -79,7 +80,22 @@
     "error": "No se pudo cargar este lugar.",
     "notFound": "Este lugar no existe o se ha borrado.",
     "opened": "Ficha abierta: {name}",
-    "closed": "Ficha cerrada"
+    "closed": "Ficha cerrada",
+    "recordingsCount_one": "Grabaciones ({count})",
+    "recordingsCount_other": "Grabaciones ({count})",
+    "meta_one": "{count} grabación",
+    "meta_other": "{count} grabaciones",
+    "latest": "la más reciente {date}",
+    "record": "Grabar",
+    "upload": "Subir",
+    "compare": "Comparar en el tiempo",
+    "public": "Público",
+    "accuracyApprox": "Ubicación aproximada ±{meters} m",
+    "accuracyPrecise": "Ubicación precisa ±{meters} m",
+    "noRecordingsTitle": "Aún no hay grabaciones aquí",
+    "noRecordingsBody": "Sé la primera persona en conservar cómo suena este lugar.",
+    "addRecording": "Añadir una grabación",
+    "recordingsError": "No se pudieron cargar las grabaciones."
   },
   "sheet": {
     "handle": "Altura del panel: {height}. Pulsa para cambiarla.",
@@ -169,5 +185,327 @@
     "longitudeRequired": "Escribe la longitud o elige un punto en el mapa.",
     "longitudeNumber": "La longitud debe ser un número, por ejemplo −2,9350.",
     "longitudeRange": "La longitud debe estar entre −180 y 180."
+  },
+  "top": {
+    "search": "Buscar un lugar",
+    "menu": "Cuenta y preferencias"
+  },
+  "account": {
+    "title": "Tu cuenta",
+    "changePassword": "Cambiar la contraseña",
+    "currentPassword": "Contraseña actual",
+    "newPassword": "Contraseña nueva",
+    "save": "Guardar la contraseña",
+    "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en tus otros dispositivos.",
+    "sessions": "Sesiones",
+    "sessionsBody": "Si crees que alguien más ha entrado con tu cuenta, cierra la sesión en todas partes.",
+    "signOutEverywhere": "Cerrar sesión en todos los dispositivos",
+    "menu": "Tu cuenta"
+  },
+  "auth": {
+    "signIn": "Entrar",
+    "signOut": "Salir",
+    "intro": "Sound Archive es privado por ahora. Si no tienes cuenta, necesitas una invitación.",
+    "username": "Usuario",
+    "usernameHint": "Será visible solo si eliges mostrar tu nombre. De 3 a 32 letras, números, puntos o guiones.",
+    "password": "Contraseña",
+    "passwordHint": "Mínimo 12 caracteres.",
+    "registerTitle": "Crear cuenta con invitación",
+    "code": "Código de invitación",
+    "createAccount": "Crear cuenta",
+    "expired": "Tu sesión ha terminado. Vuelve a entrar para continuar.",
+    "error": {
+      "bad_credentials": "El usuario o la contraseña no son correctos.",
+      "invalid_invitation": "Este código no es válido o ya se ha usado. Revísalo e inténtalo de nuevo.",
+      "username_invalid": "Usa de 3 a 32 letras, números, puntos, guiones o guiones bajos.",
+      "username_taken": "Ese nombre de usuario ya existe. Elige otro.",
+      "password_too_short": "La contraseña debe tener al menos 12 caracteres.",
+      "password_too_long": "La contraseña es demasiado larga.",
+      "password_too_common": "Esa contraseña es demasiado común. Elige otra.",
+      "password_contains_username": "La contraseña no puede contener tu nombre de usuario.",
+      "tooMany": "Demasiados intentos. Espera un poco antes de volver a intentarlo.",
+      "try_later": "El servicio no está disponible ahora mismo. Vuelve a intentarlo en un momento.",
+      "bad_origin": "No se pudo verificar el origen de la petición. Recarga la página.",
+      "bad_csrf": "No se pudo verificar la sesión. Recarga la página.",
+      "network": "No hemos podido contactar con el servidor. Comprueba la conexión.",
+      "server": "El servidor no pudo completar la petición. Inténtalo de nuevo."
+    }
+  },
+  "tech": {
+    "mono": "mono",
+    "stereo": "estéreo",
+    "multichannel": "{count} canales"
+  },
+  "license": {
+    "all-rights-reserved": "Todos los derechos reservados",
+    "cc-by": "CC BY 4.0",
+    "cc-by-nc": "CC BY-NC 4.0",
+    "cc-by-sa": "CC BY-SA 4.0",
+    "cc-by-nc-sa": "CC BY-NC-SA 4.0",
+    "cc0": "CC0 (dominio público)"
+  },
+  "player": {
+    "playNamed": "Reproducir {title}",
+    "pauseNamed": "Pausar {title}",
+    "position": "Posición",
+    "mini": "Reproductor",
+    "close": "Cerrar el reproductor y detener el sonido",
+    "onLoop": "En bucle",
+    "stopsIn": "se apaga en {time}",
+    "sleepDone": "El temporizador ha terminado y el sonido se ha detenido.",
+    "error": "No se pudo reproducir esta grabación. Comprueba la conexión e inténtalo de nuevo."
+  },
+  "recording": {
+    "anonymous": "Anónimo",
+    "pageTitle": "Grabación",
+    "player": "Reproductor",
+    "loading": "Cargando la grabación…",
+    "gone": "Esta grabación ya no está disponible.",
+    "goneBadge": "Contenido retirado",
+    "missing": "Esta grabación no existe.",
+    "error": "No se pudo cargar. Comprueba la conexión e inténtalo de nuevo.",
+    "how": "Cómo se grabó",
+    "noHeard": "Quien la grabó no ha descrito lo que se oye.",
+    "ambient": "Modo ambiente",
+    "download": "Descargar original",
+    "edit": "Editar",
+    "save": "Guardar los cambios",
+    "saved": "Cambios guardados.",
+    "remove": "Retirar",
+    "removeConfirm": "Sí, retirarla",
+    "removedToast": "Grabación retirada. Ya no se muestra a nadie.",
+    "status": {
+      "processing": "Procesando",
+      "failed": "No se pudo procesar",
+      "removed": "Retirada"
+    },
+    "method": {
+      "browser": "Grabada en el navegador",
+      "upload": "Archivo subido"
+    },
+    "fact": {
+      "device": "Dispositivo",
+      "notDeclared": "Sin indicar",
+      "method": "Origen",
+      "browserProcessing": "Procesado del navegador",
+      "noProcessing": "Ninguno (desactivado)",
+      "format": "Formato",
+      "loudness": "Volumen",
+      "peak": "Pico real",
+      "original": "Original",
+      "license": "Licencia",
+      "accuracy": "Precisión de la ubicación",
+      "accuracyValue": "±{meters} m",
+      "accuracyUnknown": "Sin indicar"
+    }
+  },
+  "report": {
+    "title": "Denunciar",
+    "body": "Cuéntanos brevemente qué ocurre. Solo lo verá la administración.",
+    "reason": "Motivo",
+    "send": "Enviar la denuncia",
+    "sent": "Denuncia enviada. Gracias.",
+    "tooShort": "Escribe un motivo, aunque sea breve.",
+    "failed": "No se pudo enviar. Inténtalo de nuevo."
+  },
+  "publish": {
+    "title": "Título",
+    "titleRequired": "Escribe un título.",
+    "heard": "Qué se oye",
+    "heardHint": "Una o dos frases para quien no pueda escucharla.",
+    "heardPlaceholder": "Voces, persianas, un tranvía…",
+    "when": "Fecha y hora de la grabación",
+    "author": "Cómo quieres aparecer",
+    "myName": "Mi nombre",
+    "visibility": "Quién puede escucharla",
+    "visibilityHint": "«Público» significa cualquier cuenta de este servidor.",
+    "public": "Público",
+    "private": "Solo yo",
+    "license": "Licencia",
+    "licenseHint": "Decide qué pueden hacer otras personas con tu grabación.",
+    "device": "Dispositivo (opcional)",
+    "deviceHint": "Por ejemplo, la grabadora o el micrófono que usaste.",
+    "submit": "Publicar",
+    "done": "Grabación publicada.",
+    "uploading": "Progreso de la subida",
+    "uploadingPercent": "Subiendo… {percent} %.",
+    "waitingConnection": "Conexión perdida. Reanudaremos en cuanto vuelva; no cierres esta pestaña.",
+    "processingBody": "Comprobamos el formato y calculamos la huella. El original no se modifica.",
+    "error": {
+      "network": "No hemos podido contactar con el servidor. Tu grabación sigue en este dispositivo: inténtalo de nuevo.",
+      "tooLarge": "El archivo supera el máximo de 2 GB.",
+      "diskFull": "El servidor no tiene espacio suficiente ahora mismo.",
+      "server": "El servidor no pudo guardar la grabación. Lo que escribiste sigue aquí: inténtalo de nuevo."
+    },
+    "failure": {
+      "not_audio": "Este archivo no parece contener audio.",
+      "format_not_allowed": "Este formato no se admite. Usa WAV, FLAC, MP3, M4A, OGG u Opus.",
+      "cannot_decode": "No se pudo leer el audio de este archivo; puede estar dañado.",
+      "processing_error": "Algo falló al procesarla en el servidor. Inténtalo de nuevo más tarde."
+    }
+  },
+  "record": {
+    "title": "Grabar",
+    "place": "Lugar",
+    "preTitle": "¿Usar el micrófono?",
+    "preBody": "Solo grabamos mientras la grabación está en marcha. El navegador te preguntará a continuación. Si prefieres no hacerlo, puedes subir un archivo.",
+    "continue": "Continuar",
+    "uploadInstead": "Subir un archivo",
+    "blockedTitle": "No podemos usar el micrófono",
+    "blockedBadge": "Permiso bloqueado",
+    "blockedBody": "El navegador no nos deja usar el micrófono. Pulsa el candado de la barra de direcciones y permítelo, o sube un archivo.",
+    "unsupportedTitle": "Este navegador no puede grabar aquí",
+    "unsupportedBody": "Necesita una conexión segura y acceso al micrófono. Puedes subir un archivo.",
+    "readyTitle": "Preparado para grabar",
+    "recording": "Grabando",
+    "elapsed": "Tiempo grabado",
+    "quality": "Calidad",
+    "lossless": "Sin pérdida (WAV)",
+    "compressed": "Comprimido",
+    "losslessHint": "WAV de 24 bits, sin comprimir. Hasta {minutes} minutos, porque se guarda en este dispositivo hasta que lo envíes.",
+    "compressedHint": "Comprimido con pérdida ({codec}). Ocupa mucho menos, pero no conserva todo el detalle.",
+    "processingNote": "Desactivamos la cancelación de eco, la supresión de ruido y el control automático de ganancia para conservar el sonido real del lugar.",
+    "start": "Empezar a grabar",
+    "stop": "Detener la grabación",
+    "started": "Grabación iniciada",
+    "stopped": "Grabación detenida. Revísala antes de publicar.",
+    "reviewTitle": "Revisar y publicar",
+    "preview": "Escuchar lo grabado",
+    "isLossless": "Sin pérdida. El servidor volverá a analizarla: su medida es la que cuenta.",
+    "isCompressed": "Comprimida con pérdida. El servidor volverá a analizarla: su medida es la que cuenta.",
+    "limitReached": "Se alcanzó el máximo de {minutes} minutos y la grabación se detuvo.",
+    "processingWarning": "Tu navegador no pudo desactivar: {list}. El sonido puede estar alterado, y así constará en la grabación.",
+    "applied": {
+      "echoCancellation": "cancelación de eco",
+      "noiseSuppression": "supresión de ruido",
+      "autoGainControl": "control automático de ganancia"
+    }
+  },
+  "upload": {
+    "title": "Subir un archivo",
+    "choose": "Elige un archivo de audio",
+    "formats": "WAV, FLAC, MP3, M4A u OGG · hasta 2 GB",
+    "chooseButton": "Elegir archivo",
+    "chooseFirst": "Elige primero un archivo.",
+    "submit": "Subir y publicar",
+    "keepOpen": "Si se corta la conexión, la subida continúa sola. No cierres esta pestaña hasta que termine."
+  },
+  "ambient": {
+    "title": "Modo ambiente",
+    "exit": "Salir",
+    "loop": "Repetir en bucle",
+    "stopIn": "Apagar en",
+    "minutes": "{n} min",
+    "hour": "1 h",
+    "never": "Nunca",
+    "volume": "Volumen",
+    "noNormalise": "No normalizamos el nivel: sonará como se grabó.",
+    "keepAwake": "Mantener la pantalla encendida"
+  },
+  "compare": {
+    "pageTitle": "Comparar en el tiempo",
+    "title": "{place}, a lo largo del tiempo",
+    "needTwo": "Hacen falta al menos dos grabaciones de este lugar para comparar.",
+    "timeline": "Grabaciones por fecha",
+    "pick": "Elegir para {slot}: {label}",
+    "choose": "Grabación {slot}",
+    "switch": "Alternar A / B",
+    "sync": "Sincronizar",
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "note": "Ambas se reproducen al mismo nivel que se grabaron; la diferencia de volumen aparece indicada y no se corrige."
+  },
+  "photos": {
+    "title": "Fotos",
+    "open": "Ampliar la foto: {description}",
+    "noDescription": "sin descripción",
+    "enlarged": "Foto ampliada",
+    "add": "Añadir una foto",
+    "file": "Archivo",
+    "fileHint": "JPEG, PNG o WebP, hasta 20 MB. Quitamos la ubicación y cualquier otro dato oculto.",
+    "alt": "Descripción de la imagen",
+    "altHint": "Opcional, pero ayuda a quien no pueda verla.",
+    "caption": "Pie de foto (opcional)",
+    "chooseFirst": "Elige primero una foto.",
+    "added": "Foto añadida.",
+    "removed": "Foto retirada.",
+    "remove": "Retirar",
+    "error": {
+      "notImage": "Este archivo no es una imagen JPEG, PNG o WebP.",
+      "tooLarge": "La imagen es demasiado grande. El máximo es 20 MB y 40 megapíxeles.",
+      "limit": "Ya has llegado al máximo de fotos en este lugar.",
+      "network": "No hemos podido contactar con el servidor. Inténtalo de nuevo.",
+      "server": "El servidor no pudo guardar la foto. Inténtalo de nuevo."
+    }
+  },
+  "admin": {
+    "title": "Administración",
+    "sections": "Secciones",
+    "menu": "Administración",
+    "tab": {
+      "content": "Contenido",
+      "invitations": "Invitaciones",
+      "users": "Usuarios",
+      "audit": "Registro"
+    },
+    "recordings": "Grabaciones",
+    "places": "Lugares",
+    "emptyRecordings": "Todavía no hay grabaciones.",
+    "col": {
+      "recording": "Grabación",
+      "place": "Lugar",
+      "author": "Autor",
+      "status": "Estado",
+      "actions": "Acciones"
+    },
+    "status": {
+      "published": "Publicada",
+      "reported": "Denunciada",
+      "removed": "Retirada"
+    },
+    "remove": "Retirar",
+    "removeTitle": "Retirar «{name}»",
+    "removeBody": "Dejará de ser visible para todos. Podrás restaurarla cuando quieras.",
+    "reason": "Motivo (solo lo ves tú)",
+    "reasonRequired": "Escribe un motivo.",
+    "actionFailed": "No se pudo hacer. Inténtalo de nuevo.",
+    "restore": "Restaurar",
+    "restored": "Restaurada.",
+    "removed": "Retirada.",
+    "resolve": "Descartar denuncia",
+    "resolved": "Denuncia descartada.",
+    "reportSays": "Denuncia: {reason}",
+    "removedBecause": "Retirada: {reason}",
+    "invitation": {
+      "create": "Crear invitación",
+      "onlyOnce": "Copia este código ahora: no volverá a mostrarse.",
+      "unused": "Sin usar",
+      "used": "Usada",
+      "revoked": "Revocada",
+      "expired": "Caducada",
+      "revoke": "Revocar",
+      "usedBy": "Usada por «{name}» · {date}",
+      "expires": "Caduca el {date}"
+    },
+    "user": {
+      "admin": "Administración",
+      "user": "Usuario",
+      "since": "desde {date}",
+      "active": "Activo",
+      "inactive": "Desactivado",
+      "deactivate": "Desactivar",
+      "reactivate": "Reactivar"
+    },
+    "audit": {
+      "system": "Sistema"
+    }
+  },
+  "offline": {
+    "banner": "Sin conexión. Puedes seguir escuchando lo que ya has abierto."
+  },
+  "notFound": {
+    "title": "Aquí no hay nada",
+    "body": "Esta dirección no existe.",
+    "home": "Volver al mapa"
   }
 }

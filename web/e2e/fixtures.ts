@@ -21,7 +21,7 @@ export interface AppOptions {
 }
 
 export async function prepare(page: Page, options: AppOptions = {}) {
-  const origin = new URL(test.info().project.use.baseURL ?? "http://caddy").origin;
+  const origin = new URL(test.info().project.use.baseURL ?? "https://soundarchive").origin;
   const blocked: string[] = [];
 
   await page.route("**/*", async (route) => {
@@ -35,12 +35,17 @@ export async function prepare(page: Page, options: AppOptions = {}) {
       return route.fulfill({ json: LOCAL_STYLE });
     }
     if (url.pathname === "/api/config") {
-      const response = await route.fetch();
-      const config = await response.json();
-      config.map_style_url = "/e2e/style.json";
-      config.map_style_url_dark = "/e2e/style.json";
-      if (options.writesEnabled !== undefined) config.writes_enabled = options.writesEnabled;
-      return route.fulfill({ response, json: config });
+      // The page may reload while this is in flight; that is not a failure.
+      try {
+        const response = await route.fetch();
+        const config = await response.json();
+        config.map_style_url = "/e2e/style.json";
+        config.map_style_url_dark = "/e2e/style.json";
+        if (options.writesEnabled !== undefined) config.writes_enabled = options.writesEnabled;
+        return await route.fulfill({ response, json: config });
+      } catch {
+        return route.abort().catch(() => {});
+      }
     }
     return route.continue();
   });

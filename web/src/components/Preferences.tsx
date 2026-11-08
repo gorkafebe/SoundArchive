@@ -17,7 +17,7 @@ export function Preferences() {
           spoken name starts with a hidden "Change language:" and then the
           visible word, so voice control ("click English") finds it too
           (WCAG 2.5.3, label in name). */}
-      <button type="button" className="button button--quiet" onClick={() => setLanguage(other)}>
+      <button type="button" className="sa-btn sa-btn--quiet" onClick={() => setLanguage(other)}>
         <span className="visually-hidden">{t("settings.language.switchToLabel")} </span>
         <span lang={other}>{t("settings.language.switchTo")}</span>
       </button>

@@ -1,0 +1,42 @@
+.admin-title {
+  font-size: 40px;
+  line-height: 44px;
+  letter-spacing: -0.01em;
+}
+.admin-columns {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+}
+.admin-main {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+@media (min-width: 64rem) {
+  .admin-columns:has(.admin-remove) {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+  }
+}
+.admin-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.admin-list {
+  display: grid;
+  gap: var(--space-2);
+}
+.admin-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+.admin-list__end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-inline-start: auto;
+}

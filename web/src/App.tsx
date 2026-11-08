@@ -1,4 +1,4 @@
-// The app shell: skip link, header (name + preferences), the navigation bar
+// The app shell: skip link, top bar (name + preferences), the navigation bar
 // (map/list switch and "Add place"), and the main area with the map or the
 // list, plus the place panel beside them.
 //
@@ -8,13 +8,27 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAnnounce } from "./components/Announcer";
 import { AddPlaceFlow } from "./features/add-place/AddPlaceFlow";
-import { Preferences } from "./components/Preferences";
+import { Icon } from "./components/Icon";
+import { TopBar } from "./components/TopBar";
 import { MapView, type Camera, type MapViewHandle } from "./features/map/MapView";
 import { PlaceList, type PlaceListHandle } from "./features/places/PlaceList";
 import { PlaceSheet } from "./features/places/PlaceSheet";
 import { useI18n } from "./i18n/i18n";
-import { getConfig, isAbort, type Place, type PublicConfig } from "./lib/api";
+import { getConfig, isAbort, saveLanguage, type Place, type PublicConfig } from "./lib/api";
+import { matchPath, useRouter } from "./lib/router";
+import { readStored, STORAGE_KEYS } from "./lib/storage";
 import { parseUrlState, toSearch, type UrlState, type View } from "./lib/urlState";
+import { useAuth } from "./features/auth/AuthContext";
+import { SignInPage } from "./features/auth/SignInPage";
+import { AccountPage } from "./features/auth/AccountPage";
+import { AdminPage } from "./features/admin/AdminPage";
+import { ComparePage } from "./features/compare/ComparePage";
+import { AmbientPage } from "./features/player/AmbientPage";
+import { MiniPlayer } from "./features/player/components";
+import { usePlayer } from "./features/player/PlayerContext";
+import { RecordingPage } from "./features/player/RecordingPage";
+import { RecordFlow } from "./features/record/RecordFlow";
+import { UploadFlow } from "./features/record/UploadFlow";
 
 type ConfigState = { status: "loading" } | { status: "error" } | { status: "ready"; config: PublicConfig };
 
@@ -32,8 +46,10 @@ function initialCameraFrom(url: UrlState): Camera {
     : DEFAULT_CAMERA;
 }
 
-export function App() {
+export function Workspace() {
   const { t } = useI18n();
+  const { user, signOut } = useAuth();
+  const { navigate } = useRouter();
   const announce = useAnnounce();
   const [loaded, setLoaded] = useState<{ attempt: number; config: ConfigState } | null>(null);
   const [url, setUrl] = useState<UrlState>(() => parseUrlState(window.location.search));
@@ -66,7 +82,7 @@ export function App() {
   useEffect(() => {
     const search = toSearch(url);
     if (search !== window.location.search) {
-      window.history.replaceState(null, "", `${window.location.pathname}${search}`);
+      window.history.replaceState(null, "", `/${search}`);
     }
   }, [url]);
 
@@ -93,6 +109,10 @@ export function App() {
       }, 0);
     }
   }, [url.place, url.view, announce, t]);
+
+  const searchPlaces = useCallback((q: string) => {
+    setUrl((current) => ({ ...current, view: "list", q, page: 1 }));
+  }, []);
 
   const onCameraChange = useCallback((next: Camera) => {
     setCamera(next);
@@ -129,40 +149,44 @@ export function App() {
   }, []);
 
   return (
-    <div className="app">
-      <a className="skip-link" href="#main-content">
-        {t("skip.toMain")}
-      </a>
-
-      <header className="app-header">
-        <p className="app-header__name">{t("app.title")}</p>
-        <Preferences />
-      </header>
-
-      <nav className="app-nav" aria-label={t("nav.label")}>
-        <div className="app-nav__views" role="group" aria-label={t("nav.views")}>
-          {(["map", "list"] as const).map((view) => (
-            <button
-              key={view}
-              type="button"
-              className="button"
-              // While adding a place neither view is the current screen.
-              aria-pressed={!adding && url.view === view}
-              onClick={() => setView(view)}
+    <div className={`app-frame${url.place ? " app--with-panel" : ""}`}>
+      <TopBar
+        view={url.view}
+        onView={setView}
+        onSearch={url.view === "map" ? searchPlaces : undefined}
+        viewsCurrent={!adding}
+        menuLabel={user?.username}
+        menuExtra={
+          <>
+            <p className="menu__name">{user?.username}</p>
+            <a
+              className="sa-btn"
+              href="/account"
+              onClick={(event) => {
+                event.preventDefault();
+                navigate("/account");
+              }}
             >
-              {t(`nav.${view}`)}
+              {t("account.menu")}
+            </a>
+            {user?.role === "admin" && (
+              <a
+                className="sa-btn"
+                href="/admin"
+                onClick={(event) => {
+                  event.preventDefault();
+                  navigate("/admin");
+                }}
+              >
+                {t("admin.menu")}
+              </a>
+            )}
+            <button type="button" className="sa-btn" onClick={() => void signOut()}>
+              {t("auth.signOut")}
             </button>
-          ))}
-        </div>
-        <button
-          ref={addButtonRef}
-          type="button"
-          className="button button--primary"
-          onClick={() => setAdding(true)}
-        >
-          {t("nav.add")}
-        </button>
-      </nav>
+          </>
+        }
+      />
 
       <main id="main-content" className="app-main" tabIndex={-1}>
         <h1 className="visually-hidden">{t("app.title")}</h1>
@@ -170,7 +194,7 @@ export function App() {
         {config.status === "error" && (
           <div className="app-main__message notice notice--error" role="alert">
             <p>{t("config.error")}</p>
-            <button type="button" className="button" onClick={() => setAttempt((n) => n + 1)}>
+            <button type="button" className="sa-btn" onClick={() => setAttempt((n) => n + 1)}>
               {t("common.retry")}
             </button>
           </div>
@@ -182,6 +206,15 @@ export function App() {
           // Hidden, not removed, while adding: the map keeps its position.
           <div hidden={adding} className={`workspace${url.place ? " workspace--with-panel" : ""}`}>
             <div className="workspace__content">
+              <button
+                ref={addButtonRef}
+                type="button"
+                className="sa-btn sa-btn--primary map-add"
+                onClick={() => setAdding(true)}
+              >
+                <Icon name="plus" size={20} />
+                {t("nav.add")}
+              </button>
               {/* The map stays mounted while the list is shown (hidden, not
                   removed), so switching back keeps its position. */}
               <div className="workspace__view" hidden={url.view !== "map"}>
@@ -221,6 +254,115 @@ export function App() {
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+const UUID = /^[0-9a-f-]{36}$/i;
+
+function Screen({ path, search }: { path: string; search: string }) {
+  const { t } = useI18n();
+  const { user } = useAuth();
+  const place = new URLSearchParams(search).get("place");
+  let params: Record<string, string> | null;
+  if ((params = matchPath("/recordings/:id/ambient", path)) && UUID.test(params.id)) return <AmbientPage key={params.id} recordingId={params.id} />;
+  if ((params = matchPath("/recordings/:id", path)) && UUID.test(params.id)) return <RecordingPage key={params.id} recordingId={params.id} />;
+  if ((params = matchPath("/places/:id/compare", path)) && UUID.test(params.id)) return <ComparePage key={params.id} placeId={params.id} />;
+  if (path === "/record" && place && UUID.test(place)) return <RecordFlow key={place} placeId={place} />;
+  if (path === "/upload" && place && UUID.test(place)) return <UploadFlow key={place} placeId={place} />;
+  if (path === "/admin" && user?.role === "admin") return <AdminPage />;
+  if (path === "/account") return <AccountPage />;
+  return (
+    <div className="app-main__message">
+      <h1 className="page__title">{t("notFound.title")}</h1>
+      <p>{t("notFound.body")}</p>
+      <a className="sa-btn" href="/">
+        {t("notFound.home")}
+      </a>
+    </div>
+  );
+}
+
+function OfflineBanner() {
+  const { t } = useI18n();
+  const [online, setOnline] = useState(() => navigator.onLine);
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
+  if (online) return null;
+  return (
+    <p className="offline-banner" role="status">
+      <Icon name="offline" size={20} />
+      {t("offline.banner")}
+    </p>
+  );
+}
+
+export function App() {
+  const { t, language, setLanguage } = useI18n();
+  const { state, user, retry } = useAuth();
+  const { path, search } = useRouter();
+  const player = usePlayer();
+
+  // The account remembers the language for devices that have no choice yet;
+  // later changes are saved back.
+  const synced = useRef<string | null>(null);
+  useEffect(() => {
+    if (!user) {
+      synced.current = null;
+      return;
+    }
+    if (synced.current !== user.id) {
+      synced.current = user.id;
+      // Only on a device with no choice of its own: an explicit choice here wins.
+      if (readStored(STORAGE_KEYS.language) === null && (user.language === "es" || user.language === "en")) {
+        setLanguage(user.language);
+      }
+      return;
+    }
+    if (user.language !== language) void saveLanguage(language).catch(() => {});
+  }, [user, language, setLanguage]);
+
+  if (state.status === "loading") {
+    return (
+      <div className="app-main__message" role="status">
+        {t("common.loading")}
+      </div>
+    );
+  }
+  if (state.status === "error") {
+    return (
+      <main className="app-main__message notice notice--error" role="alert">
+        <p>{t("config.error")}</p>
+        <button type="button" className="sa-btn" onClick={retry}>
+          {t("common.retry")}
+        </button>
+      </main>
+    );
+  }
+  if (state.status === "signedOut") return <SignInPage />;
+
+  const isWorkspace = path === "/";
+  return (
+    <div className={`app${player.current ? " app--mini" : ""}`}>
+      <a className="skip-link" href="#main-content">
+        {t("skip.toMain")}
+      </a>
+      {isWorkspace ? (
+        <Workspace />
+      ) : (
+        <main id="main-content" className="app-main" tabIndex={-1}>
+          <Screen path={path} search={search} />
+        </main>
+      )}
+      <OfflineBanner />
+      <MiniPlayer />
     </div>
   );
 }

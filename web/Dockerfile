@@ -33,5 +33,5 @@ RUN npm run build
 
 # --- server (last stage = what `docker build` produces) ---------------------------
 FROM ${CADDY_IMAGE} AS server
-COPY infra/caddy/Caddyfile /etc/caddy/Caddyfile
+COPY infra/caddy/Caddyfile infra/caddy/Caddyfile.tailnet /etc/caddy/
 COPY --from=build /web/dist /srv/web

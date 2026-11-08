@@ -59,6 +59,36 @@ type Status =
 
 const LOAD_DELAY_MS = 250;
 
+/**
+ * The quiet basemap of the design: land, water, roads and labels in the
+ * --map-* tokens, whatever colours the provider's style came with. Layers are
+ * matched by the usual names; one that is not recognised keeps its colour.
+ */
+function applyMapTokens(map: maplibregl.Map): void {
+  const css = getComputedStyle(document.documentElement);
+  const token = (name: string) => css.getPropertyValue(name).trim();
+  const land = token("--map-land");
+  const water = token("--map-water");
+  const road = token("--map-road");
+  const label = token("--map-label");
+  if (!land) return;
+  for (const layer of map.getStyle().layers ?? []) {
+    try {
+      if (layer.type === "background") map.setPaintProperty(layer.id, "background-color", land);
+      else if (layer.type === "fill" && /water|ocean|lake|river/.test(layer.id)) map.setPaintProperty(layer.id, "fill-color", water);
+      else if (layer.type === "fill") map.setPaintProperty(layer.id, "fill-color", land);
+      else if (layer.type === "line" && /water|river|canal/.test(layer.id)) map.setPaintProperty(layer.id, "line-color", water);
+      else if (layer.type === "line") map.setPaintProperty(layer.id, "line-color", road);
+      else if (layer.type === "symbol") {
+        map.setPaintProperty(layer.id, "text-color", label);
+        map.setPaintProperty(layer.id, "text-halo-color", land);
+      }
+    } catch {
+      // A layer that does not take this property keeps its look.
+    }
+  }
+}
+
 /** Relative style URLs (a local test style) are resolved against this site. */
 export function styleUrlFor(config: PublicConfig, theme: "light" | "dark"): string {
   const url = theme === "dark" ? config.map_style_url_dark : config.map_style_url;
@@ -138,6 +168,8 @@ export function MapView({ config, initialCamera, selectedId, onSelect, onCameraC
     map.on("load", () => {
       styleLoaded = true;
     });
+    // On every style, also after a change of theme.
+    map.on("style.load", () => applyMapTokens(map));
     map.on("error", (event: maplibregl.ErrorEvent) => {
       // An error before the style has loaded means no basemap at all. Later
       // errors are usually a single missing tile, which is harmless.
@@ -254,6 +286,17 @@ export function MapView({ config, initialCamera, selectedId, onSelect, onCameraC
 
   useEffect(() => {
     layerRef.current?.setSelected(selectedId);
+    if (!selectedId) return;
+    // The panel opening narrows the map. If that pushes the selected pin out
+    // of view, bring it back, so the selection never disappears.
+    const position = layerRef.current?.positionOf(selectedId);
+    const timer = window.setTimeout(() => {
+      const map = mapRef.current;
+      if (map && position && !map.getBounds().contains(position)) {
+        map.easeTo({ center: position, duration: motionDuration(300) });
+      }
+    }, 120);
+    return () => window.clearTimeout(timer);
   }, [selectedId]);
 
   useImperativeHandle(ref, () => ({
@@ -278,7 +321,7 @@ export function MapView({ config, initialCamera, selectedId, onSelect, onCameraC
         {status.kind === "error" && (
           <p className="map-status map-status--error">
             {t("map.status.error")}{" "}
-            <button type="button" className="button" onClick={() => setLoadTick((n) => n + 1)}>
+            <button type="button" className="sa-btn" onClick={() => setLoadTick((n) => n + 1)}>
               {t("common.retry")}
             </button>
           </p>

@@ -17,7 +17,7 @@ test.describe("browsing (es)", () => {
     const panel = page.getByRole("complementary", { name: "Ficha del lugar" });
     const heading = panel.getByRole("heading", { level: 2, name });
     await expect(heading).toBeFocused();
-    await expect(panel.getByText("Aún sin grabaciones")).toBeVisible();
+    await expect(panel.getByText("Aún no hay grabaciones aquí")).toBeVisible();
     await expect(page).toHaveURL(/place=[0-9a-f-]{36}/);
     // The selected pin says so, and is drawn bigger.
     const selected = page.locator(".map-pin--selected");
@@ -71,7 +71,7 @@ test.describe("browsing (en)", () => {
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await waitForPins(page);
     await page.locator(".map-pin").first().click();
-    await expect(page.getByRole("complementary", { name: "Place details" }).getByText("No recordings yet")).toBeVisible();
+    await expect(page.getByRole("complementary", { name: "Place details" }).getByText("No recordings here yet")).toBeVisible();
     await page.getByRole("button", { name: "List" }).click();
     await expect(page.getByRole("heading", { name: "List of places" })).toBeVisible();
   });

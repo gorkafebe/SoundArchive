@@ -14,3 +14,5 @@ services:
     environment:
       API_DOCS_ENABLED: "false"
       ALLOW_ANONYMOUS_WRITES: "false"
+      # The rehearsal signs in from inside the container (ops/tailnet/restore_check.py).
+      ALLOWED_ORIGINS: "https://restore-test"

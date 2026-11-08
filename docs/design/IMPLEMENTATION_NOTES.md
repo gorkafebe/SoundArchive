@@ -1,3 +1,36 @@
+# Design implementation notes (2026-11-08)
+
+What was built from `docs/design/handoff/`, what was invented where the design was silent, and what differs. The older notes on phase 3 follow below.
+
+## Implemented from the design
+
+- `tokens.css` copied unchanged. Newsreader, Atkinson Hyperlegible and IBM Plex Mono self-hosted through `@fontsource`, with no third-party request.
+- The components, in `web/src/components/ui.tsx`, `features/player/components.tsx` and `styles/components.css`, keeping the `sa-*` class names. Button and RecordButton are CSS classes on native `<button>` elements rather than React components.
+- All screens, in both themes and languages. The real basemap is recoloured at run time with the `--map-*` tokens.
+
+## Invented, following the brand book
+
+Sign-out and account page; account menu on phones (the design shows it only on desktop); "Add place" button on the map; Photo form and enlarged view; report form; invitation code shown once; audit log tab; users tab; 404 page; sleep-timer message; quality choice (lossless or compressed); the warning when a browser could not turn processing off; all English text.
+
+## Differences
+
+| Design | Built | Why |
+|---|---|---|
+| "Guardar borrador" on the review screen | Not present | A draft is not implemented. Better no button than one that does nothing |
+| Licence preselected CC BY-NC in the mock | "All rights reserved" preselected | The owner's decision |
+| Grabar and Subir at the end of the panel on desktop | Right below the title | So they are reachable with the sheet at its lowest height |
+| "Puedes cerrar esta pantalla: seguiremos en segundo plano" | "Keep this tab open" | Honest: navigating is fine, closing the tab stops the upload |
+| Map / List 40 px inside a 44 px frame | 44 px each | The target check measures the button itself |
+| Waveform and meter drawn from invented data | From real peaks and real levels | A pure test tone therefore looks like a flat block, as it should |
+
+Photo restoration by an administrator exists in the API (`/api/admin/photos/{id}/restore`), with no button yet.
+
+## The loop
+
+Ambient mode uses the audio element's own `loop`. Measured on a continuous tone in headless Chromium (`web/e2e/loop-gap.spec.ts`, a 2 s file over 9 s): silences of about 3 to 11 ms at the seam, and one of 32 ms that may be the start of playback. Both the browser and Opus's encoder padding contribute. So a small gap exists, and may be audible on steady sounds like a tone; on most ambient recordings it is likely to pass unnoticed, though that was not tested by ear. Avoiding it would mean decoding the whole file with Web Audio, which does not suit recordings of hundreds of megabytes.
+
+---
+
 # Implementation notes: phase 3 foundations (places and web interface)
 
 Date: 2026-11-03. Branch `feat/places-foundation`. For the owner and for

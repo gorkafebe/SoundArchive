@@ -219,14 +219,11 @@ def test_list_parameter_bounds(api, params):
 
 
 @pytest.mark.parametrize("writes_enabled", [False])
-def test_post_is_403_when_writes_are_disabled(api, writes_enabled):
+def test_post_needs_a_session(api, writes_enabled):
     response = api.post("/api/places", json={"name": "X", "latitude": 0, "longitude": 0})
 
-    assert response.status_code == 403
-    assert response.json()["detail"]["code"] == "writes_disabled"
-    assert api.get("/api/config").json()["writes_enabled"] is False
-    # Nothing was stored.
-    assert api.get("/api/places/list").json()["total"] == 0
+    assert response.status_code == 401
+    assert response.json()["detail"]["code"] == "not_signed_in"
 
 
 def test_config_reports_writes_and_map_styles(api):

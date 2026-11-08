@@ -571,3 +571,39 @@ make msi-snapshot LABEL=<name>               # the same, saved with the date, to
 
 The procedures for the reboot, cold boot and power tests are in
 [MSI_REBOOT_AND_POWER_TESTS.md](MSI_REBOOT_AND_POWER_TESTS.md).
+
+## The tailnet-only instance (added 2026-11-08)
+
+This instance is separate from the real app in `/srv/sound-archive`: its own project (`sa-tailnet`), volumes, and images. They share nothing. Only the ports differ: the real app publishes 80/443; this one only `127.0.0.1:9443` and `:9080`.
+
+```sh
+make tailnet-up          # build and start
+make tailnet-ps          # state
+make tailnet-logs        # logs (SERVICE=api for one)
+make tailnet-down        # stop; data is kept
+make exposure-check      # nothing beyond loopback
+make tailnet-ca-export   # the public root certificate
+make admin-create USERNAME=name
+make invite-create
+```
+
+`.env` lives in the checkout (`~/sa-dev/.env`, mode 600). The instance needs it; do not lose it, and do not recreate it, because the database keeps the passwords of its first start.
+
+**Do not delete the volume `sa-tailnet_caddy_data`**: that creates a new certificate authority, and every device would have to install the new root.
+
+### Replacing the real app with this one
+
+Not done. It needs the owner's decision (`AUTORIZO_PRODUCCION`). Steps, when wanted:
+
+1. Back up the real database and check it restores in a throwaway project.
+
+   ```sh
+   docker exec sound-archive-db-1 sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' > prod-backup.dump
+   ```
+
+2. Decide the network: staying tailnet-only means stopping the real app's public ports 80/443, since this instance replaces it. Opening to the Internet is a different project; see `SECURITY.md`.
+3. Migrate its places into this instance with `pg_restore --data-only --table=places`, then let Alembic run. Existing places will have no author.
+4. Stop the real app with `docker compose -p sound-archive stop`, not `down`, and keep its volumes until you are sure.
+5. Going back: `docker compose -p sound-archive start`.
+
+Rehearse steps 1 and 3 in a throwaway project first. Do not delete the volumes of the real app.

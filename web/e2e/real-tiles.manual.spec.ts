@@ -10,13 +10,15 @@
 // test-results/screens/real-tiles-*.png.
 import { expect, test } from "@playwright/test";
 
+import { BASE_URL } from "./constants";
+
 for (const theme of ["light", "dark"] as const) {
   test(`real basemap (${theme})`, async ({ page }) => {
     const provider: { url: string; status: number }[] = [];
     const cspErrors: string[] = [];
     page.on("response", (response) => {
       const url = new URL(response.url());
-      if (url.origin !== "http://caddy") {
+      if (url.origin !== new URL(BASE_URL).origin) {
         provider.push({ url: `${url.origin}${url.pathname}`, status: response.status() });
       }
     });

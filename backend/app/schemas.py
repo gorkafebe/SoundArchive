@@ -30,6 +30,7 @@ class PlaceCreate(BaseModel):
     description: str | None = Field(default=None, max_length=DESCRIPTION_MAX)
     latitude: Latitude
     longitude: Longitude
+    location_accuracy_m: int | None = Field(default=None, ge=0, le=100000)
 
     @field_validator("description")
     @classmethod
@@ -49,8 +50,13 @@ class PlaceOut(BaseModel):
     description: str | None
     latitude: float
     longitude: float
+    location_accuracy_m: int | None = None
     created_at: datetime
     updated_at: datetime
+    created_by: uuid.UUID | None = None
+    author_name: str | None = None
+    recording_count: int = 0
+    latest_recorded_at: datetime | None = None
 
 
 class PlaceList(BaseModel):

@@ -4,10 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "./App";
-import { AnnouncerProvider } from "./components/Announcer";
-import { I18nProvider } from "./i18n/i18n";
-import { ThemeProvider } from "./lib/theme";
 import { fakeServer, makePlace } from "./test/fakeApi";
+import { Providers } from "./test/providers";
 
 vi.mock("./features/map/MapView", () => ({
   MapView: ({ onSelect }: { onSelect: (id: string) => void }) => (
@@ -21,13 +19,9 @@ vi.mock("./features/map/MapView", () => ({
 
 function renderApp() {
   return render(
-    <I18nProvider language="es">
-      <ThemeProvider>
-        <AnnouncerProvider>
-          <App />
-        </AnnouncerProvider>
-      </ThemeProvider>
-    </I18nProvider>,
+    <Providers language="es">
+      <App />
+    </Providers>,
   );
 }
 
@@ -38,7 +32,7 @@ describe("App", () => {
   it("has the landmarks and a skip link to the main content", async () => {
     fakeServer([makePlace(1)]);
     renderApp();
-    expect(screen.getByRole("link", { name: "Saltar al contenido" })).toHaveAttribute("href", "#main-content");
+    expect(await screen.findByRole("link", { name: "Saltar al contenido" })).toHaveAttribute("href", "#main-content");
     expect(screen.getByRole("banner")).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Vistas y acciones" })).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");

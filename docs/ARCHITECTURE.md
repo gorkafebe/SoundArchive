@@ -302,3 +302,47 @@ metadata (commit, alembic, names) ──┘                                     
   PostGIS 3.6, and picks up bug-fix and security releases when you
   `docker compose pull`. These are compatible with existing data. Moving to
   Postgres 19 would need a deliberate upgrade (dump and restore).
+
+## The tailnet instance (added 2026-11-08)
+
+Everything above describes the walking skeleton. The working application runs as the Compose project `sa-tailnet`, from `compose.yaml` + `compose.tailnet.yaml`.
+
+```
+Browser on a tailnet device
+   | https://soundarchive:8443  (Tailscale forward, set up by the owner)
+   v
+127.0.0.1:9443 -> Caddy  (private CA, security headers, body limits)
+                   |-- /api/*  --> api (FastAPI, streams uploads to disk)
+                   `-- files      (the built web app)
+                                     |            |
+                     backend network (no route to the Internet)
+                                     v            v
+                            PostgreSQL + PostGIS  Redis <-- worker (ffmpeg)
+                                                     ^      maintenance
+                                     media volume ---+-- api, worker, maintenance
+```
+
+| Service | Job | Reaches the Internet |
+|---|---|---|
+| `caddy` | HTTPS with the internal CA; the only service with a published port, on `127.0.0.1` | No (only inbound) |
+| `api` | Accounts, places, recordings, photos, moderation | Not needed |
+| `worker` | Audio: `ffprobe`, SHA-256, `ebur128`, Opus copy, waveform peaks (RQ queue) | No: `backend` network only |
+| `maintenance` | Abandoned uploads, stuck jobs, expired sessions, every 5 minutes | No |
+| `redis` | Job queue and login attempt counters. Nothing on disk: `maintenance` re-queues what a restart loses | No |
+| `db` | PostgreSQL 18 + PostGIS | No |
+
+### A recording's life
+
+1. `POST /api/recordings`: metadata; status `uploading`; empty file at `media/tmp/<id>.part`.
+2. `PATCH /api/recordings/{id}/upload` with `Content-Range`, as many times as needed. The size on disk is the truth, a file lock prevents two writers, and `GET .../upload` says where to continue.
+3. Last byte: moved to `media/originals/aa/bb/<id>`, made read-only, status `processing`, job queued.
+4. The worker checks the allow-list, measures, and writes `media/derived/aa/bb/<id>.webm` and `.peaks.json`; status `ready` or `failed` with a code.
+5. `GET .../audio` serves the copy with range requests; `GET .../original` the untouched file.
+
+### Permissions
+
+Every read needs a session; "public" means any account on this instance. Only `/api/health*`, `/api/config` and `/api/auth/{login,register}` work without one. See `SECURITY.md`.
+
+### The web app
+
+No router library: `lib/router.tsx` is a small wrapper on the History API. `PlayerProvider` holds the single `<audio>` element outside the screens, so the sound continues while navigating. Comparison uses its own two elements and pauses the shared one.

@@ -102,7 +102,7 @@ export function PlaceList({ query, page, onQueryChange, selectedId, onSelect, re
               aria-describedby={hintId}
               onChange={(event) => setDraft(event.target.value)}
             />
-            <button type="submit" className="button">
+            <button type="submit" className="sa-btn">
               {t("list.searchButton")}
             </button>
           </div>
@@ -113,7 +113,7 @@ export function PlaceList({ query, page, onQueryChange, selectedId, onSelect, re
       {load.kind === "error" && (
         <div className="notice notice--error place-list__message">
           <p>{t("list.error")}</p>
-          <button type="button" className="button" onClick={() => setAttempt((n) => n + 1)}>
+          <button type="button" className="sa-btn" onClick={() => setAttempt((n) => n + 1)}>
             {t("common.retry")}
           </button>
         </div>
@@ -159,11 +159,11 @@ export function PlaceList({ query, page, onQueryChange, selectedId, onSelect, re
           )}
           {pages > 1 && (
             <nav className="place-list__pages" aria-label={t("list.pagination")}>
-              <button type="button" className="button" disabled={page <= 1} onClick={() => goTo(page - 1)}>
+              <button type="button" className="sa-btn" disabled={page <= 1} onClick={() => goTo(page - 1)}>
                 {t("list.previous")}
               </button>
               <p aria-current="page">{t("list.page", { page, pages })}</p>
-              <button type="button" className="button" disabled={page >= pages} onClick={() => goTo(page + 1)}>
+              <button type="button" className="sa-btn" disabled={page >= pages} onClick={() => goTo(page + 1)}>
                 {t("list.next")}
               </button>
             </nav>
