@@ -74,7 +74,7 @@ export function AddPlaceFlow(props: AddPlaceFlowProps) {
             <p>{t("add.disabled.body")}</p>
           </div>
           <div className="add-place__actions">
-            <button type="button" className="button" onClick={props.onCancel}>
+            <button type="button" className="sa-btn" onClick={props.onCancel}>
               {t("add.disabled.back")}
             </button>
           </div>
@@ -263,7 +263,7 @@ function AddPlaceForm({ config, initialCamera, onCancel, onCreated }: AddPlaceFl
                 </p>
                 <button
                   type="button"
-                  className="button"
+                  className="sa-btn"
                   aria-describedby="use-location-explain"
                   disabled={geo.kind === "locating"}
                   onClick={useMyLocation}
@@ -365,13 +365,13 @@ function AddPlaceForm({ config, initialCamera, onCancel, onCreated }: AddPlaceFl
           )}
 
           <div className="add-place__actions">
-            <button type="button" className="button button--quiet" onClick={onCancel}>
+            <button type="button" className="sa-btn sa-btn--quiet" onClick={onCancel}>
               {t("common.cancel")}
             </button>
             {step > 1 && (
               <button
                 type="button"
-                className="button"
+                className="sa-btn"
                 disabled={submit.kind === "submitting"}
                 onClick={() => {
                   setErrors({});
@@ -383,13 +383,13 @@ function AddPlaceForm({ config, initialCamera, onCancel, onCreated }: AddPlaceFl
               </button>
             )}
             {step < 3 ? (
-              <button type="submit" className="button button--primary">
+              <button type="submit" className="sa-btn sa-btn--primary">
                 {t("common.next")}
               </button>
             ) : (
               <button
                 type="button"
-                className="button button--primary"
+                className="sa-btn sa-btn--primary"
                 disabled={submit.kind === "submitting" || (submit.kind === "error" && submit.reason === "disabled")}
                 onClick={create}
               >

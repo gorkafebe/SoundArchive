@@ -1,0 +1,433 @@
+/*
+ * The design system's components, from docs/design/handoff/components.css
+ * (same sa-* classes, only token variables), plus the extras the screens need.
+ */
+
+/* --- Button -------------------------------------------------------------- */
+.sa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--line-strong);
+  background: var(--surface-200);
+  color: var(--ink);
+  font: 700 14px/20px var(--font-sans);
+  text-decoration: none;
+  cursor: pointer;
+}
+.sa-btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.sa-btn--quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--accent);
+}
+.sa-btn--danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.sa-btn[disabled] {
+  background: var(--surface-300);
+  border-color: var(--surface-300);
+  color: var(--ink-muted);
+  cursor: not-allowed;
+}
+.sa-btn--icon {
+  padding: 0;
+}
+
+/* Two-way switch for views (Map / List): a pressed button is the current one. */
+.sa-switch {
+  display: inline-flex;
+  flex: none;
+  border: 2px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--surface-200);
+}
+.sa-switch button {
+  min-height: 40px;
+  min-width: 44px;
+  padding: 0 var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 700 14px/20px var(--font-sans);
+  cursor: pointer;
+}
+.sa-switch button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.sa-switch button:focus-visible {
+  outline-offset: -4px;
+}
+
+/* --- Segmented choice ---------------------------------------------------- */
+.sa-seg-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.sa-seg-field legend {
+  padding: 0;
+  margin-block-end: var(--space-1);
+}
+.sa-seg {
+  display: flex;
+  flex-wrap: wrap;
+  border: 2px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--surface-200);
+}
+.sa-seg label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  min-width: 44px;
+  padding: 0 var(--space-3);
+  font: 700 14px/20px var(--font-sans);
+  cursor: pointer;
+}
+.sa-seg label.sa-seg__on {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.sa-seg label:focus-within {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -4px;
+}
+
+/* --- Badge --------------------------------------------------------------- */
+.sa-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-300);
+  color: var(--ink);
+  font: 700 13px/18px var(--font-sans);
+}
+.sa-badge--success {
+  color: var(--success);
+}
+.sa-badge--warning {
+  color: var(--warning);
+}
+.sa-badge--danger {
+  color: var(--danger);
+}
+.sa-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* --- Waveform and meter -------------------------------------------------- */
+.sa-wave {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 56px;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--surface-300);
+}
+.sa-wave--tall {
+  height: 96px;
+}
+.sa-wave b {
+  flex: 1;
+  min-width: 2px;
+  border-radius: 2px;
+  background: var(--line-strong);
+}
+.sa-wave b.on {
+  background: var(--accent);
+}
+.sa-meter {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  height: 64px;
+  align-items: flex-end;
+}
+.sa-meter b {
+  width: 8px;
+  border-radius: 2px;
+  background: var(--line-strong);
+}
+.sa-meter b.on {
+  background: var(--accent);
+}
+
+/* --- Record button ------------------------------------------------------- */
+.sa-recbtn {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-pill);
+  border: 4px solid var(--surface-200);
+  outline: 2px solid var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+.sa-recbtn--live {
+  background: var(--danger);
+  outline-color: var(--danger);
+  color: var(--surface-200);
+}
+.sa-recbtn:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+/* --- Recording card ------------------------------------------------------ */
+.sa-card {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-200);
+  width: 100%;
+}
+.sa-card--playing {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.sa-play {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.sa-play--large {
+  width: 72px;
+  height: 72px;
+}
+.sa-card__title {
+  display: block;
+  font: 600 20px/28px var(--font-serif);
+  color: var(--ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.sa-card__title:hover {
+  text-decoration: underline;
+}
+.sa-card__line {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-muted);
+}
+.sa-cards {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* --- Mini player --------------------------------------------------------- */
+.sa-mini {
+  position: fixed;
+  inset-block-end: var(--space-3);
+  inset-inline: var(--space-3);
+  z-index: 30;
+  max-width: 28rem;
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--surface-200);
+  box-shadow: var(--shadow-sheet);
+  border: 2px solid var(--line);
+}
+.sa-mini__text {
+  flex: 1;
+  min-width: 0;
+}
+.sa-mini__title {
+  display: block;
+  font: 600 16px/22px var(--font-serif);
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- PrePrompt, EmptyState ----------------------------------------------- */
+.sa-pre {
+  background: var(--surface-200);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.sa-pre__title {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+.sa-pre__icon,
+.sa-empty__icon {
+  color: var(--accent);
+}
+.sa-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
+}
+.sa-empty h3 {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+.sa-empty p {
+  color: var(--ink-muted);
+  max-width: 32ch;
+}
+
+/* --- Toast --------------------------------------------------------------- */
+.sa-toasts {
+  position: fixed;
+  inset-block-end: calc(var(--space-8) + var(--space-6));
+  inset-inline: var(--space-3);
+  z-index: 40;
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+  pointer-events: none;
+}
+.sa-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--ink);
+  color: var(--surface-100);
+  font: 700 14px/20px var(--font-sans);
+  pointer-events: auto;
+}
+.sa-toast__close {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* --- Loading and progress ------------------------------------------------ */
+.sa-skeleton {
+  display: grid;
+  gap: var(--space-2);
+}
+.sa-skeleton__line,
+.sa-skeleton__block {
+  display: block;
+  height: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-300);
+}
+.sa-skeleton__line--short {
+  width: 60%;
+}
+.sa-skeleton__block {
+  height: 56px;
+  border-radius: var(--radius-md);
+}
+.sa-progress {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-300);
+  overflow: hidden;
+}
+.sa-progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+/* --- Slider (position, volume) ------------------------------------------- */
+.sa-range {
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  background: transparent;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* --- Key and value table ("How it was recorded") ------------------------- */
+.sa-kv {
+  display: grid;
+  grid-template-columns: minmax(7rem, 40%) 1fr;
+  gap: var(--space-2) var(--space-3);
+  font-size: 13px;
+  line-height: 18px;
+}
+.sa-kv dt {
+  font-family: var(--font-mono);
+  color: var(--ink-muted);
+}
+.sa-kv dd {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.sa-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.sa-table th {
+  text-align: start;
+  font-weight: 400;
+  color: var(--ink-muted);
+  padding: var(--space-2);
+  border-block-end: 2px solid var(--line);
+}
+.sa-table td {
+  padding: var(--space-1) var(--space-2);
+  border-block-end: 2px solid var(--line);
+  vertical-align: middle;
+}
+.sa-table-wrap {
+  overflow-x: auto;
+}

@@ -278,7 +278,7 @@ export function MapView({ config, initialCamera, selectedId, onSelect, onCameraC
         {status.kind === "error" && (
           <p className="map-status map-status--error">
             {t("map.status.error")}{" "}
-            <button type="button" className="button" onClick={() => setLoadTick((n) => n + 1)}>
+            <button type="button" className="sa-btn" onClick={() => setLoadTick((n) => n + 1)}>
               {t("common.retry")}
             </button>
           </p>

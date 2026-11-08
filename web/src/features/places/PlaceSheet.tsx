@@ -172,7 +172,7 @@ export function PlaceSheet({ placeId, onClose, onShowOnMap, onLoaded }: PlaceShe
           ) : (
             <span />
           )}
-          <button type="button" className="button button--quiet" onClick={onClose}>
+          <button type="button" className="sa-btn sa-btn--quiet" onClick={onClose}>
             {t("common.close")}
           </button>
         </div>
@@ -183,7 +183,7 @@ export function PlaceSheet({ placeId, onClose, onShowOnMap, onLoaded }: PlaceShe
           <div ref={messageRef} tabIndex={-1} className="notice notice--error place-sheet__message">
             <p>{load.notFound ? t("place.notFound") : t("place.error")}</p>
             {!load.notFound && (
-              <button type="button" className="button" onClick={() => setAttempt((n) => n + 1)}>
+              <button type="button" className="sa-btn" onClick={() => setAttempt((n) => n + 1)}>
                 {t("common.retry")}
               </button>
             )}
@@ -203,7 +203,7 @@ export function PlaceSheet({ placeId, onClose, onShowOnMap, onLoaded }: PlaceShe
             </dl>
             <p className="place-sheet__muted">{t("place.created", { date: formatDate(load.place.created_at) })}</p>
             {onShowOnMap && (
-              <button type="button" className="button" onClick={() => onShowOnMap(load.place)}>
+              <button type="button" className="sa-btn" onClick={() => onShowOnMap(load.place)}>
                 {t("place.showOnMap")}
               </button>
             )}

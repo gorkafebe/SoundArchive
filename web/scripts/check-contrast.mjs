@@ -10,7 +10,7 @@ function block(selectorRegex) {
   const match = css.match(selectorRegex);
   if (!match) throw new Error(`No block for ${selectorRegex}`);
   const tokens = {};
-  for (const [, name, hex] of match[1].matchAll(/--(color-[a-z-]+):\s*(#[0-9a-f]{6})\b/gi)) {
+  for (const [, name, hex] of match[1].matchAll(/--([a-z0-9-]+):\s*(#[0-9a-f]{6})\b/gi)) {
     tokens[name] = hex;
   }
   return tokens;
@@ -38,39 +38,39 @@ function ratio(a, b) {
 const TEXT = 4.5;
 const UI = 3;
 const pairs = [
-  ["text", "bg", TEXT, "body text"],
-  ["text", "surface", TEXT, "text in panels"],
-  ["text", "surface-sunken", TEXT, "text on hover/selected rows"],
-  ["text", "accent-soft", TEXT, "text in info boxes"],
-  ["text", "danger-soft", TEXT, "text in error boxes"],
-  ["text-muted", "bg", TEXT, "secondary text"],
-  ["text-muted", "surface", TEXT, "secondary text in panels"],
-  ["text-muted", "surface-sunken", TEXT, "secondary text on hover"],
-  ["text-on-accent", "accent", TEXT, "label of the main button, pin count"],
-  ["text-on-accent", "accent-hover", TEXT, "main button on hover"],
-  ["accent", "bg", TEXT, "links"],
-  ["accent", "surface", TEXT, "links in panels"],
-  ["danger", "bg", TEXT, "error text"],
-  ["danger", "surface", TEXT, "error text in panels"],
-  ["danger", "danger-soft", TEXT, "error box text"],
-  ["border", "bg", UI, "input and button borders"],
-  ["border", "surface", UI, "borders in panels"],
-  ["focus", "bg", UI, "focus ring"],
-  ["focus", "surface", UI, "focus ring in panels"],
-  // No "focus on accent" pair: the ring is always drawn with a gap
-  // (outline-offset in base.css), so it sits on the page or panel colour,
-  // never touching the accent button.
-  ["accent", "surface", UI, "pin dot against its ring"],
-  ["danger", "surface", UI, "invalid input border"],
+  ["ink", "surface-100", TEXT, "body text"],
+  ["ink", "surface-200", TEXT, "text on cards and sheets"],
+  ["ink", "surface-300", TEXT, "text on chips"],
+  ["ink", "accent-soft", TEXT, "text on the playing card"],
+  ["ink-muted", "surface-100", TEXT, "secondary text"],
+  ["ink-muted", "surface-200", TEXT, "secondary text on cards"],
+  ["ink-muted", "surface-300", TEXT, "secondary text on chips"],
+  ["on-accent", "accent", TEXT, "label on a solid accent"],
+  ["accent", "surface-100", TEXT, "accent text"],
+  ["accent", "surface-200", TEXT, "accent text on cards"],
+  ["accent", "surface-300", TEXT, "accent text on chips"],
+  ["accent", "accent-soft", TEXT, "accent text on the playing card"],
+  ["success", "surface-300", TEXT, "success badge"],
+  ["warning", "surface-300", TEXT, "warning badge"],
+  ["danger", "surface-300", TEXT, "danger badge"],
+  ["danger", "surface-100", TEXT, "error text"],
+  ["danger", "surface-200", TEXT, "error text on cards"],
+  ["surface-100", "ink", TEXT, "toast"],
+  ["line-strong", "surface-100", UI, "control borders"],
+  ["line-strong", "surface-200", UI, "control borders on cards"],
+  ["focus-ring", "surface-100", UI, "focus ring"],
+  ["focus-ring", "surface-200", UI, "focus ring on cards"],
+  ["accent", "surface-200", UI, "pin dot against its ring"],
+  ["danger", "surface-200", UI, "danger button border"],
 ];
 
 let failures = 0;
 for (const [theme, t] of Object.entries(themes)) {
   for (const [fg, bg, min, what] of pairs) {
-    const a = t[`color-${fg}`];
-    const b = t[`color-${bg}`];
+    const a = t[fg];
+    const b = t[bg];
     if (!a || !b) {
-      console.error(`FAIL ${theme}: missing --color-${fg} or --color-${bg}`);
+      console.error(`FAIL ${theme}: missing --${fg} or --${bg}`);
       failures++;
       continue;
     }

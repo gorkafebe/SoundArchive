@@ -8,7 +8,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAnnounce } from "./components/Announcer";
 import { AddPlaceFlow } from "./features/add-place/AddPlaceFlow";
-import { Preferences } from "./components/Preferences";
+import { Icon } from "./components/Icon";
+import { TopBar } from "./components/TopBar";
 import { MapView, type Camera, type MapViewHandle } from "./features/map/MapView";
 import { PlaceList, type PlaceListHandle } from "./features/places/PlaceList";
 import { PlaceSheet } from "./features/places/PlaceSheet";
@@ -94,6 +95,10 @@ export function App() {
     }
   }, [url.place, url.view, announce, t]);
 
+  const searchPlaces = useCallback((q: string) => {
+    setUrl((current) => ({ ...current, view: "list", q, page: 1 }));
+  }, []);
+
   const onCameraChange = useCallback((next: Camera) => {
     setCamera(next);
     setUrl((current) => ({ ...current, lon: next.lon, lat: next.lat, zoom: next.zoom }));
@@ -129,40 +134,17 @@ export function App() {
   }, []);
 
   return (
-    <div className="app">
+    <div className={`app${url.place ? " app--with-panel" : ""}`}>
       <a className="skip-link" href="#main-content">
         {t("skip.toMain")}
       </a>
 
-      <header className="app-header">
-        <p className="app-header__name">{t("app.title")}</p>
-        <Preferences />
-      </header>
-
-      <nav className="app-nav" aria-label={t("nav.label")}>
-        <div className="app-nav__views" role="group" aria-label={t("nav.views")}>
-          {(["map", "list"] as const).map((view) => (
-            <button
-              key={view}
-              type="button"
-              className="button"
-              // While adding a place neither view is the current screen.
-              aria-pressed={!adding && url.view === view}
-              onClick={() => setView(view)}
-            >
-              {t(`nav.${view}`)}
-            </button>
-          ))}
-        </div>
-        <button
-          ref={addButtonRef}
-          type="button"
-          className="button button--primary"
-          onClick={() => setAdding(true)}
-        >
-          {t("nav.add")}
-        </button>
-      </nav>
+      <TopBar
+        view={url.view}
+        onView={setView}
+        onSearch={url.view === "map" ? searchPlaces : undefined}
+        viewsCurrent={!adding}
+      />
 
       <main id="main-content" className="app-main" tabIndex={-1}>
         <h1 className="visually-hidden">{t("app.title")}</h1>
@@ -170,7 +152,7 @@ export function App() {
         {config.status === "error" && (
           <div className="app-main__message notice notice--error" role="alert">
             <p>{t("config.error")}</p>
-            <button type="button" className="button" onClick={() => setAttempt((n) => n + 1)}>
+            <button type="button" className="sa-btn" onClick={() => setAttempt((n) => n + 1)}>
               {t("common.retry")}
             </button>
           </div>
@@ -182,6 +164,15 @@ export function App() {
           // Hidden, not removed, while adding: the map keeps its position.
           <div hidden={adding} className={`workspace${url.place ? " workspace--with-panel" : ""}`}>
             <div className="workspace__content">
+              <button
+                ref={addButtonRef}
+                type="button"
+                className="sa-btn sa-btn--primary map-add"
+                onClick={() => setAdding(true)}
+              >
+                <Icon name="plus" size={20} />
+                {t("nav.add")}
+              </button>
               {/* The map stays mounted while the list is shown (hidden, not
                   removed), so switching back keeps its position. */}
               <div className="workspace__view" hidden={url.view !== "map"}>
