@@ -7,6 +7,9 @@
 # exist, as a second barrier. A test passes only if the log shows what it should.
 #
 # Set GUARD_TEST_KEEP_LOG=<file> to keep a copy of the log of the fake docker.
+
+# The $(...) in single quotes below are Makefile text, not shell.
+# shellcheck disable=SC2016
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -111,7 +114,7 @@ pass "docker resolves to the fake one, and it logs"
 [ ! -e "$COPY/.env" ] || fail "the copy gained a .env"
 for t in "${GUARDED[@]}"; do
     run "$BIN" make "$t" "${VARS[@]}"
-    expect_refused "no .env: $t" "COMPOSE_PROJECT_NAME"
+    expect_refused "no .env: $t" "cp .env.example .env"
 done
 pass "no .env: all guarded targets refuse, docker never called"
 
