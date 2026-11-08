@@ -5,6 +5,8 @@ missing or has the wrong type, the app refuses to start and tells you which
 one, instead of failing later in a confusing way.
 """
 
+from urllib.parse import quote
+
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 from sqlalchemy import URL
@@ -20,11 +22,43 @@ class Settings(BaseSettings):
     # SecretStr hides the value when the settings are printed or logged.
     db_password: SecretStr
 
-    # Write protection. There are no user accounts yet (phase 6), so anyone
-    # who reaches the site could create places. Off unless set to true on
-    # purpose: the dev stack turns it on, prod leaves it off. When off,
-    # POST /api/places answers 403 and /api/config tells the web app.
+    # Test switch, off by default: treat requests with no session as allowed,
+    # and skip the CSRF and Origin checks. Only the API tests of the places
+    # endpoints use it. Never turn it on for a running instance.
     allow_anonymous_writes: bool = False
+
+    # Redis: the job queue and the login attempt counters.
+    redis_host: str = "redis"
+    redis_port: int = 6379
+    redis_password: SecretStr = SecretStr("")
+
+    # Browser addresses this site is opened from, comma-separated and exact
+    # (scheme, host and port). The CSRF check compares the Origin header to it.
+    allowed_origins: str = ""
+
+    # Sessions: closed after this many days unused, and after this many days
+    # in any case.
+    session_idle_days: int = 30
+    session_absolute_days: int = 180
+
+    # Failed attempts before a wait starts (app/ratelimit.py).
+    rate_limit_enabled: bool = True
+    rate_limit_user: int = 5
+    rate_limit_ip: int = 30
+
+    # Where audio and photos are stored.
+    media_root: str = "/media"
+    # 2 GiB (decision D-48).
+    max_upload_bytes: int = 2 * 1024 * 1024 * 1024
+    # Do not accept an upload that would leave less than this on the disk.
+    min_free_bytes: int = 5 * 1024 * 1024 * 1024
+    # Uploads never finished are deleted after this long.
+    draft_max_age_hours: int = 72
+
+    photo_max_bytes: int = 20 * 1024 * 1024
+    photos_per_person_per_place: int = 4
+    # Refuse images above this many pixels (decompression bombs).
+    photo_max_pixels: int = 40_000_000
 
     # Basemap styles (MapLibre style JSON URLs), one per theme. They live in
     # configuration, not in the web app's code, so the map provider can change
@@ -38,6 +72,15 @@ class Settings(BaseSettings):
     # off, because the docs page loads its script from a public CDN and
     # there is no need to publish it.
     api_docs_enabled: bool = True
+
+    @property
+    def allowed_origin_list(self) -> list[str]:
+        return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
+
+    @property
+    def redis_url(self) -> str:
+        password = quote(self.redis_password.get_secret_value(), safe="")
+        return f"redis://:{password}@{self.redis_host}:{self.redis_port}/0"
 
     @property
     def database_url(self) -> URL:

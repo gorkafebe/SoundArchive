@@ -1,5 +1,7 @@
 """Places: the pins on the map.
 
+    All of these need a session (only this instance's accounts can see the map).
+
     GET  /api/places?bbox=minLon,minLat,maxLon,maxLat&limit=   map: GeoJSON
     GET  /api/places/list?q=&limit=&offset=                    list view
     GET  /api/places/{id}                                      one place
@@ -30,9 +32,9 @@ from geoalchemy2 import WKTElement
 from sqlalchemy import ColumnElement, Select, func, or_, select
 from sqlalchemy.orm import Session
 
-from app.config import Settings, get_settings
 from app.db import get_session
-from app.models import Place
+from app.deps import ViewerDep, WriterDep
+from app.models import Place, Recording, User
 from app.schemas import (
     PlaceCreate,
     PlaceFeature,
@@ -60,16 +62,44 @@ _lon = func.ST_X(_geom).label("longitude")
 _lat = func.ST_Y(_geom).label("latitude")
 
 
-def _place_columns() -> Select:
+def _recording_visible(viewer_id: uuid.UUID | None, is_admin: bool) -> ColumnElement:
+    """The recordings of a place that this person can count on seeing."""
+    condition = Recording.status == "ready"
+    if is_admin:
+        return condition
+    return condition & ((Recording.visibility == "public") | (Recording.author_id == viewer_id))
+
+
+def _place_columns(viewer_id: uuid.UUID | None, is_admin: bool) -> Select:
+    visible = _recording_visible(viewer_id, is_admin)
+    recordings = (
+        select(func.count())
+        .where(Recording.place_id == Place.id, visible)
+        .correlate(Place)
+        .scalar_subquery()
+        .label("recording_count")
+    )
+    latest = (
+        select(func.max(Recording.recorded_at))
+        .where(Recording.place_id == Place.id, visible)
+        .correlate(Place)
+        .scalar_subquery()
+        .label("latest_recorded_at")
+    )
     return select(
         Place.id,
         Place.name,
         Place.description,
         _lat,
         _lon,
+        Place.location_accuracy_m,
         Place.created_at,
         Place.updated_at,
-    )
+        Place.created_by,
+        User.username.label("author_name"),
+        recordings,
+        latest,
+    ).outerjoin(User, User.id == Place.created_by)
 
 
 def parse_bbox(raw: str) -> tuple[float, float, float, float]:
@@ -111,6 +141,7 @@ def _to_out(row) -> PlaceOut:
 
 @router.get("", response_model=PlaceFeatureCollection)
 def places_in_area(
+    _viewer: ViewerDep,
     session: Annotated[Session, Depends(get_session)],
     bbox: Annotated[
         str,
@@ -131,7 +162,7 @@ def places_in_area(
     # Ask for one more than the limit: if it comes back, there were more.
     rows = session.execute(
         select(Place.id, Place.name, _lat, _lon)
-        .where(bbox_filter(*box))
+        .where(bbox_filter(*box), Place.removed_at.is_(None))
         .order_by(Place.created_at.desc(), Place.id)
         .limit(limit + 1)
     ).all()
@@ -149,6 +180,7 @@ def places_in_area(
 
 @router.get("/list", response_model=PlaceList)
 def list_places(
+    viewer: ViewerDep,
     session: Annotated[Session, Depends(get_session)],
     q: Annotated[
         str | None,
@@ -158,7 +190,7 @@ def list_places(
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> PlaceList:
     """A page of places, newest first, optionally filtered by text."""
-    conditions = []
+    conditions: list[ColumnElement] = [Place.removed_at.is_(None)]
     term = (q or "").strip()
     if term:
         # ILIKE = case-insensitive LIKE. % and _ are wildcards in LIKE, so
@@ -174,7 +206,7 @@ def list_places(
 
     total = session.execute(select(func.count()).select_from(Place).where(*conditions)).scalar_one()
     rows = session.execute(
-        _place_columns()
+        _place_columns(viewer.id, viewer.is_admin)
         .where(*conditions)
         .order_by(Place.created_at.desc(), Place.id)
         .limit(limit)
@@ -184,38 +216,29 @@ def list_places(
 
 
 @router.get("/{place_id}", response_model=PlaceOut, responses={404: {"description": "No such place"}})
-def get_place(place_id: uuid.UUID, session: Annotated[Session, Depends(get_session)]) -> PlaceOut:
-    row = session.execute(_place_columns().where(Place.id == place_id)).one_or_none()
+def get_place(
+    place_id: uuid.UUID, viewer: ViewerDep, session: Annotated[Session, Depends(get_session)]
+) -> PlaceOut:
+    row = session.execute(
+        _place_columns(viewer.id, viewer.is_admin).where(Place.id == place_id, Place.removed_at.is_(None))
+    ).one_or_none()
     if row is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Place not found")
     return _to_out(row)
 
 
-def require_writes_enabled(settings: Annotated[Settings, Depends(get_settings)]) -> None:
-    """Refuse to create anything unless ALLOW_ANONYMOUS_WRITES is true."""
-    if not settings.allow_anonymous_writes:
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            detail={
-                "code": "writes_disabled",
-                "message": "Creating places is disabled on this server.",
-            },
-        )
-
-
-@router.post(
-    "",
-    response_model=PlaceOut,
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_writes_enabled)],
-    responses={403: {"description": "Creating places is disabled on this server"}},
-)
+@router.post("", response_model=PlaceOut, status_code=status.HTTP_201_CREATED)
 def create_place(
-    body: PlaceCreate, response: Response, session: Annotated[Session, Depends(get_session)]
+    body: PlaceCreate,
+    response: Response,
+    viewer: WriterDep,
+    session: Annotated[Session, Depends(get_session)],
 ) -> PlaceOut:
     place = Place(
         name=body.name,
         description=body.description,
+        location_accuracy_m=body.location_accuracy_m,
+        created_by=viewer.id,
         # WKT ("well-known text") is the standard text form of a shape.
         # Longitude first, like GeoJSON.
         location=WKTElement(f"POINT({body.longitude!r} {body.latitude!r})", srid=4326),
@@ -223,4 +246,4 @@ def create_place(
     session.add(place)
     session.commit()
     response.headers["Location"] = f"/api/places/{place.id}"
-    return get_place(place.id, session)
+    return get_place(place.id, viewer, session)

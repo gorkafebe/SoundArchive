@@ -14,17 +14,24 @@ import os
 import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import pytest
 from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
-from sqlalchemy import Engine, create_engine, text
+from sqlalchemy import Engine, create_engine, text, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import Settings, get_settings, settings
 from app.db import get_session
+from app import recordings
 from app.main import app
+from app.models import Invitation, User
+from app.ratelimit import get_redis
+from app.security import new_invitation_code, token_hash
+from app.worker import tasks
 
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -109,7 +116,7 @@ def test_db() -> Iterator[ScratchDatabase]:
 def clean_places(test_db: ScratchDatabase) -> Iterator[ScratchDatabase]:
     """Every test starts with an empty places table."""
     with test_db.admin.begin() as conn:
-        conn.execute(text("TRUNCATE places"))
+        conn.execute(text("TRUNCATE places CASCADE"))
     yield test_db
 
 
@@ -135,5 +142,106 @@ def api(clean_places: ScratchDatabase, writes_enabled: bool) -> Iterator[TestCli
     app.dependency_overrides[get_settings] = test_settings
     try:
         yield TestClient(app)
+    finally:
+        app.dependency_overrides.clear()
+
+
+ORIGIN = "https://testserver"
+
+
+@pytest.fixture
+def media_dir(tmp_path, monkeypatch) -> Path:
+    """Files go to a temporary folder, not to the dev stack's media volume."""
+    monkeypatch.setattr(settings, "media_root", str(tmp_path))
+    monkeypatch.setattr(settings, "min_free_bytes", 0)
+    return tmp_path
+
+
+@pytest.fixture
+def secure_settings(media_dir) -> Settings:
+    return settings.model_copy(
+        update={"allow_anonymous_writes": False, "allowed_origins": ORIGIN, "rate_limit_user": 5, "rate_limit_ip": 1000}
+    )
+
+
+class Account(TestClient):
+    """A browser with its own cookies, sending the Origin and CSRF headers."""
+
+    csrf: str = ""
+    user_id: str = ""
+
+    def write(self, method: str, url: str, **kwargs):
+        headers = {"Origin": ORIGIN, "X-CSRF-Token": self.csrf, **kwargs.pop("headers", {})}
+        return self.request(method, url, headers=headers, **kwargs)
+
+
+class Harness:
+    """Creates accounts and invitations straight in the test database."""
+
+    def __init__(self, db: ScratchDatabase) -> None:
+        self.db = db
+        self.sessions = sessionmaker(bind=db.app, expire_on_commit=False)
+
+    def browser(self) -> Account:
+        # https, or the client would not send a Secure cookie back.
+        return Account(app, base_url=ORIGIN, follow_redirects=False)
+
+    def invite(self, *, days: int = 7, used: bool = False, revoked: bool = False) -> str:
+        code = new_invitation_code()
+        now = datetime.now(UTC)
+        with self.sessions() as session:
+            session.add(
+                Invitation(
+                    code_hash=token_hash(code),
+                    code_hint=code[:7],
+                    expires_at=now + timedelta(days=days),
+                    used_at=now if used else None,
+                    revoked_at=now if revoked else None,
+                )
+            )
+            session.commit()
+        return code
+
+    def signed_in(self, name: str, *, admin: bool = False) -> Account:
+        browser = self.browser()
+        response = browser.post(
+            "/api/auth/register",
+            headers={"Origin": ORIGIN},
+            json={"code": self.invite(), "username": name, "password": PASSWORD},
+        )
+        assert response.status_code == 201, response.text
+        browser.csrf = response.json()["csrf_token"]
+        browser.user_id = response.json()["id"]
+        if admin:
+            with self.sessions() as session:
+                session.execute(update(User).where(User.id == uuid.UUID(browser.user_id)).values(role="admin"))
+                session.commit()
+        return browser
+
+
+PASSWORD = "a long enough passphrase"
+
+
+@pytest.fixture
+def harness(test_db: ScratchDatabase, secure_settings: Settings, monkeypatch) -> Iterator[Harness]:
+    """A real API with accounts on, on a clean test database."""
+    with test_db.admin.begin() as conn:
+        conn.execute(
+            text("TRUNCATE reports, place_photos, recordings, places, sessions, invitations, audit_log, users CASCADE")
+        )
+    sessions = sessionmaker(bind=test_db.app, expire_on_commit=False)
+
+    def test_session() -> Iterator[Session]:
+        with sessions() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = test_session
+    app.dependency_overrides[get_settings] = lambda: secure_settings
+    get_redis().flushdb()
+    # Jobs run at once, in this process and on the test database.
+    monkeypatch.setattr(tasks, "SessionLocal", sessions)
+    monkeypatch.setattr(recordings, "_enqueue", lambda _client, recording_id: tasks.process_recording(str(recording_id)))
+    try:
+        yield Harness(test_db)
     finally:
         app.dependency_overrides.clear()
