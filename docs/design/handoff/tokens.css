@@ -1,0 +1,77 @@
+/* Sound Archive — generated from tokens.json (see README.md). Single source of colour, type, spacing, radius, shadow. */
+
+:root, [data-theme="light"] {
+  --surface-100: #f3f6fa;
+  --surface-200: #ffffff;
+  --surface-300: #e4eaf2;
+  --ink: #14202e;
+  --ink-muted: #4a5a6e;
+  --line: #d3dce8;
+  --line-strong: #6b7a8f;
+  --accent: #1d5fb4;
+  --on-accent: #ffffff;
+  --accent-soft: #d9e6f7;
+  --focus-ring: #14202e;
+  --success: #146a5c;
+  --warning: #8a5a00;
+  --danger: #b3401c;
+  --map-land: #e9eef4;
+  --map-water: #c5d8ec;
+  --map-road: #d5dde8;
+  --map-label: #4a5a6e;
+  --shadow-sheet: 0 -6px 24px rgba(20,32,46,0.14);
+  --shadow-pin: 0 2px 6px rgba(20,32,46,0.3);
+}
+
+[data-theme="dark"] {
+  --surface-100: #0f1722;
+  --surface-200: #16212f;
+  --surface-300: #1f2d3f;
+  --ink: #e8eef6;
+  --ink-muted: #a3b2c5;
+  --line: #2a3a50;
+  --line-strong: #7d8da3;
+  --accent: #7db3f2;
+  --on-accent: #07121f;
+  --accent-soft: #1d3556;
+  --focus-ring: #e8eef6;
+  --success: #6fd0bd;
+  --warning: #e0a93c;
+  --danger: #f0906b;
+  --map-land: #131d2a;
+  --map-water: #0b121b;
+  --map-road: #243348;
+  --map-label: #a3b2c5;
+  --shadow-sheet: 0 -6px 24px rgba(0,0,0,0.55);
+  --shadow-pin: 0 2px 6px rgba(0,0,0,0.6);
+}
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --target-min: 44px;
+  --target-record: 72px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+  --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-sans: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+.display { font-family: var(--font-serif); font-size: 40px; line-height: 44px; font-weight: 500; letter-spacing: -0.01em; }
+.title { font-family: var(--font-serif); font-size: 28px; line-height: 34px; font-weight: 500; }
+.heading { font-family: var(--font-serif); font-size: 20px; line-height: 28px; font-weight: 600; }
+.body { font-family: var(--font-sans); font-size: 16px; line-height: 24px; font-weight: 400; }
+.body-strong { font-family: var(--font-sans); font-size: 16px; line-height: 24px; font-weight: 700; }
+.label { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 700; }
+.caption { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 400; }
+.meta { font-family: var(--font-mono); font-size: 13px; line-height: 18px; font-weight: 400; }
+.timecode { font-family: var(--font-mono); font-size: 20px; line-height: 24px; font-weight: 500; }
