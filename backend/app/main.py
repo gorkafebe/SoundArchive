@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
-from app import places
+from app import admin, auth, moderation, photos, places, recordings
 from app.config import Settings, get_settings, settings
 from app.db import engine
 from app.schemas import PublicConfig
@@ -77,7 +77,9 @@ def public_config(settings: Annotated[Settings, Depends(get_settings)]) -> Publi
     Only public values: never put a secret here, every visitor can read it.
     """
     return PublicConfig(
-        writes_enabled=settings.allow_anonymous_writes,
+        # With accounts, signing in is what allows writing; the switch only
+        # remains for the web app's "disabled" state.
+        writes_enabled=True,
         map_style_url=settings.map_style_url,
         map_style_url_dark=settings.map_style_url_dark,
     )
@@ -85,3 +87,8 @@ def public_config(settings: Annotated[Settings, Depends(get_settings)]) -> Publi
 
 app.include_router(router)
 app.include_router(places.router)
+app.include_router(auth.router)
+app.include_router(admin.router)
+app.include_router(recordings.router)
+app.include_router(photos.router)
+app.include_router(moderation.router)
