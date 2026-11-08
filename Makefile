@@ -37,7 +37,7 @@ NODE = docker run --rm -u "$$(id -u):$$(id -g)" -v "$(CURDIR)/web:/app" -w /app 
        $(NODE_IMAGE)
 
 # These targets are command names, not files to build.
-.PHONY: help guard-project guard-prod up down ps logs test migrate seed-dev psql reset-db \
+.PHONY: help guard-project guard-prod guard-test up down ps logs test migrate seed-dev psql reset-db \
         web-install web-check web-build web-dev check e2e e2e-real-tiles \
         e2e-image e2e-up e2e-down tailnet-up tailnet-down tailnet-ps tailnet-logs tailnet-ca-export exposure-check need-username need-id admin-create admin-reset-password invite-create purge-recording purge-place \
         prod-config prod-check prod-up prod-down prod-ps prod-logs \
@@ -280,5 +280,5 @@ restore-test: need-backup-vars ## Ops: restore the latest backup into sa-restore
 	ops/backup/restore-test.sh --repo "$(RESTIC_REPO)" --password-file "$(RESTIC_PASSWORD_FILE)" \
 	  --source-project "$(BACKUP_PROJECT)" --source-url "$(SOURCE_URL)" $(if $(MEDIA_DIR),--media "$(MEDIA_DIR)")
 
-shellcheck: ## Ops: lint every script in ops/ with ShellCheck (in Docker)
-	docker run --rm -v "$(CURDIR):/mnt:ro" -w /mnt $(SHELLCHECK_IMAGE) -x $$(cd $(CURDIR) && find ops -name '*.sh' | sort)
+shellcheck: ## Ops: lint every script in ops/ and scripts/ with ShellCheck (in Docker)
+	docker run --rm -v "$(CURDIR):/mnt:ro" -w /mnt $(SHELLCHECK_IMAGE) -x $$(cd $(CURDIR) && find ops scripts -name '*.sh' | sort)
