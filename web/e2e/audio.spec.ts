@@ -114,6 +114,26 @@ for (const language of ["es", "en"] as const) {
   });
 }
 
+test("a connection cut in the middle of an upload is recovered by the browser", async ({ page }) => {
+  await prepare(page);
+  const placeId = await createPlace(page.request, "Corte de red");
+  let cuts = 0;
+  await page.route("**/api/recordings/*/upload", async (route) => {
+    if (route.request().method() === "PATCH" && cuts === 0) {
+      cuts += 1;
+      return route.abort("connectionreset");
+    }
+    return route.continue();
+  });
+  await page.goto(`/upload?place=${placeId}`);
+  await page.getByTestId("file-input").setInputFiles(`${MEDIA}/tone-a.wav`);
+  await page.getByLabel("Título").fill("Tras el corte");
+  await page.getByRole("button", { name: "Subir y publicar" }).click();
+  await expect(page).toHaveURL(/\/recordings\/[0-9a-f-]{36}$/, WAIT_READY);
+  expect(cuts).toBe(1);
+  await expect(page.getByTestId("sha256")).toHaveText(/^[0-9a-f]{64}$/);
+});
+
 test("a file that is not audio gets an understandable error, and what was typed stays", async ({ page }) => {
   await prepare(page);
   const placeId = await createPlace(page.request, "No audio");

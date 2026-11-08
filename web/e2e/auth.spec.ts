@@ -1,4 +1,6 @@
 // Accounts end to end: invitation, entering, creating a place, leaving.
+import AxeBuilder from "@axe-core/playwright";
+
 import { ADMIN_PASSWORD, BASE_URL, USER_PASSWORD } from "./constants";
 import { expect, prepare, test, waitForPins } from "./fixtures";
 import { apiPost } from "./helpers";
@@ -16,6 +18,16 @@ test.describe("signed out", () => {
     await expect(page.getByRole("button", { name: "Lista" })).toHaveCount(0);
     await page.screenshot({ path: "test-results/screens/signin-1440.png", fullPage: true });
   });
+
+  for (const theme of ["light", "dark"] as const) {
+    test(`the sign-in screen passes the audit (${theme})`, async ({ page }) => {
+      await prepare(page, { theme });
+      await page.goto("/");
+      await expect(page.getByRole("heading", { name: "Entrar" })).toBeVisible();
+      const audit = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
+      expect(audit.violations.filter((v) => v.impact === "serious" || v.impact === "critical")).toEqual([]);
+    });
+  }
 
   test("a wrong password gets a neutral message", async ({ page }) => {
     await prepare(page);

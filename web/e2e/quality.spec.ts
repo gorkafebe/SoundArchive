@@ -69,10 +69,15 @@ test.describe("axe accessibility audit", () => {
         );
         // Justified exception: a pin that happens to sit under the floating top
         // bar counts as a covered target. The list view reaches every place.
-        const serious = results.violations
-          .filter((v) => v.impact === "serious" || v.impact === "critical")
-          .filter((v) => !(v.id === "target-size" && v.nodes.every((n) => n.html.includes("map-pin"))))
-          .map((v) => ({ id: v.id, nodes: v.nodes.slice(0, 3).map((n) => n.target.join(" ")) }));
+        // (A pin, not any other control: checked in the page itself.)
+        const isPin = (selector: string) =>
+          page.evaluate((s) => document.querySelector(s)?.closest(".map-pin, .map-cluster") != null, selector);
+        const serious = [];
+        for (const v of results.violations.filter((x) => x.impact === "serious" || x.impact === "critical")) {
+          const pins = await Promise.all(v.nodes.map((n) => isPin(n.target.join(" "))));
+          if (v.id === "target-size" && pins.every(Boolean)) continue;
+          serious.push({ id: v.id, nodes: v.nodes.slice(0, 3).map((n) => n.target.join(" ")) });
+        }
         expect(serious, JSON.stringify(serious, null, 2)).toEqual([]);
       });
     }

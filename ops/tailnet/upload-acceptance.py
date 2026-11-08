@@ -145,6 +145,7 @@ def main() -> int:
                 continue
             assert status == 200, (status, body[:200])
             offset += len(data)
+            time.sleep(float(os.environ.get("PACE", "0")))
     elapsed = time.time() - started
     stop.set()
     sampler.join()

@@ -110,12 +110,11 @@ e2e-down: ## Dev: destroy the end-to-end stack and its data
 
 # A manual check against the REAL basemap provider (internet needed): the
 # style, tiles and fonts load and the attribution shows. Not part of `e2e`.
-e2e-real-tiles: ## Dev: one manual browser check with the real map tiles
-	$(DEV) up -d --build --wait
-	docker run --rm --name sa-e2e-real-tiles --network $(E2E_NETWORK) --shm-size=1g \
-	  -u "$$(id -u):$$(id -g)" -e HOME=/tmp -e E2E_REAL_TILES=1 -v "$(CURDIR)/web:/app" -w /app \
-	  $(E2E_IMAGE) npx playwright test real-tiles
-
+e2e-real-tiles: e2e-up ## Dev: one manual browser check with the real map tiles
+	docker run --rm --name sa-e2e-real-tiles --network $(E2E_PROJECT)_default --shm-size=1g \
+	  -u "$$(id -u):$$(id -g)" -e HOME=/tmp/home -e E2E_REAL_TILES=1 -v "$(CURDIR)/web:/app" -w /app \
+	  -e NODE_EXTRA_CA_CERTS=/app/test-results/ca/root.crt \
+	  $(E2E_IMAGE) e2e-run npx playwright test --project=chromium real-tiles
 reset-db: ## Dev: DELETE all database data and volumes, then start fresh
 	@printf 'This deletes ALL database data in the dev Docker volumes. Type y to continue: '; \
 	  read answer; [ "$$answer" = y ] || { echo "Cancelled."; exit 1; }
