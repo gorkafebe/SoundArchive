@@ -23,6 +23,7 @@ NODE = docker run --rm -u "$$(id -u):$$(id -g)" -v "$(CURDIR)/web:/app" -w /app 
 # These targets are command names, not files to build.
 .PHONY: help up down ps logs test migrate seed-dev psql reset-db \
         web-install web-check web-build web-dev check e2e e2e-real-tiles \
+        e2e-image e2e-up e2e-down tailnet-up tailnet-down tailnet-ps tailnet-logs tailnet-ca-export exposure-check \
         prod-config prod-check prod-up prod-down prod-ps prod-logs \
         msi-check msi-snapshot shellcheck backup restore-test need-backup-vars
 
@@ -77,25 +78,33 @@ web-dev: ## Web: live-reloading dev server on port 5173 (after make up)
 
 check: test web-check ## Dev: every check (API tests + web checks)
 
-# End-to-end tests in a real (headless) browser, inside Docker:
-#   1. start the dev stack (rebuilding the web image) and add the example places;
-#   2. run the official Playwright image (same version as @playwright/test in
-#      web/package.json) on the stack's network, so it reaches Caddy as
-#      http://caddy. The container is named sa-e2e-playwright and removed
-#      when it finishes (--rm).
-# The tests answer every request to other sites locally: no internet needed.
-# Screenshots go to web/test-results/screens/. Extra options:
-#   make e2e E2E_ARGS="--grep keyboard"
-E2E_IMAGE = mcr.microsoft.com/playwright:v1.64.1-noble
+# End-to-end tests in a real (headless) browser, inside Docker, against a
+# throwaway copy of the REAL configuration (HTTPS with the private CA, the
+# same cookies and headers):
+#   1. start the stack as project $(E2E_PROJECT), on 127.0.0.1 only;
+#   2. copy its public root certificate out, for the browser to trust;
+#   3. run the Playwright image on the stack's network, where Caddy answers
+#      as https://soundarchive. No "ignore certificate errors".
+# Extra options:  make e2e E2E_ARGS="--grep keyboard"
+# The stack stays up between runs; make e2e-down destroys it.
+E2E_PROJECT ?= sa-test-e2e
+E2E_STACK = COMPOSE_PROJECT_NAME=$(E2E_PROJECT) TAILNET_HTTP_PORT=19080 TAILNET_HTTPS_PORT=19443 \
+            docker compose -p $(E2E_PROJECT) -f compose.yaml -f compose.tailnet.yaml -f compose.e2e.yaml
+E2E_IMAGE = sa-e2e-playwright:v1.64.1
 E2E_ARGS ?=
-# Compose names the network <project>_default.
-E2E_NETWORK = $(or $(COMPOSE_PROJECT_NAME),sound-archive)_default
-e2e: ## Dev: end-to-end browser tests (Playwright in Docker)
-	$(DEV) up -d --build --wait
-	$(DEV) run --rm -e SEED_DEV=1 api python -m scripts.seed_dev
-	docker run --rm --name sa-e2e-playwright --network $(E2E_NETWORK) --shm-size=1g \
-	  -u "$$(id -u):$$(id -g)" -e HOME=/tmp -v "$(CURDIR)/web:/app" -w /app \
-	  $(E2E_IMAGE) npx playwright test $(E2E_ARGS)
+E2E_CA_DIR = $(CURDIR)/web/test-results/ca
+e2e-image:
+	docker build -q -t $(E2E_IMAGE) infra/e2e
+e2e-up: e2e-image
+	$(E2E_STACK) up -d --build --wait
+	mkdir -p $(E2E_CA_DIR)
+	$(E2E_STACK) cp caddy:/data/caddy/pki/authorities/local/root.crt $(E2E_CA_DIR)/root.crt
+e2e: e2e-up ## Dev: end-to-end browser tests over HTTPS (Playwright in Docker)
+	docker run --rm --name sa-e2e-playwright --network $(E2E_PROJECT)_default --shm-size=1g \
+	  -u "$$(id -u):$$(id -g)" -e HOME=/tmp/home -v "$(CURDIR)/web:/app" -w /app \
+	  $(E2E_IMAGE) trust-ca /app/test-results/ca/root.crt npx playwright test $(E2E_ARGS)
+e2e-down: ## Dev: destroy the end-to-end stack and its data
+	$(E2E_STACK) down -v --remove-orphans
 
 # A manual check against the REAL basemap provider (internet needed): the
 # style, tiles and fonts load and the attribution shows. Not part of `e2e`.
@@ -142,6 +151,26 @@ prod-ps: ## Prod: show containers and their health
 
 prod-logs: ## Prod: follow logs (all, or SERVICE=...)
 	$(PROD) logs -f --tail=100 $(SERVICE)
+
+# --- Tailnet instance (project sa-tailnet) ---------------------------------------
+# Listens on 127.0.0.1 only; see compose.tailnet.yaml. COMPOSE_PROJECT_NAME is
+# set as well as -p because compose.yaml uses it to name the images.
+TAILNET = COMPOSE_PROJECT_NAME=sa-tailnet docker compose -p sa-tailnet -f compose.yaml -f compose.tailnet.yaml
+CA_EXPORT_DIR ?= $(HOME)/SoundArchive-Informe/tailnet-2026-11-08/ca
+tailnet-up: ## Tailnet: build and start the instance (127.0.0.1 only)
+	$(TAILNET) up -d --build --wait
+tailnet-down: ## Tailnet: stop and remove containers (data is kept)
+	$(TAILNET) down
+tailnet-ps: ## Tailnet: show containers and their health
+	$(TAILNET) ps -a
+tailnet-logs: ## Tailnet: follow logs (all, or SERVICE=...)
+	$(TAILNET) logs -f --tail=100 $(SERVICE)
+tailnet-ca-export: ## Tailnet: copy the PUBLIC root certificate out and print its fingerprint
+	mkdir -p $(CA_EXPORT_DIR)
+	$(TAILNET) cp caddy:/data/caddy/pki/authorities/local/root.crt $(CA_EXPORT_DIR)/root.crt
+	openssl x509 -in $(CA_EXPORT_DIR)/root.crt -noout -fingerprint -sha256
+exposure-check: ## Tailnet: fail if anything of ours is reachable beyond loopback
+	ops/tailnet/exposure-check.sh
 
 # --- MSI operations (read-only checks) -----------------------------------------
 # Scripts in ops/check/. They change nothing, need no sudo and print no

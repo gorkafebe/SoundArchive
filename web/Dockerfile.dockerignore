@@ -4,6 +4,7 @@
 *
 !web/
 !infra/caddy/Caddyfile
+!infra/caddy/Caddyfile.tailnet
 
 # Inside web/: never the local installs or build outputs.
 web/node_modules/

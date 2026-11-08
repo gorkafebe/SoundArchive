@@ -1,0 +1,16 @@
+# Extra settings for the throwaway end-to-end stacks (project sa-test-*), on
+# top of compose.yaml + compose.tailnet.yaml. So the browser tests exercise the
+# same HTTPS, cookies and headers as the real instance.
+
+services:
+  api:
+    environment:
+      # The browser container opens the site as https://soundarchive.
+      ALLOWED_ORIGINS: "https://soundarchive"
+
+  caddy:
+    networks:
+      default:
+        # The certificate lists "soundarchive"; this name makes it resolve
+        # to Caddy from the browser container on this network.
+        aliases: [soundarchive]
