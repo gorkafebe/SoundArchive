@@ -22,6 +22,7 @@ const screens: Record<string, (page: Page) => Promise<void>> = {
     await waitForPins(page);
     await page.locator(".map-pin").first().click();
     await expect(page.getByRole("complementary").getByRole("heading", { level: 2 })).toBeFocused();
+    await page.waitForTimeout(1000); // the map may re-centre on the selected pin
   },
   list: async (page) => {
     await page.goto("/?view=list");
@@ -154,6 +155,7 @@ test.describe("keyboard only", () => {
 
     // 5. Add a place, all from the keyboard, from the top of the page.
     await page.reload();
+    await expect(page.getByRole("button", { name: "Añadir lugar" })).toBeVisible();
     await tabTo(page, /^Añadir lugar$/);
     await page.keyboard.press("Enter");
     await expect(page.getByRole("heading", { level: 2 })).toBeFocused();

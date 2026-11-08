@@ -233,7 +233,9 @@
   height: 72px;
 }
 .sa-card__title {
-  display: block;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
   font: 600 20px/28px var(--font-serif);
   color: var(--ink);
   text-decoration: none;
