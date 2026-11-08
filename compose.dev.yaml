@@ -1,5 +1,5 @@
 # Dev overrides, used together with compose.yaml:
-#   docker compose -f compose.yaml -f compose.dev.yaml up -d     (make up)
+#   make up
 # Only what differs from the base file is here.
 
 x-backend-dev: &backend-dev
@@ -8,7 +8,7 @@ x-backend-dev: &backend-dev
     # The "dev" stage of backend/Dockerfile: includes pytest, runs with --reload.
     target: dev
   # A different tag, so the dev image never overwrites the prod one.
-  image: ${COMPOSE_PROJECT_NAME:-sound-archive}-backend:dev
+  image: ${COMPOSE_PROJECT_NAME:?set COMPOSE_PROJECT_NAME in .env, see .env.example}-backend:dev
   volumes:
     # Use the code from this laptop instead of the copy inside the image.
     # Edit a .py file, and the API reloads; add a migration, and the next
@@ -57,7 +57,7 @@ services:
   caddy:
     # Same build as prod, under a dev tag. After editing web/ or the
     # Caddyfile, `make up` rebuilds it (or use `make web-dev` for instant reload).
-    image: ${COMPOSE_PROJECT_NAME:-sound-archive}-web:dev
+    image: ${COMPOSE_PROJECT_NAME:?set COMPOSE_PROJECT_NAME in .env, see .env.example}-web:dev
     ports:
       # DEV_HTTP_BIND picks the network interface. The default, 127.0.0.1,
       # means this computer only. Set DEV_HTTP_BIND=0.0.0.0 in .env (all
