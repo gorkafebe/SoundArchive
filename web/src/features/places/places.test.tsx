@@ -3,18 +3,14 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { AnnouncerProvider } from "../../components/Announcer";
-import { I18nProvider, type Language } from "../../i18n/i18n";
+import type { Language } from "../../i18n/i18n";
 import { fakeServer, json, makePlace, mockFetch } from "../../test/fakeApi";
+import { Providers } from "../../test/providers";
 import { PlaceList } from "./PlaceList";
 import { PlaceSheet } from "./PlaceSheet";
 
 function wrap(children: ReactNode, language: Language = "es") {
-  return (
-    <I18nProvider language={language}>
-      <AnnouncerProvider>{children}</AnnouncerProvider>
-    </I18nProvider>
-  );
+  return <Providers language={language}>{children}</Providers>;
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -113,8 +109,8 @@ describe("PlaceSheet", () => {
     await waitFor(() => expect(heading).toHaveFocus());
     expect(screen.getByText("Rain on a tin roof")).toBeInTheDocument();
     expect(screen.getByText("43,26300° N, 2,93500° O")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Grabaciones" })).toBeInTheDocument();
-    expect(screen.getByText("Aún sin grabaciones")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^Grabaciones/ })).toBeInTheDocument();
+    expect(await screen.findByText("Aún no hay grabaciones aquí")).toBeInTheDocument();
     // A complementary region (non-modal), not a dialog.
     expect(screen.getByRole("complementary", { name: "Ficha del lugar" })).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -124,7 +120,7 @@ describe("PlaceSheet", () => {
     fakeServer([place]);
     render(wrap(<PlaceSheet placeId={place.id} onClose={() => {}} />, "en"));
     expect(await screen.findByText("43.26300° N, 2.93500° W")).toBeInTheDocument();
-    expect(screen.getByText("No recordings yet")).toBeInTheDocument();
+    expect(await screen.findByText("No recordings here yet")).toBeInTheDocument();
   });
 
   it("closes", async () => {

@@ -254,6 +254,17 @@ export function MapView({ config, initialCamera, selectedId, onSelect, onCameraC
 
   useEffect(() => {
     layerRef.current?.setSelected(selectedId);
+    if (!selectedId) return;
+    // The panel opening narrows the map. If that pushes the selected pin out
+    // of view, bring it back, so the selection never disappears.
+    const position = layerRef.current?.positionOf(selectedId);
+    const timer = window.setTimeout(() => {
+      const map = mapRef.current;
+      if (map && position && !map.getBounds().contains(position)) {
+        map.easeTo({ center: position, duration: motionDuration(300) });
+      }
+    }, 120);
+    return () => window.clearTimeout(timer);
   }, [selectedId]);
 
   useImperativeHandle(ref, () => ({

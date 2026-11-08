@@ -183,6 +183,7 @@ function AddPlaceForm({ config, initialCamera, onCancel, onCreated }: AddPlaceFl
         description: draft.description.trim() || null,
         latitude: lat,
         longitude: lon,
+        ...(geo.kind === "found" ? { location_accuracy_m: geo.meters } : {}),
       });
       announce(t("add.success", { name: place.name }));
       onCreated(place);

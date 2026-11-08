@@ -69,6 +69,10 @@ interface I18nValue {
   t: (key: string, vars?: Vars) => string;
   formatNumber: (value: number, options?: Intl.NumberFormatOptions) => string;
   formatDate: (iso: string) => string;
+  /** 12 oct 2026 */
+  formatDateShort: (iso: string) => string;
+  /** 12 oct 2026, 08:42 */
+  formatDateTime: (iso: string) => string;
 }
 
 const I18nContext = createContext<I18nValue | null>(null);
@@ -93,6 +97,16 @@ export function I18nProvider({ children, language: forced }: { children: ReactNo
       t: (key, vars) => translate(language, key, vars),
       formatNumber: (n, options) => new Intl.NumberFormat(language, options).format(n),
       formatDate: (iso) => new Intl.DateTimeFormat(language, { dateStyle: "long" }).format(new Date(iso)),
+      formatDateShort: (iso) =>
+        new Intl.DateTimeFormat(language, { day: "numeric", month: "short", year: "numeric" }).format(new Date(iso)),
+      formatDateTime: (iso) =>
+        new Intl.DateTimeFormat(language, {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }).format(new Date(iso)),
     }),
     [language, setLanguage],
   );

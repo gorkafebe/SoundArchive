@@ -9,6 +9,14 @@ export const CONFIG: PublicConfig = {
   map_style_url_dark: "/test-style-dark.json",
 };
 
+export const ME = {
+  id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  username: "gorka",
+  role: "user",
+  language: null,
+  csrf_token: "test-csrf",
+};
+
 export function makePlace(n: number, extra: Partial<Place> = {}): Place {
   return {
     id: `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`,
@@ -44,6 +52,9 @@ export function fakeServer(places: Place[], config: PublicConfig = CONFIG) {
   const db = [...places];
   return mockFetch(async (url, init) => {
     if (url.pathname === "/api/config") return json(config);
+    if (url.pathname === "/api/auth/me") return json(ME);
+    if (/^\/api\/places\/[\w-]+\/recordings$/.test(url.pathname)) return json({ items: [] });
+    if (/^\/api\/places\/[\w-]+\/photos$/.test(url.pathname)) return json([]);
     if (url.pathname === "/api/places/list") {
       const q = (url.searchParams.get("q") ?? "").toLowerCase();
       const limit = Number(url.searchParams.get("limit"));

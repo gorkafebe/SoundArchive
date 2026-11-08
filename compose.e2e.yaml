@@ -6,7 +6,7 @@ services:
   api:
     environment:
       # The browser container opens the site as https://soundarchive.
-      ALLOWED_ORIGINS: "https://soundarchive"
+      ALLOWED_ORIGINS: "https://soundarchive,https://localhost:19443"
 
   caddy:
     networks:

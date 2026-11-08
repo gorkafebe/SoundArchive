@@ -1,0 +1,47 @@
+.compare-line {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+}
+.compare-point {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  min-width: var(--target-min);
+  min-height: var(--target-min);
+  padding: var(--space-1);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.compare-point i {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+  border: 3px solid var(--accent);
+  background: var(--surface-200);
+}
+.compare-point--on i {
+  background: var(--accent);
+}
+.compare-point[aria-pressed="true"] i {
+  outline: 4px solid var(--accent-soft);
+}
+.compare-selects {
+  display: grid;
+  gap: var(--space-3);
+}
+.compare-track__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+}
+.compare-track--active {
+  border-color: var(--accent);
+}

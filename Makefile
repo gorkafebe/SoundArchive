@@ -23,7 +23,7 @@ NODE = docker run --rm -u "$$(id -u):$$(id -g)" -v "$(CURDIR)/web:/app" -w /app 
 # These targets are command names, not files to build.
 .PHONY: help up down ps logs test migrate seed-dev psql reset-db \
         web-install web-check web-build web-dev check e2e e2e-real-tiles \
-        e2e-image e2e-up e2e-down tailnet-up tailnet-down tailnet-ps tailnet-logs tailnet-ca-export exposure-check \
+        e2e-image e2e-up e2e-down tailnet-up tailnet-down tailnet-ps tailnet-logs tailnet-ca-export exposure-check need-username need-id admin-create admin-reset-password invite-create purge-recording purge-place \
         prod-config prod-check prod-up prod-down prod-ps prod-logs \
         msi-check msi-snapshot shellcheck backup restore-test need-backup-vars
 
@@ -99,10 +99,12 @@ e2e-up: e2e-image
 	$(E2E_STACK) up -d --build --wait
 	mkdir -p $(E2E_CA_DIR)
 	$(E2E_STACK) cp caddy:/data/caddy/pki/authorities/local/root.crt $(E2E_CA_DIR)/root.crt
+	infra/e2e/seed.sh $(E2E_PROJECT)-api-1 throwaway-e2e-stack-only
 e2e: e2e-up ## Dev: end-to-end browser tests over HTTPS (Playwright in Docker)
 	docker run --rm --name sa-e2e-playwright --network $(E2E_PROJECT)_default --shm-size=1g \
 	  -u "$$(id -u):$$(id -g)" -e HOME=/tmp/home -v "$(CURDIR)/web:/app" -w /app \
-	  $(E2E_IMAGE) trust-ca /app/test-results/ca/root.crt npx playwright test $(E2E_ARGS)
+	  -e NODE_EXTRA_CA_CERTS=/app/test-results/ca/root.crt \
+	  $(E2E_IMAGE) e2e-run npx playwright test $(E2E_ARGS)
 e2e-down: ## Dev: destroy the end-to-end stack and its data
 	$(E2E_STACK) down -v --remove-orphans
 
@@ -169,6 +171,24 @@ tailnet-ca-export: ## Tailnet: copy the PUBLIC root certificate out and print it
 	mkdir -p $(CA_EXPORT_DIR)
 	$(TAILNET) cp caddy:/data/caddy/pki/authorities/local/root.crt $(CA_EXPORT_DIR)/root.crt
 	openssl x509 -in $(CA_EXPORT_DIR)/root.crt -noout -fingerprint -sha256
+# Administrator commands, against the running instance. The password is asked
+# with hidden input; it never appears as an argument or in the shell history.
+USERNAME ?=
+ID ?=
+need-username:
+	@[ -n "$(USERNAME)" ] || { echo "Set USERNAME=<name>, e.g. make admin-create USERNAME=ana"; exit 1; }
+need-id:
+	@[ -n "$(ID)" ] || { echo "Set ID=<uuid>"; exit 1; }
+admin-create: need-username ## Tailnet: create an administrator (USERNAME=...)
+	$(TAILNET) exec api python -m app.cli admin-create --username "$(USERNAME)"
+admin-reset-password: need-username ## Tailnet: set a new password for an account (USERNAME=...)
+	$(TAILNET) exec api python -m app.cli admin-reset-password --username "$(USERNAME)"
+invite-create: ## Tailnet: create an invitation code
+	$(TAILNET) exec api python -m app.cli invite-create
+purge-recording: need-id ## Tailnet: delete a removed recording and its files for good (ID=...)
+	$(TAILNET) exec api python -m app.cli purge-recording --id "$(ID)"
+purge-place: need-id ## Tailnet: delete a removed place, with its recordings and photos (ID=...)
+	$(TAILNET) exec api python -m app.cli purge-place --id "$(ID)"
 exposure-check: ## Tailnet: fail if anything of ours is reachable beyond loopback
 	ops/tailnet/exposure-check.sh
 

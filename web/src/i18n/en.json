@@ -32,7 +32,8 @@
     "close": "Close",
     "back": "Back",
     "next": "Next",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "save": "Save"
   },
   "config": {
     "error": "Could not reach the server. Check your connection and try again."
@@ -79,7 +80,22 @@
     "error": "Could not load this place.",
     "notFound": "This place does not exist or was deleted.",
     "opened": "Opened: {name}",
-    "closed": "Details closed"
+    "closed": "Details closed",
+    "recordingsCount_one": "Recordings ({count})",
+    "recordingsCount_other": "Recordings ({count})",
+    "meta_one": "{count} recording",
+    "meta_other": "{count} recordings",
+    "latest": "latest {date}",
+    "record": "Record",
+    "upload": "Upload",
+    "compare": "Compare across time",
+    "public": "Public",
+    "accuracyApprox": "Approximate location ±{meters} m",
+    "accuracyPrecise": "Precise location ±{meters} m",
+    "noRecordingsTitle": "No recordings here yet",
+    "noRecordingsBody": "Be the first to keep how this place sounds.",
+    "addRecording": "Add a recording",
+    "recordingsError": "The recordings could not be loaded."
   },
   "sheet": {
     "handle": "Panel height: {height}. Press to change it.",
@@ -173,5 +189,323 @@
   "top": {
     "search": "Find a place",
     "menu": "Account and preferences"
+  },
+  "account": {
+    "title": "Your account",
+    "changePassword": "Change your password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "save": "Save the password",
+    "passwordChanged": "Password changed. Your other devices have been signed out.",
+    "sessions": "Sessions",
+    "sessionsBody": "If you think someone else has used your account, sign out everywhere.",
+    "signOutEverywhere": "Sign out on every device",
+    "menu": "Your account"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "intro": "Sound Archive is private for now. If you do not have an account, you need an invitation.",
+    "username": "Username",
+    "usernameHint": "Only visible if you choose to show your name. 3 to 32 letters, numbers, dots or dashes.",
+    "password": "Password",
+    "passwordHint": "At least 12 characters.",
+    "registerTitle": "Create an account with an invitation",
+    "code": "Invitation code",
+    "createAccount": "Create account",
+    "expired": "Your session has ended. Sign in again to continue.",
+    "error": {
+      "bad_credentials": "That username or password is not right.",
+      "invalid_invitation": "This code is not valid or has already been used. Check it and try again.",
+      "username_invalid": "Use 3 to 32 letters, numbers, dots, dashes or underscores.",
+      "username_taken": "That username already exists. Choose another one.",
+      "password_too_short": "The password needs at least 12 characters.",
+      "password_too_long": "That password is too long.",
+      "password_too_common": "That password is too common. Choose another one.",
+      "password_contains_username": "The password cannot contain your username.",
+      "tooMany": "Too many attempts. Wait a little before trying again.",
+      "try_later": "The service is not available right now. Try again in a moment.",
+      "bad_origin": "We could not verify where this request came from. Reload the page.",
+      "bad_csrf": "We could not verify your session. Reload the page.",
+      "network": "We could not reach the server. Check your connection.",
+      "server": "The server could not complete that. Try again."
+    }
+  },
+  "tech": {
+    "mono": "mono",
+    "stereo": "stereo",
+    "multichannel": "{count} channels"
+  },
+  "license": {
+    "all-rights-reserved": "All rights reserved",
+    "cc-by": "CC BY 4.0",
+    "cc-by-nc": "CC BY-NC 4.0",
+    "cc-by-sa": "CC BY-SA 4.0",
+    "cc-by-nc-sa": "CC BY-NC-SA 4.0",
+    "cc0": "CC0 (public domain)"
+  },
+  "player": {
+    "playNamed": "Play {title}",
+    "pauseNamed": "Pause {title}",
+    "position": "Position",
+    "mini": "Player",
+    "close": "Close the player and stop the sound",
+    "onLoop": "On loop",
+    "stopsIn": "stops in {time}",
+    "sleepDone": "The timer has finished and the sound has stopped.",
+    "error": "This recording could not be played. Check your connection and try again."
+  },
+  "recording": {
+    "anonymous": "Anonymous",
+    "pageTitle": "Recording",
+    "player": "Player",
+    "loading": "Loading the recording…",
+    "gone": "This recording is no longer available.",
+    "goneBadge": "Content removed",
+    "missing": "This recording does not exist.",
+    "error": "It could not be loaded. Check your connection and try again.",
+    "how": "How it was recorded",
+    "noHeard": "The person who recorded it has not described what you can hear.",
+    "ambient": "Ambient mode",
+    "download": "Download original",
+    "edit": "Edit",
+    "save": "Save changes",
+    "saved": "Changes saved.",
+    "remove": "Remove",
+    "removeConfirm": "Yes, remove it",
+    "removedToast": "Recording removed. It is no longer shown to anyone.",
+    "status": {
+      "processing": "Processing",
+      "failed": "Could not be processed",
+      "removed": "Removed"
+    },
+    "method": {
+      "browser": "Recorded in the browser",
+      "upload": "Uploaded file"
+    },
+    "fact": {
+      "device": "Device",
+      "notDeclared": "Not stated",
+      "method": "Source",
+      "browserProcessing": "Browser processing",
+      "noProcessing": "None (turned off)",
+      "format": "Format",
+      "loudness": "Loudness",
+      "peak": "True peak",
+      "original": "Original",
+      "license": "Licence",
+      "accuracy": "Location accuracy",
+      "accuracyValue": "±{meters} m",
+      "accuracyUnknown": "Not stated"
+    }
+  },
+  "report": {
+    "title": "Report",
+    "body": "Tell us briefly what is wrong. Only the administrators will see it.",
+    "reason": "Reason",
+    "send": "Send the report",
+    "sent": "Report sent. Thank you.",
+    "tooShort": "Write a reason, even a short one.",
+    "failed": "It could not be sent. Try again."
+  },
+  "publish": {
+    "title": "Title",
+    "titleRequired": "Write a title.",
+    "heard": "What you can hear",
+    "heardHint": "A sentence or two for people who cannot listen.",
+    "heardPlaceholder": "Voices, shutters, a tram…",
+    "when": "Date and time of the recording",
+    "author": "How you want to appear",
+    "myName": "My name",
+    "visibility": "Who can listen",
+    "visibilityHint": "\"Public\" means any account on this server.",
+    "public": "Public",
+    "private": "Only me",
+    "license": "Licence",
+    "licenseHint": "Decides what other people can do with your recording.",
+    "device": "Device (optional)",
+    "deviceHint": "For instance, the recorder or microphone you used.",
+    "submit": "Publish",
+    "done": "Recording published.",
+    "uploading": "Upload progress",
+    "uploadingPercent": "Uploading… {percent}%.",
+    "waitingConnection": "Connection lost. We will resume when it returns; keep this tab open.",
+    "processingBody": "We check the format and calculate the fingerprint. The original is not changed.",
+    "error": {
+      "network": "We could not reach the server. Your recording is still on this device: try again.",
+      "tooLarge": "The file is over the 2 GB limit.",
+      "diskFull": "The server does not have enough space right now.",
+      "server": "The server could not save the recording. What you wrote is still here: try again."
+    },
+    "failure": {
+      "not_audio": "This file does not seem to contain audio.",
+      "format_not_allowed": "This format is not accepted. Use WAV, FLAC, MP3, M4A, OGG or Opus.",
+      "cannot_decode": "The audio in this file could not be read; it may be damaged.",
+      "processing_error": "Something went wrong on the server. Try again later."
+    }
+  },
+  "record": {
+    "title": "Record",
+    "place": "Place",
+    "preTitle": "Use the microphone?",
+    "preBody": "We only record while a recording is running. Your browser will ask you next. If you would rather not, you can upload a file.",
+    "continue": "Continue",
+    "uploadInstead": "Upload a file",
+    "blockedTitle": "We cannot use the microphone",
+    "blockedBadge": "Permission blocked",
+    "blockedBody": "The browser is not letting us use the microphone. Press the padlock in the address bar and allow it, or upload a file.",
+    "unsupportedTitle": "This browser cannot record here",
+    "unsupportedBody": "It needs a secure connection and access to a microphone. You can upload a file.",
+    "readyTitle": "Ready to record",
+    "recording": "Recording",
+    "elapsed": "Time recorded",
+    "quality": "Quality",
+    "lossless": "Lossless (WAV)",
+    "compressed": "Compressed",
+    "losslessHint": "24-bit WAV, uncompressed. Up to {minutes} minutes, because it stays on this device until you send it.",
+    "compressedHint": "Lossy compression ({codec}). Takes much less space, but does not keep all the detail.",
+    "processingNote": "We turn off echo cancellation, noise suppression and automatic gain to keep the real sound of the place.",
+    "start": "Start recording",
+    "stop": "Stop recording",
+    "started": "Recording started",
+    "stopped": "Recording stopped. Listen back before publishing.",
+    "reviewTitle": "Review and publish",
+    "preview": "Listen to what you recorded",
+    "isLossless": "Lossless. The server will analyse it again: its measurement is the one that counts.",
+    "isCompressed": "Lossy compression. The server will analyse it again: its measurement is the one that counts.",
+    "limitReached": "The {minutes}-minute limit was reached and the recording stopped.",
+    "processingWarning": "Your browser could not turn off: {list}. The sound may be altered, and the recording will say so.",
+    "applied": {
+      "echoCancellation": "echo cancellation",
+      "noiseSuppression": "noise suppression",
+      "autoGainControl": "automatic gain control"
+    }
+  },
+  "upload": {
+    "title": "Upload a file",
+    "choose": "Choose an audio file",
+    "formats": "WAV, FLAC, MP3, M4A or OGG · up to 2 GB",
+    "chooseButton": "Choose file",
+    "chooseFirst": "Choose a file first.",
+    "submit": "Upload and publish",
+    "keepOpen": "If the connection drops, the upload continues by itself. Keep this tab open until it finishes."
+  },
+  "ambient": {
+    "title": "Ambient mode",
+    "exit": "Exit",
+    "loop": "Loop",
+    "stopIn": "Stop in",
+    "minutes": "{n} min",
+    "hour": "1 h",
+    "never": "Never",
+    "volume": "Volume",
+    "noNormalise": "We do not normalise the level: it will sound as it was recorded.",
+    "keepAwake": "Keep the screen on"
+  },
+  "compare": {
+    "pageTitle": "Compare across time",
+    "title": "{place}, across time",
+    "needTwo": "You need at least two recordings of this place to compare.",
+    "timeline": "Recordings by date",
+    "pick": "Choose for {slot}: {label}",
+    "choose": "Recording {slot}",
+    "switch": "Switch A / B",
+    "sync": "Sync",
+    "play": "Play",
+    "pause": "Pause",
+    "note": "Both play at the level they were recorded; the difference in loudness is shown and not corrected."
+  },
+  "photos": {
+    "title": "Photos",
+    "open": "Enlarge the photo: {description}",
+    "noDescription": "no description",
+    "enlarged": "Enlarged photo",
+    "add": "Add a photo",
+    "file": "File",
+    "fileHint": "JPEG, PNG or WebP, up to 20 MB. We remove the location and any other hidden data.",
+    "alt": "Image description",
+    "altHint": "Optional, but it helps people who cannot see it.",
+    "caption": "Caption (optional)",
+    "chooseFirst": "Choose a photo first.",
+    "added": "Photo added.",
+    "removed": "Photo removed.",
+    "remove": "Remove",
+    "error": {
+      "notImage": "This file is not a JPEG, PNG or WebP image.",
+      "tooLarge": "The image is too large. The maximum is 20 MB and 40 megapixels.",
+      "limit": "You have reached the limit of photos for this place.",
+      "network": "We could not reach the server. Try again.",
+      "server": "The server could not save the photo. Try again."
+    }
+  },
+  "admin": {
+    "title": "Administration",
+    "sections": "Sections",
+    "menu": "Administration",
+    "tab": {
+      "content": "Content",
+      "invitations": "Invitations",
+      "users": "Users",
+      "audit": "Log"
+    },
+    "recordings": "Recordings",
+    "places": "Places",
+    "emptyRecordings": "There are no recordings yet.",
+    "col": {
+      "recording": "Recording",
+      "place": "Place",
+      "author": "Author",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "published": "Published",
+      "reported": "Reported",
+      "removed": "Removed"
+    },
+    "remove": "Remove",
+    "removeTitle": "Remove \"{name}\"",
+    "removeBody": "It will stop being visible to everyone. You can restore it whenever you want.",
+    "reason": "Reason (only you see this)",
+    "reasonRequired": "Write a reason.",
+    "actionFailed": "That could not be done. Try again.",
+    "restore": "Restore",
+    "restored": "Restored.",
+    "removed": "Removed.",
+    "resolve": "Dismiss report",
+    "resolved": "Report dismissed.",
+    "reportSays": "Report: {reason}",
+    "removedBecause": "Removed: {reason}",
+    "invitation": {
+      "create": "Create invitation",
+      "onlyOnce": "Copy this code now: it will not be shown again.",
+      "unused": "Unused",
+      "used": "Used",
+      "revoked": "Revoked",
+      "expired": "Expired",
+      "revoke": "Revoke",
+      "usedBy": "Used by \"{name}\" · {date}",
+      "expires": "Expires on {date}"
+    },
+    "user": {
+      "admin": "Administrator",
+      "user": "User",
+      "since": "since {date}",
+      "active": "Active",
+      "inactive": "Deactivated",
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate"
+    },
+    "audit": {
+      "system": "System"
+    }
+  },
+  "offline": {
+    "banner": "You are offline. You can keep listening to what you have already opened."
+  },
+  "notFound": {
+    "title": "Nothing here",
+    "body": "This address does not exist.",
+    "home": "Back to the map"
   }
 }

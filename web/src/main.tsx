@@ -16,6 +16,8 @@ import { createRoot } from "react-dom/client";
 
 import { App } from "./App";
 import { AnnouncerProvider } from "./components/Announcer";
+import { AuthProvider } from "./features/auth/AuthContext";
+import { PlayerProvider } from "./features/player/PlayerContext";
 import { I18nProvider } from "./i18n/i18n";
 import { ToastProvider } from "./components/ui";
 import { RouterProvider } from "./lib/router";
@@ -28,7 +30,11 @@ createRoot(document.getElementById("root")!).render(
         <AnnouncerProvider>
           <ToastProvider>
             <RouterProvider>
-              <App />
+              <AuthProvider>
+                <PlayerProvider>
+                  <App />
+                </PlayerProvider>
+              </AuthProvider>
             </RouterProvider>
           </ToastProvider>
         </AnnouncerProvider>

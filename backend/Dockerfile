@@ -98,4 +98,5 @@ COPY alembic.ini ./
 USER app
 # --host 0.0.0.0: listen on the container's network so Caddy can reach it.
 # Port 8000 is never published to the host; only Caddy talks to it.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Caddy already logs every request, with the private parts filtered out.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]

@@ -9,4 +9,5 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends libnss3-tools ffmpeg \
  && rm -rf /var/lib/apt/lists/*
 COPY trust-ca.sh /usr/local/bin/trust-ca
-RUN chmod 755 /usr/local/bin/trust-ca
+COPY run.sh /usr/local/bin/e2e-run
+RUN chmod 755 /usr/local/bin/trust-ca /usr/local/bin/e2e-run

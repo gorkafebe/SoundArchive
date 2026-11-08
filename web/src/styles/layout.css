@@ -10,6 +10,69 @@
   height: 100dvh;
 }
 
+.app-frame {
+  height: 100%;
+}
+/* The mini-player floats at the bottom: keep things clear of it. */
+.app--mini .map-add {
+  inset-block-end: 88px;
+}
+.app--mini .place-sheet__body,
+.app--mini .place-list {
+  padding-block-end: 96px;
+}
+.app--mini .maplibregl-ctrl-bottom-right {
+  margin-block-end: 76px;
+}
+.offline-banner {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--ink);
+  color: var(--surface-100);
+  font: 700 14px/20px var(--font-sans);
+}
+.signin {
+  overflow-y: auto;
+}
+.signin__grid {
+  display: grid;
+  gap: var(--space-6);
+  max-width: 75rem;
+  margin-inline: auto;
+  padding: var(--space-6) var(--space-4);
+  align-items: start;
+}
+@media (min-width: 60rem) {
+  .signin__grid {
+    grid-template-columns: 1fr 1fr;
+    padding-block-start: var(--space-8);
+  }
+}
+.signin__column {
+  display: grid;
+  gap: var(--space-3);
+}
+.signin__title {
+  font-size: 40px;
+  line-height: 44px;
+  letter-spacing: -0.01em;
+}
+.signin__subtitle {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 600;
+}
+.signin__form {
+  display: grid;
+  gap: var(--space-4);
+}
 .top-bar {
   position: absolute;
   inset-block-start: 0;
@@ -109,6 +172,7 @@
 
 /* A full page with its own scroll: recording, record, upload, admin... */
 .page {
+  position: relative; /* hidden labels inside must scroll with the page */
   height: 100%;
   overflow-y: auto;
   background: var(--surface-100);

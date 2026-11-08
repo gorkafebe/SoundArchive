@@ -56,11 +56,11 @@ a {
   outline-offset: 2px;
 }
 
-[tabindex="-1"]:focus {
-  outline: none;
-}
+/* Headings that receive focus from code, so a screen reader starts there.
+   They are not controls and are out of the Tab order: no ring. */
+[tabindex="-1"]:focus,
 [tabindex="-1"]:focus-visible {
-  outline: 2px solid var(--focus-ring);
+  outline: none;
 }
 
 .visually-hidden {

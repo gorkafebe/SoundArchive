@@ -79,6 +79,12 @@ export class MarkerLayer {
     for (const entry of this.entries.values()) this.decorate(entry);
   }
 
+  /** Where a place's pin is, if it is on the map right now. */
+  positionOf(id: string): [number, number] | null {
+    const item = this.entries.get(`p:${id}`)?.item;
+    return item ? [item.lon, item.lat] : null;
+  }
+
   /** Move keyboard focus to a place's pin. False if it is not on screen (e.g. inside a cluster). */
   focusPlace(id: string): boolean {
     const entry = this.entries.get(`p:${id}`);
