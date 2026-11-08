@@ -18,8 +18,9 @@ export default defineConfig({
   reporter: [["list"]],
   outputDir: "test-results",
   use: {
-    // Inside the Docker network, Caddy is reachable by its service name.
-    baseURL: process.env.E2E_BASE_URL ?? "http://caddy",
+    // Inside the Docker network, Caddy answers to the name on its certificate
+    // (network alias in compose.e2e.yaml); the CA is trusted by infra/e2e/trust-ca.sh.
+    baseURL: process.env.E2E_BASE_URL ?? "https://soundarchive",
     trace: "off",
     screenshot: "only-on-failure",
     launchOptions: {

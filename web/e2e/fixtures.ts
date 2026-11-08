@@ -21,7 +21,7 @@ export interface AppOptions {
 }
 
 export async function prepare(page: Page, options: AppOptions = {}) {
-  const origin = new URL(test.info().project.use.baseURL ?? "http://caddy").origin;
+  const origin = new URL(test.info().project.use.baseURL ?? "https://soundarchive").origin;
   const blocked: string[] = [];
 
   await page.route("**/*", async (route) => {
