@@ -56,9 +56,9 @@
 		X-Content-Type-Options "nosniff"
 		# No address is sent to other sites (such as the tile server).
 		Referrer-Policy "same-origin"
-		# Microphone, location and wake lock for this site only; never for
+		# Microphone, location, camera and wake lock for this site only; never for
 		# embedded pages. Everything else this app does not use is off.
-		Permissions-Policy "microphone=(self), geolocation=(self), screen-wake-lock=(self), camera=(), payment=(), usb=()"
+		Permissions-Policy "microphone=(self), geolocation=(self), camera=(self), screen-wake-lock=(self), payment=(), usb=()"
 		Cross-Origin-Opener-Policy "same-origin"
 		# Strict-Transport-Security is deliberately NOT set, and should stay
 		# off for this instance:

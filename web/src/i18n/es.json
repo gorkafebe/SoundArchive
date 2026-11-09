@@ -495,7 +495,6 @@
     "noDescription": "sin descripción",
     "enlarged": "Foto ampliada",
     "add": "Añadir una foto",
-    "file": "Archivo",
     "fileHint": "JPEG, PNG o WebP, hasta 20 MB. Quitamos la ubicación y cualquier otro dato oculto.",
     "alt": "Descripción de la imagen",
     "altHint": "Opcional, pero ayuda a quien no pueda verla.",
@@ -510,6 +509,28 @@
       "limit": "Ya has llegado al máximo de fotos en este lugar.",
       "network": "No hemos podido contactar con el servidor. Inténtalo de nuevo.",
       "server": "El servidor no pudo guardar la foto. Inténtalo de nuevo."
+    },
+    "camera": {
+      "takeOne": "Hacer una foto",
+      "fromFiles": "Elegir de la galería o archivos",
+      "introTitle": "Hacer una foto con la cámara",
+      "introBody": "Tu navegador te pedirá permiso para usar la cámara. La imagen solo sale de este dispositivo si eliges usarla, y la cámara se apaga en cuanto hagas la foto.",
+      "turnOn": "Activar la cámara",
+      "starting": "Activando la cámara…",
+      "useFile": "Elegir un archivo en su lugar",
+      "preview": "Vista previa de la cámara",
+      "choose": "Cámara",
+      "default": "La predeterminada",
+      "numbered": "Cámara {number}",
+      "take": "Hacer foto",
+      "taken": "Foto que acabas de hacer",
+      "use": "Usar esta foto",
+      "repeat": "Repetir",
+      "ready": "Foto lista para añadir",
+      "blocked": "El navegador tiene bloqueada la cámara en este sitio.",
+      "blockedHelp": "Para permitirla, abre los ajustes del sitio (el icono junto a la dirección web), busca «Cámara» y elige «Permitir»; después vuelve a intentarlo.",
+      "none": "No encontramos ninguna cámara en este dispositivo. Puedes elegir una foto de tus archivos.",
+      "error": "No se pudo usar la cámara. Inténtalo de nuevo o elige una foto de tus archivos."
     }
   },
   "admin": {

@@ -47,10 +47,10 @@
 		# can contain which place someone is looking at. Some tile providers
 		# with API keys require "strict-origin-when-cross-origin" instead.
 		Referrer-Policy "same-origin"
-		# Browser features: location and microphone only for this site (the
-		# add-place flow, and recording in phase 5), never for embedded pages;
-		# no camera, payments or USB.
-		Permissions-Policy "geolocation=(self), microphone=(self), camera=(), payment=(), usb=()"
+		# Browser features: location, microphone and camera only for this site
+		# (adding places, recording, photos), never for embedded pages; no
+		# payments or USB.
+		Permissions-Policy "geolocation=(self), microphone=(self), camera=(self), payment=(), usb=()"
 		# Keep other sites' windows from scripting ours (window.opener).
 		Cross-Origin-Opener-Policy "same-origin"
 		# Strict-Transport-Security is NOT set: over plain HTTP browsers ignore

@@ -495,7 +495,6 @@
     "noDescription": "no description",
     "enlarged": "Enlarged photo",
     "add": "Add a photo",
-    "file": "File",
     "fileHint": "JPEG, PNG or WebP, up to 20 MB. We remove the location and any other hidden data.",
     "alt": "Image description",
     "altHint": "Optional, but it helps people who cannot see it.",
@@ -510,6 +509,28 @@
       "limit": "You have reached the limit of photos for this place.",
       "network": "We could not reach the server. Try again.",
       "server": "The server could not save the photo. Try again."
+    },
+    "camera": {
+      "takeOne": "Take a photo",
+      "fromFiles": "Choose from gallery or files",
+      "introTitle": "Take a photo with the camera",
+      "introBody": "Your browser will ask for permission to use the camera. The image only leaves this device if you choose to use it, and the camera turns off as soon as you take the photo.",
+      "turnOn": "Turn on the camera",
+      "starting": "Turning on the camera…",
+      "useFile": "Choose a file instead",
+      "preview": "Camera preview",
+      "choose": "Camera",
+      "default": "The default one",
+      "numbered": "Camera {number}",
+      "take": "Take photo",
+      "taken": "The photo you just took",
+      "use": "Use this photo",
+      "repeat": "Repeat",
+      "ready": "Photo ready to add",
+      "blocked": "Your browser blocks the camera on this site.",
+      "blockedHelp": "To allow it, open the site settings (the icon next to the web address), find “Camera” and choose “Allow”, then try again.",
+      "none": "We could not find a camera on this device. You can choose a photo from your files.",
+      "error": "The camera could not be used. Try again or choose a photo from your files."
     }
   },
   "admin": {
