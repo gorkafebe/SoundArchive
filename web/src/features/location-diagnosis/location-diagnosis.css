@@ -1,0 +1,76 @@
+/* The location diagnosis: a plain page of facts. */
+.diagnosis__section {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+.diagnosis__heading {
+  font-size: 20px;
+  line-height: 26px;
+}
+.diagnosis__list {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+  margin: var(--space-3) 0 0;
+}
+.diagnosis__row {
+  display: grid;
+  grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
+  gap: var(--space-3);
+}
+.diagnosis__row dt {
+  color: var(--ink-muted);
+}
+.diagnosis__row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.diagnosis__action {
+  min-height: 44px;
+}
+.diagnosis__status {
+  min-height: 24px;
+}
+.diagnosis__results {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.diagnosis__results li {
+  display: grid;
+  gap: var(--space-1);
+  overflow-wrap: anywhere;
+}
+.diagnosis__check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+}
+.diagnosis__check input {
+  width: 24px;
+  height: 24px;
+}
+.diagnosis__report {
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--ink-muted);
+  border-radius: var(--radius-sm);
+  background: var(--surface-200);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 20px;
+  resize: vertical;
+}
+@media (max-width: 480px) {
+  .diagnosis__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
