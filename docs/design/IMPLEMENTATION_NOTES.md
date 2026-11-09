@@ -173,3 +173,9 @@ None of these screens were in the design. They use the existing components and t
 - **The halo pulses gently**, and is still with `prefers-reduced-motion`. It is the one decorative movement on the map, requested for this marker.
 - **The explanation** is a floating `PrePrompt` under the search bar, so the attribution stays visible while it is open.
 - **Messages** go with the map's other status lines, top left, away from the crowded bottom corners.
+
+## The location diagnosis and the failure message (2026-11-09)
+
+- **The diagnosis screen** uses the existing `.page` layout with a definition list; nothing new from the design system. It is reachable only from the button's failure message.
+- **The failure message** gained technical details (a native `details` element), a link and a retry button, within the existing `.map-status--error`. On phones it keeps 48 px clear on the right so that it does not sit under the layers button.
+- **A position worse than 20 km** stays at zoom 10 and says so in kilometres, rather than fitting a circle that would show half a country.

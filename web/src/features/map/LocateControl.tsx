@@ -10,7 +10,7 @@ import { Icon } from "../../components/Icon";
 import { PrePrompt } from "../../components/ui";
 import { useI18n } from "../../i18n/i18n";
 import { useUserLocation } from "./useUserLocation";
-import type { UserMarker } from "./UserMarker";
+import { VERY_APPROXIMATE_ABOVE_M, type UserMarker } from "./UserMarker";
 
 /** Worse than this the position is only a rough idea, and it says so. */
 const APPROXIMATE_ABOVE_M = 1000;
@@ -113,7 +113,8 @@ export function LocateControl({ map, marker, statusSlot, active, locateMs }: Loc
   }
 
   const stateClass = status === "on" ? " locate-control__button--on" : status === "searching" ? " locate-control__button--busy" : "";
-  const approximate = reading !== null && reading.meters > APPROXIMATE_ABOVE_M;
+  const veryApproximate = reading !== null && reading.meters > VERY_APPROXIMATE_ABOVE_M;
+  const approximate = reading !== null && reading.meters > APPROXIMATE_ABOVE_M && !veryApproximate;
 
   return (
     <>
@@ -170,13 +171,30 @@ export function LocateControl({ map, marker, statusSlot, active, locateMs }: Loc
             {approximate && reading && (
               <p className="map-status">{t("map.locate.approximate", { meters: reading.meters })}</p>
             )}
+            {veryApproximate && reading && (
+              <p className="map-status">{t("map.locate.veryApproximate", { km: Math.round(reading.meters / 1000) })}</p>
+            )}
             {error && (
               <div className="map-status map-status--error locate-notice">
                 <p>{t(`map.locate.error.${error}`)}</p>
                 {error === "denied" && <p>{t("map.locate.error.deniedHelp")}</p>}
-                <button type="button" className="sa-btn" onClick={location.clearError}>
-                  {t("common.close")}
-                </button>
+                {location.detail && (
+                  <details className="locate-notice__details">
+                    <summary>{t("map.locate.details")}</summary>
+                    <p>{t("map.locate.detail", { code: location.detail.code, message: location.detail.message })}</p>
+                  </details>
+                )}
+                <a className="locate-notice__link" href="/diagnostico-ubicacion">
+                  {t("map.locate.diagnosis")}
+                </a>
+                <div className="locate-notice__actions">
+                  <button type="button" className="sa-btn" onClick={() => void location.activate()}>
+                    {t("common.retry")}
+                  </button>
+                  <button type="button" className="sa-btn" onClick={location.clearError}>
+                    {t("common.close")}
+                  </button>
+                </div>
               </div>
             )}
           </>,

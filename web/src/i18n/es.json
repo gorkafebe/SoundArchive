@@ -90,8 +90,13 @@
         "deniedHelp": "Para permitirlo, abre los ajustes del sitio (el icono junto a la dirección web), busca «Ubicación» y elige «Permitir». El mapa sigue funcionando sin ella.",
         "unavailable": "No se pudo saber tu ubicación ahora mismo. Inténtalo de nuevo más tarde.",
         "timeout": "La búsqueda de tu ubicación tardó demasiado. Inténtalo de nuevo.",
-        "unsupported": "Este navegador no puede compartir tu ubicación."
-      }
+        "unsupported": "Este navegador no puede compartir tu ubicación.",
+        "noResponse": "El navegador no ha respondido con tu ubicación. Puede que este dispositivo no tenga forma de saberla."
+      },
+      "details": "Detalles técnicos",
+      "detail": "Código {code}: {message}",
+      "diagnosis": "¿No funciona tu ubicación? Diagnóstico",
+      "veryApproximate": "Ubicación muy aproximada (±{km} km)."
     }
   },
   "coords": {
@@ -636,5 +641,72 @@
     "title": "Aquí no hay nada",
     "body": "Esta dirección no existe.",
     "home": "Volver al mapa"
+  },
+  "diagnosis": {
+    "title": "Diagnóstico de ubicación",
+    "intro": "Esta página pregunta a tu navegador por tu ubicación y anota qué responde, para saber por qué el botón «Dónde estoy» no funciona en este dispositivo.",
+    "privacy": "Lo que ves aquí no se envía ni se guarda. Al salir de la página, todo se detiene y se olvida.",
+    "yes": "sí",
+    "no": "no",
+    "test": "Probar ahora",
+    "again": "Probar otra vez",
+    "running": "Probando: {name}.",
+    "finished": "Pruebas terminadas.",
+    "env": {
+      "title": "Este navegador",
+      "build": "Versión de la interfaz",
+      "address": "Dirección",
+      "secure": "Contexto seguro",
+      "geolocation": "Tiene geolocalización",
+      "permission": "Permiso de ubicación",
+      "policy": "Política de permisos",
+      "online": "Con conexión",
+      "language": "Idioma",
+      "userAgent": "Agente de usuario"
+    },
+    "permission": {
+      "granted": "concedido",
+      "denied": "denegado",
+      "prompt": "por preguntar",
+      "not-available": "no disponible"
+    },
+    "policy": {
+      "allowed": "permitida",
+      "blocked": "bloqueada",
+      "not-available": "no disponible"
+    },
+    "probes": {
+      "title": "Pruebas",
+      "body": "Tres intentos seguidos, unos 35 segundos como mucho. Si el navegador pide permiso, acéptalo."
+    },
+    "probe": {
+      "T1": "T1, precisión alta, 10 s",
+      "T2": "T2, sin precisión alta, 10 s",
+      "T3": "T3, seguimiento durante 15 s"
+    },
+    "result": {
+      "waiting": "pendiente",
+      "running": "probando…",
+      "ok": "correcto: primera lectura en {ms} ms, ±{meters} m, {readings} lecturas",
+      "error": "error, código {code}: {message}",
+      "silent": "sin respuesta en {seconds} s"
+    },
+    "position": {
+      "title": "¿Es verosímil?",
+      "body": "Muestra aquí tu posición, con dos decimales, para ver si está en tu ciudad o a 300 km. No se añade al informe salvo que marques la casilla.",
+      "show": "Mostrar mi posición aquí",
+      "asking": "Preguntando al navegador…",
+      "failed": "No se obtuvo ninguna posición.",
+      "label": "Posición aproximada",
+      "include": "Añadir la posición, redondeada a dos decimales, al informe"
+    },
+    "report": {
+      "heading": "Informe",
+      "title": "Diagnóstico de ubicación de Sound Archive",
+      "notRun": "Pruebas: sin ejecutar.",
+      "copy": "Copiar informe",
+      "copied": "Informe copiado.",
+      "manual": "No se pudo copiar solo: el texto está seleccionado para copiarlo a mano."
+    }
   }
 }

@@ -90,8 +90,13 @@
         "deniedHelp": "To allow it, open the site settings (the icon next to the web address), find “Location” and choose “Allow”. The map keeps working without it.",
         "unavailable": "Your location is not available right now. Try again later.",
         "timeout": "Finding your location took too long. Try again.",
-        "unsupported": "This browser cannot share your location."
-      }
+        "unsupported": "This browser cannot share your location.",
+        "noResponse": "The browser did not respond with your location. This device may have no way of knowing it."
+      },
+      "details": "Technical details",
+      "detail": "Code {code}: {message}",
+      "diagnosis": "Location not working? Diagnosis",
+      "veryApproximate": "Very approximate location (±{km} km)."
     }
   },
   "coords": {
@@ -636,5 +641,72 @@
     "title": "Nothing here",
     "body": "This address does not exist.",
     "home": "Back to the map"
+  },
+  "diagnosis": {
+    "title": "Location diagnosis",
+    "intro": "This page asks your browser for your location and writes down what it answers, to find out why the “where am I” button does not work on this device.",
+    "privacy": "Nothing shown here is sent or stored. When you leave this page, everything stops and is forgotten.",
+    "yes": "yes",
+    "no": "no",
+    "test": "Test now",
+    "again": "Test again",
+    "running": "Testing: {name}.",
+    "finished": "Tests finished.",
+    "env": {
+      "title": "This browser",
+      "build": "Interface version",
+      "address": "Address",
+      "secure": "Secure context",
+      "geolocation": "Has geolocation",
+      "permission": "Location permission",
+      "policy": "Permissions policy",
+      "online": "Online",
+      "language": "Language",
+      "userAgent": "User agent"
+    },
+    "permission": {
+      "granted": "granted",
+      "denied": "denied",
+      "prompt": "not asked yet",
+      "not-available": "not available"
+    },
+    "policy": {
+      "allowed": "allowed",
+      "blocked": "blocked",
+      "not-available": "not available"
+    },
+    "probes": {
+      "title": "Tests",
+      "body": "Three attempts in a row, about 35 seconds at most. If the browser asks for permission, allow it."
+    },
+    "probe": {
+      "T1": "T1, high accuracy, 10 s",
+      "T2": "T2, no high accuracy, 10 s",
+      "T3": "T3, tracking for 15 s"
+    },
+    "result": {
+      "waiting": "waiting",
+      "running": "testing…",
+      "ok": "success: first reading in {ms} ms, ±{meters} m, {readings} readings",
+      "error": "error, code {code}: {message}",
+      "silent": "no response in {seconds} s"
+    },
+    "position": {
+      "title": "Does it look right?",
+      "body": "Shows your position here, to two decimals, so you can see whether it is your city or 300 km away. It stays out of the report unless you tick the box.",
+      "show": "Show my position here",
+      "asking": "Asking the browser…",
+      "failed": "No position was obtained.",
+      "label": "Approximate position",
+      "include": "Add the position, rounded to two decimals, to the report"
+    },
+    "report": {
+      "heading": "Report",
+      "title": "Sound Archive location diagnosis",
+      "notRun": "Tests: not run.",
+      "copy": "Copy report",
+      "copied": "Report copied.",
+      "manual": "Could not copy automatically: the text is selected so you can copy it by hand."
+    }
   }
 }

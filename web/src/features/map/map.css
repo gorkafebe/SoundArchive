@@ -318,3 +318,26 @@
   outline: 2px solid var(--focus-ring);
   outline-offset: calc(-1 * 2px);
 }
+
+/* What went wrong with the location, and where to go from there. */
+.locate-notice__details summary,
+.locate-notice__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+}
+.locate-notice__details p {
+  overflow-wrap: anywhere;
+}
+.locate-notice__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+/* On a phone the message is tall enough to reach the layers button: keep clear of it. */
+@media (max-width: 480px) {
+  .locate-notice {
+    margin-inline-end: 48px;
+  }
+}

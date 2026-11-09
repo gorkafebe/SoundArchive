@@ -21,6 +21,7 @@ import { parseUrlState, toSearch, type UrlState, type View } from "./lib/urlStat
 import { useAuth } from "./features/auth/AuthContext";
 import { SignInPage } from "./features/auth/SignInPage";
 import { AccountPage } from "./features/auth/AccountPage";
+import { LocationDiagnosis } from "./features/location-diagnosis/LocationDiagnosis";
 import { AdminPage } from "./features/admin/AdminPage";
 import { ComparePage } from "./features/compare/ComparePage";
 import { AmbientPage } from "./features/player/AmbientPage";
@@ -286,6 +287,7 @@ function Screen({ path, search }: { path: string; search: string }) {
   if (path === "/upload" && place && UUID.test(place)) return <UploadFlow key={place} placeId={place} />;
   if (path === "/admin" && user?.role === "admin") return <AdminPage />;
   if (path === "/account") return <AccountPage />;
+  if (path === "/diagnostico-ubicacion") return <LocationDiagnosis />;
   return (
     <div className="app-main__message">
       <h1 className="page__title">{t("notFound.title")}</h1>

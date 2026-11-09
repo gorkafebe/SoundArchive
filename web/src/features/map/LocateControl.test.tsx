@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { AnnouncerProvider } from "../../components/Announcer";
 import { I18nProvider, type Language } from "../../i18n/i18n";
 import { LocateControl } from "./LocateControl";
-import { FIT_ABOVE_M, NO_CIRCLE_ABOVE_M, UserMarker } from "./UserMarker";
+import { FIT_ABOVE_M, NO_CIRCLE_ABOVE_M, UserMarker, VERY_APPROXIMATE_ABOVE_M } from "./UserMarker";
 
 vi.mock("maplibre-gl", () => {
   class Marker {
@@ -213,7 +213,7 @@ describe("the button", () => {
     expect(busy).toHaveAttribute("aria-busy", "true");
     // The window ends: never stuck in "searching".
     expect(await screen.findByRole("button", { name: SHOW })).toHaveAttribute("aria-busy", "false");
-    expect(document.querySelector(".locate-notice")).toHaveTextContent(/tardó demasiado/);
+    expect(document.querySelector(".locate-notice")).toHaveTextContent(/no ha respondido/);
   });
 
   it("on and centred: a press turns it off and takes the marker away", async () => {
@@ -259,6 +259,14 @@ describe("the button", () => {
     expect(button(SHOW)).toBeInTheDocument();
     await u.click(screen.getByRole("button", { name: "Cerrar" }));
     expect(slot).toBeEmptyDOMElement();
+  });
+
+  it("a position known only to tens of kilometres says so, in kilometres", async () => {
+    stubGeolocation("granted", 50_000);
+    const { slot } = renderControl();
+    await userEvent.click(button(SHOW));
+    await screen.findByText("Ubicación muy aproximada (±50 km).");
+    expect(slot).not.toHaveTextContent("Ubicación aproximada");
   });
 
   it("a rough position says so", async () => {
@@ -313,6 +321,14 @@ describe("the marker", () => {
     marker.update(reading(20), "x");
     marker.center();
     expect(map.easeTo).toHaveBeenLastCalledWith(expect.objectContaining({ duration: 0 }));
+  });
+
+  it("worse than 20 km it stays at the zoom of a region, whatever the circle", () => {
+    const { map, marker } = setup();
+    marker.update(reading(VERY_APPROXIMATE_ABOVE_M + 1), "x");
+    marker.center();
+    expect(map.fitBounds).not.toHaveBeenCalled();
+    expect(map.easeTo).toHaveBeenCalledWith(expect.objectContaining({ center: [-2, 41], zoom: 10 }));
   });
 
   it("fits the circle when the position is worse than 500 m", () => {
