@@ -128,8 +128,13 @@
   background: var(--surface-200);
   box-shadow: var(--shadow-sheet);
 }
+/* This button is inside a MapLibre control, whose own hover style would
+   otherwise win and wash it out: hence the long selectors. */
+.map-view .locate-control .locate-control__button:hover {
+  background: var(--surface-300);
+}
 .locate-control__button--on,
-.locate-control__button--on:hover {
+.map-view .locate-control .locate-control__button--on:hover {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--on-accent);

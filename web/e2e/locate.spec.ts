@@ -382,6 +382,30 @@ test("from the keyboard alone: reach it, turn it on, hear it, turn it off", asyn
   await expect(myMarker(page)).toHaveCount(0);
 });
 
+for (const theme of ["light", "dark"] as const) {
+  test(`the button stays legible under the pointer when on (${theme})`, async ({ page }) => {
+    const here = spot();
+    await prepare(page, { theme });
+    await grant(page, here);
+    await openMap(page, here);
+    await turnOn(page);
+    const stop = page.getByRole("button", { name: COPY.es.stop, exact: true });
+    await stop.hover();
+    const colours = await stop.evaluate((element) => ({
+      background: getComputedStyle(element).backgroundColor,
+      accent: (() => {
+        const probe = document.createElement("i");
+        probe.style.color = "var(--accent)";
+        document.body.append(probe);
+        const value = getComputedStyle(probe).color;
+        probe.remove();
+        return value;
+      })(),
+    }));
+    expect(colours.background).toBe(colours.accent);
+  });
+}
+
 test("a rough position is marked as approximate", async ({ page }) => {
   const here = spot();
   await prepare(page);
