@@ -55,6 +55,14 @@ export default defineConfig({
       use: { ...devices["Desktop Firefox"], ignoreHTTPSErrors: true },
     },
     {
+      // The main journey of the location button in another browser engine. The
+      // position is simulated: this is about permissions and order of events.
+      name: "webkit-locate",
+      testMatch: ["**/locate-scenarios.spec.ts"],
+      grep: /@engines/,
+      use: { ...devices["Desktop Safari"], ignoreHTTPSErrors: true },
+    },
+    {
       name: "mobile",
       testMatch: ["**/mobile.spec.ts"],
       use: {
