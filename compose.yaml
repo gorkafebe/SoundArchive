@@ -226,6 +226,8 @@ services:
       # Basemap server(s) the page may contact (Content-Security-Policy in the
       # Caddyfile). Must match MAP_STYLE_URL's server; see .env.example.
       MAP_TILE_ORIGINS: ${MAP_TILE_ORIGINS:-https://tiles.openfreemap.org}
+      # Servers of the optional imagery layers (none unless an instance adds them).
+      MAP_RASTER_ORIGINS: ${MAP_RASTER_ORIGINS:-}
     volumes:
       # /data holds HTTPS certificates and keys. It must survive container
       # re-creation, or Caddy would request new certificates every time

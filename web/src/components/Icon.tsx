@@ -52,6 +52,7 @@ const PATHS: Record<string, ReactNode> = {
   trash: <path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5" />,
   flag: <path d="M6 21V4h11l-2 4 2 4H6" />,
   check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
+  layers: <path d="m12 4 9 5-9 5-9-5zM3 14l9 5 9-5" />,
   alert: <path d="M12 4 2.5 20h19zM12 10v4.5M12 17.5h.01" />,
   close: <path d="M6 6l12 12M18 6 6 18" />,
   chevron: <path d="m15 5-7 7 7 7" />,

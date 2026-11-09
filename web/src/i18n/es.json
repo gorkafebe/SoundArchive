@@ -58,7 +58,21 @@
     },
     "styleError": "No se pudo cargar el mapa base. Los lugares siguen disponibles en la lista.",
     "osmAttribution": "© OpenStreetMap",
-    "osmAttributionLink": "https://www.openstreetmap.org/copyright"
+    "osmAttributionLink": "https://www.openstreetmap.org/copyright",
+    "layers": {
+      "button": "Capas",
+      "group": "Capa del mapa",
+      "changed": "Capa del mapa: {name}",
+      "map": "Mapa",
+      "satellite": "Satélite",
+      "topo": "Mapa topográfico",
+      "unavailable": {
+        "satellite": "Satélite no disponible en esta zona",
+        "topo": "Mapa topográfico no disponible en esta zona"
+      },
+      "failed": "No se han podido cargar las imágenes de esta capa.",
+      "backToMap": "Volver al mapa"
+    }
   },
   "coords": {
     "value": "{lat}° {ns}, {lon}° {ew}",

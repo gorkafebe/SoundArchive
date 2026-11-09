@@ -101,6 +101,75 @@
   outline-offset: 3px;
 }
 
+/* Over a photograph no single colour stands out everywhere: a light ring with
+   a dark edge keeps 3:1 against whatever is underneath. */
+.map-view[data-imagery="true"] .map-pin__dot,
+.map-view[data-imagery="true"] .map-cluster {
+  border-color: var(--map-marker-ring);
+  box-shadow: 0 0 0 2px var(--map-marker-outline);
+}
+
+/* --- The layer selector ---------------------------------------------------- */
+
+/* Under the zoom buttons, so it covers neither them nor the attribution. */
+.layer-control {
+  position: absolute;
+  inset-block-start: 170px;
+  inset-inline-end: 10px;
+  z-index: 3;
+  display: grid;
+  justify-items: end;
+  gap: var(--space-2);
+}
+.layer-control__button {
+  background: var(--surface-200);
+  box-shadow: var(--shadow-sheet);
+}
+.layer-control__group {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-end: calc(100% + var(--space-2));
+  display: grid;
+  min-width: 12rem;
+  padding: var(--space-1);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-200);
+  box-shadow: var(--shadow-sheet);
+}
+.layer-control__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+  padding-inline: var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.layer-control__option[aria-checked="true"] {
+  font-weight: 700;
+  color: var(--accent);
+}
+.layer-control__option:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+.layer-control__mark {
+  display: inline-flex;
+  width: 16px;
+}
+.layer-control__notice {
+  width: min(16rem, calc(100vw - 2 * var(--space-6)));
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
 /* --- MapLibre controls -------------------------------------------------------- */
 
 .map-view .maplibregl-ctrl-group {

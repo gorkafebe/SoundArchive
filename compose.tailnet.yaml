@@ -93,6 +93,9 @@ services:
     environment:
       TAILNET_FQDN: ${TAILNET_FQDN:?set TAILNET_FQDN in .env}
       MAP_TILE_ORIGINS: ${MAP_TILE_ORIGINS:-https://tiles.openfreemap.org}
+      # Final domains of the imagery layers, checked with curl: no redirects.
+      # Without world-wide satellite, leave out tiles.maps.eox.at.
+      MAP_RASTER_ORIGINS: ${MAP_RASTER_ORIGINS:-https://www.ign.es https://tiles.maps.eox.at}
     ports:
       # 127.0.0.1 written out on purpose: a bare "9443:443" would mean every
       # interface, and Docker would open it straight through the firewall.

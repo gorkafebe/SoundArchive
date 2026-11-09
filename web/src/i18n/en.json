@@ -58,7 +58,21 @@
     },
     "styleError": "Could not load the base map. The places are still available in the list.",
     "osmAttribution": "© OpenStreetMap",
-    "osmAttributionLink": "https://www.openstreetmap.org/copyright"
+    "osmAttributionLink": "https://www.openstreetmap.org/copyright",
+    "layers": {
+      "button": "Layers",
+      "group": "Map layer",
+      "changed": "Map layer: {name}",
+      "map": "Map",
+      "satellite": "Satellite",
+      "topo": "Topographic map",
+      "unavailable": {
+        "satellite": "Satellite not available in this area",
+        "topo": "Topographic map not available in this area"
+      },
+      "failed": "The images for this layer could not be loaded.",
+      "backToMap": "Back to the map"
+    }
   },
   "coords": {
     "value": "{lat}° {ns}, {lon}° {ew}",

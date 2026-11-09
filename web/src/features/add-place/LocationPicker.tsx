@@ -5,7 +5,7 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import * as maplibregl from "maplibre-gl";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useI18n } from "../../i18n/i18n";
 import type { PublicConfig } from "../../lib/api";
@@ -13,6 +13,9 @@ import { motionDuration } from "../../lib/media";
 import { useTheme } from "../../lib/theme";
 import { styleUrlFor, type Camera } from "../map/MapView";
 import { circlePolygon } from "../map/geo";
+import { LayerControl } from "../map/LayerControl";
+import { MapLayers } from "../map/MapLayers";
+import { applyMapTokens } from "../map/mapTokens";
 
 const ACCURACY_SOURCE = "sa-accuracy";
 const ACCURACY_FILL = "sa-accuracy-fill";
@@ -63,6 +66,7 @@ export function LocationPicker({ config, initialCamera, value, accuracyM, onPick
     onPickRef.current = onPick;
   });
   const circleRef = useRef(accuracyData(value, accuracyM));
+  const [layers, setLayers] = useState<MapLayers | null>(null);
 
   useEffect(() => {
     let map: maplibregl.Map;
@@ -89,12 +93,20 @@ export function LocationPicker({ config, initialCamera, value, accuracyM, onPick
     osm.href = t("map.osmAttributionLink");
     osm.textContent = t("map.osmAttribution");
     map.addControl(new maplibregl.AttributionControl({ compact: false, customAttribution: osm.outerHTML }), "bottom-right");
-    map.on("style.load", () => addAppLayers(map, circleRef.current));
+    const mapLayers = new MapLayers(map, config);
+    map.on("style.load", () => {
+      applyMapTokens(map);
+      addAppLayers(map, circleRef.current);
+      mapLayers.onStyleLoad();
+    });
+    setLayers(mapLayers);
     map.on("click", (event) => onPickRef.current(event.lngLat.lat, event.lngLat.wrap().lng));
     const resize = new ResizeObserver(() => map.resize());
     resize.observe(containerRef.current!);
     return () => {
       resize.disconnect();
+      mapLayers.destroy();
+      setLayers(null);
       map.remove();
       mapRef.current = null;
       markerRef.current = null;
@@ -144,5 +156,10 @@ export function LocationPicker({ config, initialCamera, value, accuracyM, onPick
     }
   }, [value?.lat, value?.lon, accuracyM, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return <div ref={containerRef} className="location-picker map-view" />;
+  return (
+    <div className="location-picker map-view">
+      <div ref={containerRef} className="map-view__canvas" />
+      {layers && <LayerControl layers={layers} />}
+    </div>
+  );
 }

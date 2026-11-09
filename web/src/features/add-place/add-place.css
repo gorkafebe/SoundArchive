@@ -35,6 +35,8 @@
   border: 2px solid var(--line-strong);
   border-radius: var(--radius-md);
   overflow: hidden;
+}
+.location-picker .map-view__canvas {
   cursor: crosshair;
 }
 

@@ -25,6 +25,9 @@ import { motionDuration } from "../../lib/media";
 import { useTheme } from "../../lib/theme";
 import { buildIndex, clustersFor, type PlaceProps } from "./clusters";
 import { boundsToBbox } from "./geo";
+import { LayerControl } from "./LayerControl";
+import { MapLayers } from "./MapLayers";
+import { applyMapTokens } from "./mapTokens";
 import { MarkerLayer, type MarkerLabels } from "./markers";
 
 maplibregl.setWorkerUrl(workerUrl);
@@ -59,36 +62,6 @@ type Status =
 
 const LOAD_DELAY_MS = 250;
 
-/**
- * The quiet basemap of the design: land, water, roads and labels in the
- * --map-* tokens, whatever colours the provider's style came with. Layers are
- * matched by the usual names; one that is not recognised keeps its colour.
- */
-function applyMapTokens(map: maplibregl.Map): void {
-  const css = getComputedStyle(document.documentElement);
-  const token = (name: string) => css.getPropertyValue(name).trim();
-  const land = token("--map-land");
-  const water = token("--map-water");
-  const road = token("--map-road");
-  const label = token("--map-label");
-  if (!land) return;
-  for (const layer of map.getStyle().layers ?? []) {
-    try {
-      if (layer.type === "background") map.setPaintProperty(layer.id, "background-color", land);
-      else if (layer.type === "fill" && /water|ocean|lake|river/.test(layer.id)) map.setPaintProperty(layer.id, "fill-color", water);
-      else if (layer.type === "fill") map.setPaintProperty(layer.id, "fill-color", land);
-      else if (layer.type === "line" && /water|river|canal/.test(layer.id)) map.setPaintProperty(layer.id, "line-color", water);
-      else if (layer.type === "line") map.setPaintProperty(layer.id, "line-color", road);
-      else if (layer.type === "symbol") {
-        map.setPaintProperty(layer.id, "text-color", label);
-        map.setPaintProperty(layer.id, "text-halo-color", land);
-      }
-    } catch {
-      // A layer that does not take this property keeps its look.
-    }
-  }
-}
-
 /** Relative style URLs (a local test style) are resolved against this site. */
 export function styleUrlFor(config: PublicConfig, theme: "light" | "dark"): string {
   const url = theme === "dark" ? config.map_style_url_dark : config.map_style_url;
@@ -106,6 +79,7 @@ export function MapView({ config, initialCamera, selectedId, onSelect, onCameraC
   const [status, setStatus] = useState<Status>({ kind: "loading" });
   const [mapError, setMapError] = useState(false);
   const [loadTick, setLoadTick] = useState(0);
+  const [layers, setLayers] = useState<MapLayers | null>(null);
 
   // Latest callbacks and texts, read from MapLibre's event handlers without
   // re-creating the map each time they change.
@@ -169,7 +143,12 @@ export function MapView({ config, initialCamera, selectedId, onSelect, onCameraC
       styleLoaded = true;
     });
     // On every style, also after a change of theme.
-    map.on("style.load", () => applyMapTokens(map));
+    const mapLayers = new MapLayers(map, config);
+    map.on("style.load", () => {
+      applyMapTokens(map);
+      mapLayers.onStyleLoad();
+    });
+    setLayers(mapLayers);
     map.on("error", (event: maplibregl.ErrorEvent) => {
       // An error before the style has loaded means no basemap at all. Later
       // errors are usually a single missing tile, which is harmless.
@@ -209,6 +188,8 @@ export function MapView({ config, initialCamera, selectedId, onSelect, onCameraC
     return () => {
       resize.disconnect();
       layer.destroy();
+      mapLayers.destroy();
+      setLayers(null);
       map.remove();
       mapRef.current = null;
       layerRef.current = null;
@@ -315,6 +296,7 @@ export function MapView({ config, initialCamera, selectedId, onSelect, onCameraC
   return (
     <section className="map-view" aria-label={t("map.label")}>
       <div ref={containerRef} className="map-view__canvas" />
+      {layers && <LayerControl layers={layers} />}
       <div className="map-view__status">
         {mapError && <p className="map-status map-status--error">{t("map.styleError")}</p>}
         {status.kind === "loading" && <p className="map-status">{t("map.status.loading")}</p>}

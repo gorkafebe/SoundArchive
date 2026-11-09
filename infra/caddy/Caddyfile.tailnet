@@ -52,7 +52,7 @@
 		#   media-src          ours; blob: to listen before publishing.
 		#   worker-src         MapLibre's worker (a file of ours, or a blob:).
 		#   font-src 'self'    fonts are self-hosted (@fontsource).
-		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org}; img-src 'self' data: blob: {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org}; media-src 'self' blob:; font-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org} {$MAP_RASTER_ORIGINS:}; img-src 'self' data: blob: {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org} {$MAP_RASTER_ORIGINS:}; media-src 'self' blob:; font-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 		X-Content-Type-Options "nosniff"
 		# No address is sent to other sites (such as the tile server).
 		Referrer-Policy "same-origin"

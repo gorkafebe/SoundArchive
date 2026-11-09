@@ -40,7 +40,7 @@
 		#                        and no other site may show us inside a frame
 		# MAP_TILE_ORIGINS must list the basemap server(s) of MAP_STYLE_URL
 		# (space-separated). If you change map provider, change both.
-		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org}; img-src 'self' data: blob: {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org}; font-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org} {$MAP_RASTER_ORIGINS:}; img-src 'self' data: blob: {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org} {$MAP_RASTER_ORIGINS:}; font-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 		# Do not let the browser guess a file's type (a text file run as a script).
 		X-Content-Type-Options "nosniff"
 		# Send no address to other sites (e.g. the tile server): the address
