@@ -21,6 +21,10 @@ const MIN_ZOOM = 16;
 export const FIT_ABOVE_M = 500;
 /** Worse than this, a circle would only cover the screen. */
 export const NO_CIRCLE_ABOVE_M = 5000;
+/** Worse than this it is a position from the IP address, or as good as. */
+export const VERY_APPROXIMATE_ABOVE_M = 20_000;
+/** The furthest out it will go for such a position: the region, not the continent. */
+const VERY_APPROXIMATE_ZOOM = 10;
 /** How far from the middle of the map still counts as "centred", in pixels. */
 const CENTERED_PX = 24;
 
@@ -165,6 +169,10 @@ export class UserMarker {
     this.centering = true;
     const map = this.map;
     const duration = motionDuration(400);
+    if (reading.meters > VERY_APPROXIMATE_ABOVE_M) {
+      map.easeTo({ center: [reading.lon, reading.lat], zoom: VERY_APPROXIMATE_ZOOM, duration });
+      return;
+    }
     if (reading.meters > FIT_ABOVE_M) {
       const ring = circlePolygon(reading.lat, reading.lon, reading.meters);
       const bounds = ring.reduce((box, point) => box.extend(point), new maplibregl.LngLatBounds(ring[0], ring[0]));

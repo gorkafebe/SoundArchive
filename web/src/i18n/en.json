@@ -95,7 +95,8 @@
       },
       "details": "Technical details",
       "detail": "Code {code}: {message}",
-      "diagnosis": "Location not working? Diagnosis"
+      "diagnosis": "Location not working? Diagnosis",
+      "veryApproximate": "Very approximate location (±{km} km)."
     }
   },
   "coords": {

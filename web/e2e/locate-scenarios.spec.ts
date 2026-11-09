@@ -121,7 +121,6 @@ test.describe("what the person sees", () => {
   });
 
   test("terrible accuracy, position from the IP address (A4, B8): shown, warned, not zoomed out to a continent", async ({ page }) => {
-    test.fail(true, "B8: fits the view to a 50 km circle and says nothing about it");
     await pressButton(page, "byIp");
     await expectShown(page);
     await expect(page.locator(".map-status").filter({ hasText: /muy aproximada \(±50 km\)/ })).toBeVisible();
