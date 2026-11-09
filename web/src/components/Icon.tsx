@@ -53,6 +53,13 @@ const PATHS: Record<string, ReactNode> = {
   flag: <path d="M6 21V4h11l-2 4 2 4H6" />,
   check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
   layers: <path d="m12 4 9 5-9 5-9-5zM3 14l9 5 9-5" />,
+  locate: (
+    <>
+      <circle cx="12" cy="12" r="7" />
+      <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+    </>
+  ),
   alert: <path d="M12 4 2.5 20h19zM12 10v4.5M12 17.5h.01" />,
   close: <path d="M6 6l12 12M18 6 6 18" />,
   chevron: <path d="m15 5-7 7 7 7" />,

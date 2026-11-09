@@ -117,6 +117,94 @@
   }
 }
 
+/* --- Where am I ------------------------------------------------------------- */
+
+.map-view .locate-control {
+  pointer-events: auto;
+}
+.locate-control__button {
+  width: var(--target-min);
+  padding: 0;
+  background: var(--surface-200);
+  box-shadow: var(--shadow-sheet);
+}
+.locate-control__button--on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.locate-control__button--busy {
+  border-style: dashed;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .locate-control__button--busy svg {
+    animation: locate-searching 1.2s ease-in-out infinite;
+  }
+  .map-me__halo {
+    animation: locate-halo 2.4s ease-in-out infinite;
+  }
+}
+@keyframes locate-searching {
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes locate-halo {
+  50% {
+    transform: scale(1.14);
+  }
+}
+
+/* Keep the corner clear of a phone's rounded edges and system bars. */
+.map-view:not(.location-picker) .maplibregl-ctrl-bottom-right {
+  padding-block-end: env(safe-area-inset-bottom);
+  padding-inline-end: env(safe-area-inset-right);
+}
+
+.locate-prompt {
+  position: absolute;
+  inset-block-start: 68px;
+  inset-inline: var(--space-3);
+  z-index: 5;
+  max-width: 24rem;
+  max-height: calc(100% - 76px);
+  overflow-y: auto;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sheet);
+}
+.locate-notice {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
+/* The person, not a place. A target: small dot, thick white ring, dark edge,
+   and a halo around it. No clicks: whatever is underneath still gets them. */
+.map-me {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  pointer-events: none;
+}
+.map-me__halo {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-pill);
+  background: var(--map-me-halo);
+  border: 2px solid var(--map-me);
+}
+.map-me__dot {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  background: var(--map-me);
+  border: 8px solid var(--map-me-ring);
+  outline: 2px solid var(--map-me-edge);
+}
+
 /* --- The layer selector ---------------------------------------------------- */
 
 /* Under the zoom buttons, so it covers neither them nor the attribution. */
