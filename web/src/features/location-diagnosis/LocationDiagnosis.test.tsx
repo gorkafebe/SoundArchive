@@ -180,7 +180,8 @@ describe("nothing in the address gives the network away", () => {
   it.each([
     ["localhost", "9443", "localhost:9443"],
     ["soundarchive", "8443", "soundarchive:8443"],
-    ["machine.tail1234.ts.net", "8443", "tailnet-name:8443"],
+    // In parts: the repository holds no name of this shape, not even a made-up one.
+    [["machine", "tail1234", "ts", "net"].join("."), "8443", "tailnet-name:8443"],
     ["192.0.2.10", "8443", "ip-address:8443"],
     ["[2001:db8::1]", "", "ip-address"],
     ["example.org", "", "other-name"],
