@@ -161,3 +161,4 @@ class PublicConfig(BaseModel):
     satellite_enabled: bool = False
     satellite_global_fallback: bool = False
     topo_es_enabled: bool = False
+    location_warn_accuracy_m: int = 100

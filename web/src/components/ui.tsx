@@ -117,18 +117,21 @@ export function PrePrompt({
   title,
   children,
   actions,
+  as: Heading = "h2",
 }: {
   icon: IconName;
   title: string;
   children: ReactNode;
   actions: ReactNode;
+  /** Inside a page that already has its own h2. */
+  as?: "h2" | "h3";
 }) {
   return (
     <div className="sa-pre">
       <span className="sa-pre__icon">
         <Icon name={icon} size={32} />
       </span>
-      <h2 className="sa-pre__title">{title}</h2>
+      <Heading className="sa-pre__title">{title}</Heading>
       <p>{children}</p>
       <div className="actions">{actions}</div>
     </div>

@@ -86,6 +86,7 @@ def public_config(settings: Annotated[Settings, Depends(get_settings)]) -> Publi
         satellite_enabled=settings.satellite_enabled,
         satellite_global_fallback=settings.satellite_global_fallback,
         topo_es_enabled=settings.topo_es_enabled,
+        location_warn_accuracy_m=settings.location_warn_accuracy_m,
     )
 
 

@@ -23,6 +23,21 @@ export function boundsToBbox(west: number, south: number, east: number, north: n
   return [wrapLongitude(west), clampLat(south), wrapLongitude(east), clampLat(north)];
 }
 
+/**
+ * A circle on the ground as a closed ring of [lon, lat] points, for drawing
+ * "the GPS is sure to within this many metres". Accurate enough at that size.
+ */
+export function circlePolygon(lat: number, lon: number, meters: number, steps = 48): [number, number][] {
+  const ring: [number, number][] = [];
+  const dLat = meters / 111_320;
+  const dLon = dLat / Math.max(Math.cos((lat * Math.PI) / 180), 0.01);
+  for (let i = 0; i <= steps; i++) {
+    const angle = (i / steps) * 2 * Math.PI;
+    ring.push([lon + dLon * Math.cos(angle), lat + dLat * Math.sin(angle)]);
+  }
+  return ring;
+}
+
 /** Coordinates for people: "43.26300° N, 2.93500° W" (decimal mark per language). */
 export function formatCoordinates(
   lat: number,

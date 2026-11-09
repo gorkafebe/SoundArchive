@@ -73,6 +73,8 @@ class Settings(BaseSettings):
     duplicate_radius_m: int = 50
     duplicate_radius_max_m: int = 150
     nearby_rate_per_minute: int = 60
+    # Above this GPS doubt, in metres, the web app says the position is rough.
+    location_warn_accuracy_m: int = 100
 
     # Suggestions of known sites from OpenStreetMap (app/overpass.py). Off
     # unless the instance turns it on; compose.tailnet.yaml does.
