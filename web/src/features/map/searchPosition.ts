@@ -34,6 +34,28 @@ export type SearchEnd =
 export interface SearchLimits {
   highMs: number;
   lowMs: number;
+  /** While the browser's permission dialog is open the clock must not run. */
+  decided?: Promise<void>;
+}
+
+/** How long to wait for an answer to the browser's dialog before counting anyway. */
+export const DECISION_MS = 30_000;
+
+/**
+ * Settles when the person answers the browser's permission dialog, or after
+ * waitMs. Some browsers leave the state in "prompt" after "allow this once",
+ * so an answer is not guaranteed to be announced: hence the limit.
+ */
+export function permissionDecided(status: PermissionStatus, waitMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    const done = () => {
+      window.clearTimeout(timer);
+      status.removeEventListener?.("change", done);
+      resolve();
+    };
+    const timer = window.setTimeout(done, waitMs);
+    status.addEventListener?.("change", done);
+  });
 }
 
 /** Starts the search. The function returned cancels it. */
@@ -68,9 +90,16 @@ export function searchPosition(geolocation: Geolocation, limits: SearchLimits, o
     else finish({ kind: "noResponse", detail: null });
   };
 
-  function listen(high: boolean, limitMs: number, next: () => void) {
+  function listen(high: boolean, limitMs: number, next: () => void, decided?: Promise<void>) {
     release();
     const mine = ++attempt;
+    const arm = () => {
+      if (finished || mine !== attempt || timer !== undefined) return;
+      timer = window.setTimeout(() => {
+        if (best) finishWithBest();
+        else next();
+      }, limitMs);
+    };
     const id = geolocation.watchPosition(
       (position) => {
         if (finished || mine !== attempt) return;
@@ -81,6 +110,7 @@ export function searchPosition(geolocation: Geolocation, limits: SearchLimits, o
         };
         if (!best || reading.meters < best.meters) best = reading;
         if (!high || reading.meters <= GOOD_ENOUGH_M) finishWithBest();
+        else arm(); // a reading means the dialog, if there was one, is gone
       },
       (error) => {
         if (finished || mine !== attempt) return;
@@ -99,13 +129,11 @@ export function searchPosition(geolocation: Geolocation, limits: SearchLimits, o
       return;
     }
     watch = id;
-    timer = window.setTimeout(() => {
-      if (best) finishWithBest();
-      else next();
-    }, limitMs);
+    if (decided) void decided.then(arm);
+    else arm();
   }
 
-  listen(true, limits.highMs, () => listen(false, limits.lowMs, giveUp));
+  listen(true, limits.highMs, () => listen(false, limits.lowMs, giveUp), limits.decided);
 
   return () => {
     finished = true;

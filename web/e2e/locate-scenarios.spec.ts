@@ -162,7 +162,6 @@ test.describe("what the person sees", () => {
   });
 
   test("the browser's permission dialog stays open 12 s (B11): shown once allowed", async ({ page }) => {
-    test.fail(true, "B11: the 8 s timer also counts the time the dialog is open");
     await pressButton(page, "slowDialog");
     await expectShown(page, /±30 m$/);
   });

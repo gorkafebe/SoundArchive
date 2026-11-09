@@ -12,7 +12,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { Reading } from "../add-place/useBestLocation";
-import { HIGH_ACCURACY_MS, LOW_ACCURACY_MS, searchPosition, type BrowserFailure, type SearchEnd } from "./searchPosition";
+import { DECISION_MS, HIGH_ACCURACY_MS, LOW_ACCURACY_MS, permissionDecided, searchPosition, type BrowserFailure, type SearchEnd } from "./searchPosition";
 
 export type LocateStatus = "off" | "prompt" | "searching" | "on";
 export type LocateError = "denied" | "unavailable" | "timeout" | "noResponse" | "unsupported";
@@ -20,9 +20,9 @@ export type LocateError = "denied" | "unavailable" | "timeout" | "noResponse" | 
 /** Fastest the marker may be updated. Also spares the battery a little. */
 export const MIN_UPDATE_MS = 1000;
 
-async function permissionState(): Promise<PermissionState | null> {
+async function permissionStatus(): Promise<PermissionStatus | null> {
   try {
-    return (await navigator.permissions?.query({ name: "geolocation" }))?.state ?? null;
+    return (await navigator.permissions?.query({ name: "geolocation" })) ?? null;
   } catch {
     return null; // Not available (Safari, for instance): treat as unknown.
   }
@@ -68,7 +68,8 @@ export function useUserLocation({ active, locateMs }: { active: boolean; locateM
       return;
     }
     // Already blocked: say how to unblock it (the browser would refuse silently).
-    if ((await permissionState()) === "denied") {
+    const permission = await permissionStatus();
+    if (permission?.state === "denied") {
       setGeo({ kind: "blocked" });
       return;
     }
@@ -76,7 +77,11 @@ export function useUserLocation({ active, locateMs }: { active: boolean; locateM
     setGeo({ kind: "locating" });
     cancelSearch.current = searchPosition(
       navigator.geolocation,
-      { highMs: locateMs ?? HIGH_ACCURACY_MS, lowMs: locateMs ?? LOW_ACCURACY_MS },
+      {
+        highMs: locateMs ?? HIGH_ACCURACY_MS,
+        lowMs: locateMs ?? LOW_ACCURACY_MS,
+        decided: permission?.state === "prompt" ? permissionDecided(permission, locateMs ?? DECISION_MS) : undefined,
+      },
       setGeo,
     );
   }
@@ -98,7 +103,7 @@ export function useUserLocation({ active, locateMs }: { active: boolean; locateM
   /** The button, when off. Explains first unless permission is already settled. */
   async function activate() {
     setTrackError(null);
-    const state = await permissionState();
+    const state = (await permissionStatus())?.state;
     // "denied" goes straight on: locate() reports it, with how to fix it.
     if (state === "granted" || state === "denied" || accepted.current || !("geolocation" in navigator)) begin();
     else setPhase("prompt");
