@@ -12,10 +12,10 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { Reading } from "../add-place/useBestLocation";
-import { HIGH_ACCURACY_MS, LOW_ACCURACY_MS, searchPosition, type SearchEnd } from "./searchPosition";
+import { HIGH_ACCURACY_MS, LOW_ACCURACY_MS, searchPosition, type BrowserFailure, type SearchEnd } from "./searchPosition";
 
 export type LocateStatus = "off" | "prompt" | "searching" | "on";
-export type LocateError = "denied" | "unavailable" | "timeout" | "unsupported";
+export type LocateError = "denied" | "unavailable" | "timeout" | "noResponse" | "unsupported";
 
 /** Fastest the marker may be updated. Also spares the battery a little. */
 export const MIN_UPDATE_MS = 1000;
@@ -28,7 +28,7 @@ async function permissionState(): Promise<PermissionState | null> {
   }
 }
 
-type Geo = { kind: "idle" } | { kind: "locating" } | { kind: "unsupported" } | SearchEnd;
+type Geo = { kind: "idle" } | { kind: "locating" } | { kind: "unsupported" } | { kind: "blocked" } | SearchEnd;
 
 export function useUserLocation({ active, locateMs }: { active: boolean; locateMs?: number }) {
   const [geo, setGeo] = useState<Geo>({ kind: "idle" });
@@ -42,12 +42,18 @@ export function useUserLocation({ active, locateMs }: { active: boolean; locateM
   const accepted = useRef(false);
 
   const failed =
-    geo.kind === "denied" || geo.kind === "unavailable" || geo.kind === "timeout" || geo.kind === "unsupported";
+    geo.kind === "denied" ||
+    geo.kind === "blocked" ||
+    geo.kind === "unavailable" ||
+    geo.kind === "timeout" ||
+    geo.kind === "noResponse" ||
+    geo.kind === "unsupported";
   let status: LocateStatus = "off";
   if (phase === "prompt") status = "prompt";
   else if (phase === "running" && !failed) status = geo.kind === "found" ? "on" : "searching";
 
-  const error: LocateError | null = phase === "running" && failed ? geo.kind : trackError;
+  const error: LocateError | null = phase === "running" && failed ? (geo.kind === "blocked" ? "denied" : geo.kind) : trackError;
+  const detail: BrowserFailure | null = phase === "running" && "detail" in geo ? geo.detail : null;
   const reading = status === "on" && geo.kind === "found" ? (tracked ?? geo.reading) : null;
 
   function cancel() {
@@ -63,7 +69,7 @@ export function useUserLocation({ active, locateMs }: { active: boolean; locateM
     }
     // Already blocked: say how to unblock it (the browser would refuse silently).
     if ((await permissionState()) === "denied") {
-      setGeo({ kind: "denied" });
+      setGeo({ kind: "blocked" });
       return;
     }
     cancelSearch.current();
@@ -172,5 +178,5 @@ export function useUserLocation({ active, locateMs }: { active: boolean; locateM
     if (!active) latest.current.stop();
   }, [active]);
 
-  return { status, error, reading, activate, accept, dismiss, stop, clearError };
+  return { status, error, detail, reading, activate, accept, dismiss, stop, clearError };
 }

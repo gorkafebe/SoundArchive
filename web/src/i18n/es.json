@@ -90,8 +90,12 @@
         "deniedHelp": "Para permitirlo, abre los ajustes del sitio (el icono junto a la dirección web), busca «Ubicación» y elige «Permitir». El mapa sigue funcionando sin ella.",
         "unavailable": "No se pudo saber tu ubicación ahora mismo. Inténtalo de nuevo más tarde.",
         "timeout": "La búsqueda de tu ubicación tardó demasiado. Inténtalo de nuevo.",
-        "unsupported": "Este navegador no puede compartir tu ubicación."
-      }
+        "unsupported": "Este navegador no puede compartir tu ubicación.",
+        "noResponse": "El navegador no ha respondido con tu ubicación. Puede que este dispositivo no tenga forma de saberla."
+      },
+      "details": "Detalles técnicos",
+      "detail": "Código {code}: {message}",
+      "diagnosis": "¿No funciona tu ubicación? Diagnóstico"
     }
   },
   "coords": {

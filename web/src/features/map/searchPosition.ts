@@ -19,7 +19,17 @@ const GOOD_ENOUGH_M = 10;
 /** The second attempt accepts a position this old. */
 const LOW_ACCURACY_MAX_AGE_MS = 60_000;
 
-export type SearchEnd = { kind: "found"; reading: Reading } | { kind: "denied" } | { kind: "unavailable" } | { kind: "timeout" };
+/** What the browser said, word for word. Never contains the position. */
+export interface BrowserFailure {
+  code: number;
+  message: string;
+}
+
+export type SearchEnd =
+  | { kind: "found"; reading: Reading }
+  | { kind: "denied" | "unavailable" | "timeout"; detail: BrowserFailure }
+  // The browser never said anything, not even an error.
+  | { kind: "noResponse"; detail: null };
 
 export interface SearchLimits {
   highMs: number;
@@ -30,7 +40,7 @@ export interface SearchLimits {
 export function searchPosition(geolocation: Geolocation, limits: SearchLimits, onEnd: (end: SearchEnd) => void): () => void {
   let best: Reading | null = null;
   let finished = false;
-  let lastCode: number | null = null;
+  let lastFailure: BrowserFailure | null = null;
   let attempt = 0;
   let watch: number | undefined;
   let timer: number | undefined;
@@ -53,7 +63,10 @@ export function searchPosition(geolocation: Geolocation, limits: SearchLimits, o
     if (best) finish({ kind: "found", reading: best });
   };
 
-  const giveUp = () => finish(lastCode === 2 ? { kind: "unavailable" } : { kind: "timeout" });
+  const giveUp = () => {
+    if (lastFailure) finish({ kind: lastFailure.code === 3 ? "timeout" : "unavailable", detail: lastFailure });
+    else finish({ kind: "noResponse", detail: null });
+  };
 
   function listen(high: boolean, limitMs: number, next: () => void) {
     release();
@@ -72,9 +85,9 @@ export function searchPosition(geolocation: Geolocation, limits: SearchLimits, o
       (error) => {
         if (finished || mine !== attempt) return;
         if (best) finishWithBest();
-        else if (error.code === error.PERMISSION_DENIED) finish({ kind: "denied" });
+        else if (error.code === error.PERMISSION_DENIED) finish({ kind: "denied", detail: { code: error.code, message: error.message } });
         else {
-          lastCode = error.code;
+          lastFailure = { code: error.code, message: error.message };
           next();
         }
       },

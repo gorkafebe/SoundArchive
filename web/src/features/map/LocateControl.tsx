@@ -174,9 +174,23 @@ export function LocateControl({ map, marker, statusSlot, active, locateMs }: Loc
               <div className="map-status map-status--error locate-notice">
                 <p>{t(`map.locate.error.${error}`)}</p>
                 {error === "denied" && <p>{t("map.locate.error.deniedHelp")}</p>}
-                <button type="button" className="sa-btn" onClick={location.clearError}>
-                  {t("common.close")}
-                </button>
+                {location.detail && (
+                  <details className="locate-notice__details">
+                    <summary>{t("map.locate.details")}</summary>
+                    <p>{t("map.locate.detail", { code: location.detail.code, message: location.detail.message })}</p>
+                  </details>
+                )}
+                <a className="locate-notice__link" href="/diagnostico-ubicacion">
+                  {t("map.locate.diagnosis")}
+                </a>
+                <div className="locate-notice__actions">
+                  <button type="button" className="sa-btn" onClick={() => void location.activate()}>
+                    {t("common.retry")}
+                  </button>
+                  <button type="button" className="sa-btn" onClick={location.clearError}>
+                    {t("common.close")}
+                  </button>
+                </div>
               </div>
             )}
           </>,

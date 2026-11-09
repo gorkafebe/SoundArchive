@@ -105,7 +105,6 @@ test.describe("what the person sees", () => {
   });
 
   test("total silence, no callback at all (A2, B1): never stuck, says no response", async ({ page }) => {
-    test.fail(true, "B1/B5: ends at 8 s, but calls silence a timeout and offers no way forward");
     await pressButton(page, "silence");
     await expectError(page, NO_RESPONSE);
     await expect(page.getByRole("button", { name: SHOW, exact: true })).toBeVisible();
@@ -185,7 +184,6 @@ test.describe("what the person sees", () => {
   });
 
   test("error details: the browser's own words are there, the coordinates are not (B5)", async ({ page }) => {
-    test.fail(true, "B5: the browser's code and message are thrown away");
     await pressButton(page, "unavailable2");
     const notice = page.locator(".locate-notice");
     await expect(notice).toBeVisible(WITHIN);

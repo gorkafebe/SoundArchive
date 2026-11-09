@@ -213,7 +213,7 @@ describe("the button", () => {
     expect(busy).toHaveAttribute("aria-busy", "true");
     // The window ends: never stuck in "searching".
     expect(await screen.findByRole("button", { name: SHOW })).toHaveAttribute("aria-busy", "false");
-    expect(document.querySelector(".locate-notice")).toHaveTextContent(/tardó demasiado/);
+    expect(document.querySelector(".locate-notice")).toHaveTextContent(/no ha respondido/);
   });
 
   it("on and centred: a press turns it off and takes the marker away", async () => {

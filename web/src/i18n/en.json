@@ -90,8 +90,12 @@
         "deniedHelp": "To allow it, open the site settings (the icon next to the web address), find “Location” and choose “Allow”. The map keeps working without it.",
         "unavailable": "Your location is not available right now. Try again later.",
         "timeout": "Finding your location took too long. Try again.",
-        "unsupported": "This browser cannot share your location."
-      }
+        "unsupported": "This browser cannot share your location.",
+        "noResponse": "The browser did not respond with your location. This device may have no way of knowing it."
+      },
+      "details": "Technical details",
+      "detail": "Code {code}: {message}",
+      "diagnosis": "Location not working? Diagnosis"
     }
   },
   "coords": {

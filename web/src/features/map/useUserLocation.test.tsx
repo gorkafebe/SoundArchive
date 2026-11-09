@@ -155,12 +155,24 @@ describe("errors, and never stuck searching", () => {
     expect(result.current.status).toBe("off");
   });
 
-  it("no reading in the window ends in a timeout", async () => {
-    stubGeolocation("granted");
+  it("no answer at all ends in 'no response', after trying without high accuracy", async () => {
+    const geo = stubGeolocation("granted");
     const { result } = setup();
     await act(() => result.current.activate());
-    await waitFor(() => expect(result.current.error).toBe("timeout"));
+    await waitFor(() => expect(result.current.error).toBe("noResponse"));
     expect(result.current.status).toBe("off");
+    expect(geo.watchPosition.mock.calls.map((call) => (call as unknown[])[2])).toMatchObject([{ enableHighAccuracy: true }, { enableHighAccuracy: false }]);
+    expect(geo.watches.size).toBe(0);
+  });
+
+  it("keeps the browser's own words about what failed", async () => {
+    const geo = stubGeolocation("granted");
+    const { result } = setup();
+    await act(() => result.current.activate());
+    await waitFor(() => expect(geo.watchPosition).toHaveBeenCalled());
+    act(() => [...geo.watches.values()].at(-1)!.fail({ ...failure(2), message: "provider said no" }));
+    await waitFor(() => expect(result.current.error).toBe("unavailable"));
+    expect(result.current.detail).toEqual({ code: 2, message: "provider said no" });
   });
 
   it("a device without geolocation", async () => {
