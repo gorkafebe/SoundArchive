@@ -150,3 +150,16 @@ report):
   (false in prod).
 - No address search yet: it needs a geocoding provider, which means sending
   what people type to a third party. **Open question.**
+
+# Invented for places, camera and layers (2026-11-09)
+
+None of these screens were in the design. They use the existing components and tokens.
+
+- **Add place, first step:** the `PrePrompt` component now takes the heading level (`as="h3"`), because this page already has its `h2`. The recommended button is taller (56 px) and carries a small outlined tag instead of a `Badge`, because it sits on a solid accent.
+- **Advanced coordinates:** a native `<details>` with the design's border and a 44 px `summary`.
+- **"Is it the same place?" and suggestions:** a bordered block (`.known`); the same-place one uses the accent border, as it is the one that needs a decision. The list rows have the name, a caption and one button.
+- **Accuracy:** a `Badge` with "±N m"; the warning is a `notice`, not an error, because nothing is wrong with what the person did.
+- **In-page camera:** a 4:3 frame on `surface-300`, like the photos, and `PrePrompt` for the explanation.
+- **Layer selector:** a floating button under the zoom controls; the options open to its left and upwards so they fit in the small map. The current option is shown with a check mark and bold, not by colour alone.
+- **New tokens** (`--map-marker-ring`, `--map-marker-outline`, `--map-label-on-image`, `--map-halo-on-image`, `--map-road-on-image`): the design's map colours assume a quiet basemap, and a photograph is not one. A pin over imagery gets a light ring with a dark edge, so it keeps 3:1 against anything underneath.
+- **Credits on a phone:** imagery credits are long and wrap, so at phone width they move above the floating "add place" button.

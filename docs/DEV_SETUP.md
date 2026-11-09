@@ -218,9 +218,20 @@ it ends. Nothing is installed on the machine. Inside:
   and 1440 x 900 in `web/test-results/screens/`.
 - The tests create places named `E2E ...` in the dev database.
 
+The suggestions come from `sa-e2e-overpass-mock`, a small Python server in
+`infra/e2e/overpass-mock.py` on the throwaway network, with no published port.
+It only knows sites inside one area of Spain (latitude 37.0 to 37.6, longitude
+-3.6 to -3.0), so other tests see no suggestions. The tests can make it fail
+(`/__mode?m=down|slow`) and count its calls (`/__calls`). Imagery is simulated
+with `web/e2e/assets/tile.png`.
+
 `make e2e-real-tiles` is a separate, manual check with the real basemap
 provider (internet needed): style, tiles and fonts load, the CSP lets them
 through, and the attribution shows.
+
+`make e2e-manual E2E_ARGS=real-layers` is the manual check with the real IGN and
+EOX under the real CSP (internet needed). `make e2e-manual E2E_ARGS=screens`
+takes screenshots of the new screens for a person to look at.
 
 ## The project-name guard
 

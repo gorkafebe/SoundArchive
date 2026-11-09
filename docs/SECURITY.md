@@ -46,6 +46,43 @@ Browsers offer the microphone and geolocation only in a secure context. Caddy's 
 
 The CA's root key lives in the `sa-tailnet_caddy_data` volume. Deleting that volume creates a new CA, and every device would need the new root installed.
 
+## Who else the application talks to
+
+Licences, limits and the provider list: `docs/THIRD_PARTY_DATA.md`.
+
+### Suggestions from OpenStreetMap (server to Overpass)
+
+When someone adds a place, **our server** asks the public Overpass API which named sites exist nearby. The browser never does.
+
+- **Sent:** a rectangle aligned to a fixed grid of 0.003 degrees (about 300 m) with a small margin, the list of tags to look for, and the header `User-Agent: SoundArchive/<version> (self-hosted)`.
+- **Never sent:** the exact position, a user, a session, a cookie, an email address. `backend/tests/test_suggest.py` captures the real request and checks it.
+- **Why cells:** the provider learns "someone looked at this square", not where. Every point in a cell produces exactly the same request. The answer is cached for 30 days, so the second person sends nothing.
+- If the circle around the point touches several uncached cells, one rectangle covering those whole cells is requested. That reveals the point is near a cell border, which narrows it slightly; it is the price of one request instead of four.
+- **Being a good guest:** at least 2 s between requests, at most `OVERPASS_DAILY_CAP` uncached requests a day for the whole instance, at least 30 s of silence after 429 or 406, 10 minutes after three failures in a row, 15 s maximum per request. All of that is in Redis; if Redis is down, no call is made.
+- **Where it can go:** only the host names listed in `backend/app/overpass.py`, with no redirects and no proxies, whatever the configuration says.
+- **If it fails** the add-place flow continues without suggestions and shows no error. The check for places already here does not depend on it.
+- **To turn it off:** `EXTERNAL_PLACES_ENABLED=no` in `.env`, for the whole instance; or the "Suggest sites from OpenStreetMap" box, per person (then `external=false` goes to our own API and nothing leaves).
+- The API is the only service with a route to the Internet that needs one for this; the worker and maintenance containers stay on the internal network.
+
+### Map imagery (browser to the provider)
+
+The basemap already worked this way: each browser asks the tile server directly. The satellite and topographic layers add two more servers.
+
+- **Nothing is requested until a person chooses the layer.** The source is added to the map at that moment; `web/e2e/layers.spec.ts` checks that no request goes out before.
+- **What the provider sees:** the person's IP address and the area being looked at, as with any map. That is why the IP is not hidden: it would take a proxy on our server, which is the documented plan B and was not needed because both providers allow CORS.
+- `Referrer-Policy: same-origin` means they do not learn this site's address.
+- The choice of layer stays in the browser's `localStorage` and is not sent to our server.
+
+### Content-Security-Policy and permissions
+
+- `MAP_RASTER_ORIGINS` adds `https://www.ign.es` and `https://tiles.maps.eox.at` to `connect-src` and `img-src` on the tailnet instance, and nothing else. They are the final domains, checked: no redirects. Empty by default elsewhere.
+- `Permissions-Policy` now allows `camera=(self)`, as it already did the microphone and geolocation, for this site only and never for embedded pages. The camera is released after taking the photo, on closing, when the tab is hidden and when leaving.
+- Photos taken with the camera go through the same path as any upload: decoded and encoded again as a new JPEG on the server, which drops all metadata.
+
+### Duplicates cannot be skipped from another client
+
+`POST /api/places` refuses a place within the radius of an existing one unless the request says `confirm_distinct`. It also refuses a second place with the same outside reference. Confirmed cases are recorded in the audit log (`place.created_despite_nearby`). A transaction-level advisory lock makes concurrent requests take turns.
+
 ## Known limits
 
 - The per-address login limit sees only the Docker gateway behind the Tailscale TCP forward, so today it works as a global ceiling. The per-username limit is the effective one.

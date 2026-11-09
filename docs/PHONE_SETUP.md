@@ -41,6 +41,15 @@ With Tailscale off, the address must **not** open. That is the design: it is onl
 
 Report anything different; each row is a real unknown until tried.
 
+## Location and camera (added 2026-11-09)
+
+To try after updating, none of it tested on a real phone yet:
+
+- **Location.** "Use my current location" asks for permission only after the tap. It keeps refining for up to 8 s and shows the accuracy as "±N m"; above 100 m it says the position is approximate and lets you drag the marker. Indoors expect a rough reading: that is the GPS, not a fault.
+- If you refused once, Chrome on Android does not ask again: tap the icon next to the address, Permissions, Location, Allow.
+- **Camera.** "Take a photo" opens the phone's camera app directly (`capture="environment"`). Without the certificate from step 2 the page is not a secure context and the location will not work.
+- **Known risks.** A browser may ignore `capture` and show the file picker instead, which still works. On iOS, Safari's location and camera were not tested. Very large photos are refused above 20 MB or 40 megapixels; a phone at maximum resolution can come close.
+
 ## 5. Known risks
 
 - **Recording in the background.** Browsers stop or silence capture when the page is hidden or the phone locks. Keep the screen on and the page in front while recording. This is a platform limit that a web app cannot remove.
