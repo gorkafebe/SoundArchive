@@ -109,6 +109,14 @@
   box-shadow: 0 0 0 2px var(--map-marker-outline);
 }
 
+/* Imagery credits are long and wrap at phone width: keep them clear of the
+   floating "add place" button. */
+@media (max-width: 40rem) {
+  .map-view[data-imagery="true"] .maplibregl-ctrl-bottom-right {
+    inset-block-end: calc(var(--target-min) + var(--space-5));
+  }
+}
+
 /* --- The layer selector ---------------------------------------------------- */
 
 /* Under the zoom buttons, so it covers neither them nor the attribution. */

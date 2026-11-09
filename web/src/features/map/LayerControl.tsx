@@ -1,7 +1,7 @@
 // "Layers": one control, used on the main map and on the map for adding a
 // place. A button opens a group of radio buttons: arrow keys move and choose,
 // Esc closes, and the focus goes back to the button.
-import { useId, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 
 import { useAnnounce } from "../../components/Announcer";
 import { Icon } from "../../components/Icon";
@@ -17,6 +17,11 @@ export function LayerControl({ layers }: { layers: MapLayers }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const groupRef = useRef<HTMLDivElement>(null);
   const groupId = useId();
+
+  // When it opens, the focus goes to the current choice.
+  useEffect(() => {
+    if (open) groupRef.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus();
+  }, [open]);
 
   // Only the plain map on offer: nothing to choose.
   if (state.options.length < 2) return null;
@@ -34,11 +39,6 @@ export function LayerControl({ layers }: { layers: MapLayers }) {
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "Escape") {
-      event.stopPropagation();
-      close();
-      return;
-    }
     const step = event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 0;
     if (!step) return;
     event.preventDefault();
@@ -51,6 +51,12 @@ export function LayerControl({ layers }: { layers: MapLayers }) {
   return (
     <div
       className="layer-control"
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && open) {
+          event.stopPropagation();
+          close();
+        }
+      }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
       }}
@@ -61,11 +67,7 @@ export function LayerControl({ layers }: { layers: MapLayers }) {
         className="sa-btn layer-control__button"
         aria-expanded={open}
         aria-controls={open ? groupId : undefined}
-        onClick={() => {
-          setOpen((value) => !value);
-          // Keep the focus inside, on the current choice, when it opens.
-          window.setTimeout(() => groupRef.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus(), 0);
-        }}
+        onClick={() => setOpen((value) => !value)}
       >
         <Icon name="layers" size={20} />
         {t("map.layers.button")}

@@ -347,7 +347,7 @@ describe("is it somewhere we know?", () => {
     const fetch = server({ existing: [NEARBY] });
     const { onOpenExisting, onCreated } = renderFlow();
     await typeLocation(u);
-    await u.click(await screen.findByRole("button", { name: "Sí, es Fuente de la plaza" }));
+    await u.click(await screen.findByRole("button", { name: "Sí, es este: Fuente de la plaza" }));
     expect(onOpenExisting).toHaveBeenCalledWith({ id: NEARBY.id, latitude: NEARBY.latitude, longitude: NEARBY.longitude });
     expect(onCreated).not.toHaveBeenCalled();
     expect(posted(fetch)).toEqual([]);
@@ -374,7 +374,7 @@ describe("is it somewhere we know?", () => {
     expect(await screen.findByRole("heading", { level: 3, name: "¿Es alguno de estos sitios?" })).toBeInTheDocument();
     expect(screen.getByText("Panadería · a 20 m")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "© colaboradores de OpenStreetMap" })).toBeInTheDocument();
-    await u.click(screen.getByRole("button", { name: "Es Panadería Paco" }));
+    await u.click(screen.getByRole("button", { name: "Es este: Panadería Paco" }));
     const name = await screen.findByRole("textbox", { name: "Nombre" });
     expect(name).toHaveValue("Panadería Paco");
     await u.clear(name);
@@ -563,7 +563,7 @@ describe("creating", () => {
     });
     const { onCreated } = renderFlow();
     await typeLocation(u);
-    await u.click(await screen.findByRole("button", { name: "Es Panadería Paco" }));
+    await u.click(await screen.findByRole("button", { name: "Es este: Panadería Paco" }));
     await screen.findByRole("textbox", { name: "Nombre" });
     await u.click(screen.getByRole("button", NEXT));
     await u.click(screen.getByRole("button", { name: "Crear el lugar" }));
