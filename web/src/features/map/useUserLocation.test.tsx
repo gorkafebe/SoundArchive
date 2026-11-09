@@ -198,6 +198,38 @@ describe("errors, and never stuck searching", () => {
   });
 });
 
+describe("hidden in the middle of a search", () => {
+  it("stops listening, and starts again on coming back", async () => {
+    const geo = stubGeolocation("granted");
+    const { result } = setup();
+    await act(() => result.current.activate());
+    await waitFor(() => expect(geo.watches.size).toBe(1));
+
+    setHidden(true);
+    expect(geo.watches.size).toBe(0);
+    expect(result.current.error).toBeNull();
+
+    setHidden(false);
+    await waitFor(() => expect(geo.watches.size).toBe(1));
+    expect(result.current.status).toBe("searching");
+    geo.send(40, 8);
+    await waitFor(() => expect(result.current.status).toBe("on"));
+  });
+
+  it("does not start again by itself once the map has been left", async () => {
+    const geo = stubGeolocation("granted");
+    const { result, rerender } = setup();
+    await act(() => result.current.activate());
+    await waitFor(() => expect(geo.watches.size).toBe(1));
+    setHidden(true);
+    rerender({ on: false });
+    setHidden(false);
+    await act(async () => {});
+    expect(geo.watches.size).toBe(0);
+    expect(result.current.status).toBe("off");
+  });
+});
+
 describe("while on", () => {
   it("follows the position, at most once a second", async () => {
     const geo = stubGeolocation();

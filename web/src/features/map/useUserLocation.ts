@@ -40,6 +40,9 @@ export function useUserLocation({ active, locateMs }: { active: boolean; locateM
   // Already said yes during this visit: where the Permissions API is missing
   // there is no other way to know, and asking twice would be tiresome.
   const accepted = useRef(false);
+  // The page was hidden in the middle of a search (a system dialog on a phone
+  // can do this): no GPS meanwhile, but it starts again on coming back.
+  const resume = useRef(false);
 
   const failed =
     geo.kind === "denied" ||
@@ -123,9 +126,9 @@ export function useUserLocation({ active, locateMs }: { active: boolean; locateM
     setTrackError(null);
   }
 
-  const latest = useRef({ stop, status });
+  const latest = useRef({ stop, begin, status });
   useEffect(() => {
-    latest.current = { stop, status };
+    latest.current = { stop, begin, status };
   });
 
   // Leaving the screen stops the search.
@@ -164,9 +167,18 @@ export function useUserLocation({ active, locateMs }: { active: boolean; locateM
   useEffect(() => {
     const leave = () => {
       setVisible(false);
-      if (latest.current.status === "searching") latest.current.stop();
+      if (latest.current.status === "searching") {
+        resume.current = true;
+        latest.current.stop();
+      }
     };
-    const back = () => setVisible(true);
+    const back = () => {
+      setVisible(true);
+      if (resume.current) {
+        resume.current = false;
+        latest.current.begin();
+      }
+    };
     const onVisibility = () => (document.hidden ? leave() : back());
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pagehide", leave);
@@ -180,7 +192,10 @@ export function useUserLocation({ active, locateMs }: { active: boolean; locateM
 
   // The map stays mounted, hidden, under the list and the add-place flow.
   useEffect(() => {
-    if (!active) latest.current.stop();
+    if (!active) {
+      resume.current = false;
+      latest.current.stop();
+    }
   }, [active]);
 
   return { status, error, detail, reading, activate, accept, dismiss, stop, clearError };

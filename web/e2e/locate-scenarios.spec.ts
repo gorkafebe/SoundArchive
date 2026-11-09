@@ -167,7 +167,6 @@ test.describe("what the person sees", () => {
   });
 
   test("the page is hidden during the search and comes back (B12): shown", async ({ page }) => {
-    test.fail(true, "B12: the search is abandoned without a word");
     await pressButton(page, "after3s");
     await page.waitForTimeout(500);
     const setHidden = (hidden: boolean) =>
