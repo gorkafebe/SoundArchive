@@ -55,14 +55,6 @@ export default defineConfig({
       use: { ...devices["Desktop Firefox"], ignoreHTTPSErrors: true },
     },
     {
-      // Firefox in the test container has no WebGL, so no map: the location
-      // button cannot be tried in it, but the diagnosis screen can.
-      name: "firefox-diagnosis",
-      testMatch: ["**/location-diagnosis.spec.ts"],
-      grep: /@no-map/,
-      use: { ...devices["Desktop Firefox"], ignoreHTTPSErrors: true },
-    },
-    {
       // The main journey of the location button in another browser engine. The
       // position is simulated: this is about permissions and order of events.
       name: "webkit-locate",

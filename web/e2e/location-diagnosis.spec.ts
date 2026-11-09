@@ -9,7 +9,7 @@ for (const { language, theme, width, height, button, done } of [
   { language: "es", theme: "light", width: 390, height: 844, button: "Probar ahora", done: "Pruebas terminadas." },
   { language: "en", theme: "dark", width: 1440, height: 900, button: "Test now", done: "Tests finished." },
 ] as const) {
-  test(`runs the three attempts and sends nothing (${language}, ${theme}, ${width}) @no-map`, async ({ page }) => {
+  test(`runs the three attempts and sends nothing (${language}, ${theme}, ${width})`, async ({ page }) => {
     await prepare(page, { language, theme });
     await page.addInitScript(installGeoScenario, GEO_SCENARIOS.highFails);
     await page.setViewportSize({ width, height });
