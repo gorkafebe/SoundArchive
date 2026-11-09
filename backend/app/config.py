@@ -68,6 +68,12 @@ class Settings(BaseSettings):
     map_style_url: str = "https://tiles.openfreemap.org/styles/positron"
     map_style_url_dark: str = "https://tiles.openfreemap.org/styles/dark"
 
+    # "Is this the same place?": how far around a new place to look, in metres.
+    # The GPS accuracy is added to the radius, up to the maximum.
+    duplicate_radius_m: int = 50
+    duplicate_radius_max_m: int = 150
+    nearby_rate_per_minute: int = 60
+
     # Interactive API docs at /api/docs. On in dev; compose.prod.yaml turns it
     # off, because the docs page loads its script from a public CDN and
     # there is no need to publish it.

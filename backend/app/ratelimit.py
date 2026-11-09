@@ -52,6 +52,28 @@ def too_many(retry_after: int) -> HTTPException:
     )
 
 
+def per_minute(client: redis.Redis, config: Settings, scope: str, who: str, limit: int) -> None:
+    """A plain requests-per-minute ceiling for one person on a read endpoint.
+
+    Unlike the login limits, this one lets the request through if Redis is
+    down: it only stops someone hammering a search, and a search is harmless.
+    """
+    if not config.rate_limit_enabled:
+        return
+    key = f"ratelimit:{scope}:{who}:minute"
+    try:
+        count = int(client.incr(key))
+        if count == 1:
+            client.expire(key, 60)
+        if count <= limit:
+            return
+        retry_after = max(int(client.ttl(key)), 1)
+    except redis.RedisError as exc:
+        logger.warning("Rate limiter unavailable: %s", type(exc).__name__)
+        return
+    raise too_many(retry_after)
+
+
 class AttemptLimiter:
     def __init__(self, client: redis.Redis, config: Settings, scope: str) -> None:
         self.client = client

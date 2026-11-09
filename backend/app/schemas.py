@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
 
 from app.models import DESCRIPTION_MAX, NAME_MAX
 
@@ -31,6 +31,11 @@ class PlaceCreate(BaseModel):
     latitude: Latitude
     longitude: Longitude
     location_accuracy_m: int | None = Field(default=None, ge=0, le=100000)
+    # "I have seen the places nearby, and this one is different."
+    confirm_distinct: bool = False
+    # Set when the place was picked from an outside list.
+    external_source: Literal["osm"] | None = None
+    external_id: str | None = Field(default=None, pattern=r"^(node|way|relation)/[0-9]{1,20}$")
 
     @field_validator("description")
     @classmethod
@@ -40,6 +45,12 @@ class PlaceCreate(BaseModel):
             return None
         value = value.strip()
         return value or None
+
+    @model_validator(mode="after")
+    def external_reference_is_complete(self) -> "PlaceCreate":
+        if (self.external_source is None) != (self.external_id is None):
+            raise ValueError("external_source and external_id go together")
+        return self
 
 
 class PlaceOut(BaseModel):
@@ -57,6 +68,8 @@ class PlaceOut(BaseModel):
     author_name: str | None = None
     recording_count: int = 0
     latest_recorded_at: datetime | None = None
+    external_source: str | None = None
+    external_id: str | None = None
 
 
 class PlaceList(BaseModel):
@@ -66,6 +79,24 @@ class PlaceList(BaseModel):
     total: int  # matches in all pages, so the UI can say "page 2 of 7"
     limit: int
     offset: int
+
+
+class NearbyPlace(BaseModel):
+    """A place close to a point: what "is this the same place?" shows."""
+
+    id: uuid.UUID
+    name: str
+    latitude: float
+    longitude: float
+    distance_m: float
+    recording_count: int = 0
+    # 0 to 1, only when a name was given to compare with.
+    name_similarity: float | None = None
+
+
+class NearbyPlaces(BaseModel):
+    items: list[NearbyPlace]
+    radius_m: float
 
 
 # --- GeoJSON (RFC 7946), the format MapLibre reads directly -----------------

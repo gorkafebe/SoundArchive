@@ -39,6 +39,7 @@ export default async function globalSetup() {
             description: "Example data for the end-to-end tests.",
             latitude: lat + (next() - 0.5) * spread,
             longitude: lon + (next() - 0.5) * spread,
+            confirm_distinct: true,
           },
         });
         if (!response.ok()) throw new Error(`Could not add a place: ${response.status()}`);

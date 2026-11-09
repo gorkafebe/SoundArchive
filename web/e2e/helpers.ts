@@ -27,6 +27,7 @@ export async function createPlace(request: APIRequestContext, name: string): Pro
     latitude: 43.3 + Math.random() / 50,
     longitude: -2.5 + Math.random() / 50,
     location_accuracy_m: 50,
+    confirm_distinct: true,
   });
   expect(response.status()).toBe(201);
   return (await response.json()).id;

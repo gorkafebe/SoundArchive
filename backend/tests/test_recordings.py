@@ -32,7 +32,7 @@ def tone(path: Path, seconds: float = 10.0, *, rate: int = 48000, codec: list[st
 
 
 def make_place(browser) -> str:
-    response = browser.write("POST", "/api/places", json={"name": "Lugar", "latitude": 43.0, "longitude": -3.0})
+    response = browser.write("POST", "/api/places", json={"name": "Lugar", "latitude": 43.0, "longitude": -3.0, "confirm_distinct": True})
     assert response.status_code == 201
     return response.json()["id"]
 

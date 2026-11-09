@@ -81,7 +81,7 @@ def main() -> int:
     assert status == 200, status
     client.csrf = me["csrf_token"]
 
-    status, place = client.json("POST", "/api/places", {"name": "Aceptación", "latitude": 43.0, "longitude": -3.0})
+    status, place = client.json("POST", "/api/places", {"name": "Aceptación", "latitude": 43.0, "longitude": -3.0, "confirm_distinct": True})
     assert status == 201, (status, place)
 
     size = os.path.getsize(args.file)
