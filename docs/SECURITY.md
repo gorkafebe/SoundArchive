@@ -81,6 +81,12 @@ The "show my location" button does not send, store or log the position. It stays
 
 Tracking stops when the tab is hidden (`visibilitychange`, `pagehide`) and when leaving the map. `Permissions-Policy` did not change: `geolocation=(self)`.
 
+### The location diagnosis
+
+`/diagnostico-ubicacion` asks the browser for the position to report how it answers. It stays local: no request of its own and nothing stored (`LocationDiagnosis.test.tsx`, `location-diagnosis.spec.ts`), and leaving the page stops everything. The copyable report has no coordinates unless the box is ticked, and then only to two decimals. It replaces the host name with a category when it is an IP address, a tailnet name or any other dotted name. It does include the browser's user agent, by design: which browser it is matters to the diagnosis.
+
+The error details under the location button show the browser's code and message, which do not contain the position.
+
 ### Content-Security-Policy and permissions
 
 - `MAP_RASTER_ORIGINS` adds `https://www.ign.es` and `https://tiles.maps.eox.at` to `connect-src` and `img-src` on the tailnet instance, and nothing else. They are the final domains, checked: no redirects. Empty by default elsewhere.

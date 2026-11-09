@@ -169,3 +169,28 @@ Session of 2026-11-09, branch `feat/locate-me`, on top of `feat/place-dedupe-cam
 - Real GPS, a real phone, Android or iOS, accuracy indoors.
 - A real screen reader.
 - The marker over real satellite imagery: a test image was used, because this work adds no outside call. The contrast figures cover the extremes.
+
+# Acceptance record: why location may not be detected
+
+Session of 2026-11-09, branch `fix/locate-me-diagnosis`, on top of `feat/locate-me`. Output in `~/SoundArchive-Informe/diagnostico-ubicacion-2026-11-09/evidencias/`.
+
+| Criterion | Evidence | Result |
+|---|---|---|
+| Configuration: headers, build, origins | `00-cabeceras.txt`, `00-b10-js.txt` | `geolocation=(self)` once on the document, an asset and the API. Served JS and `index.html` match a build of the commit |
+| Realistic scenarios, one test each | `web/src/test/geoScenarios.ts`, `locate-scenarios.spec.ts` | 20 tests. 11 passed from the start, 9 reproduced a defect |
+| Never searching for ever | `locate-scenarios.spec.ts`, `searchPosition.test.ts` | Total silence ends at 18 s with its own message; an unanswered dialog ends too |
+| Every fix has a red test before and green after | `h1-escenarios-chromium.log`, `h3-*-e2e.log` | Five fixes, one commit each |
+| Diagnosis: functional, accessible, no network, no storage | `LocationDiagnosis.test.tsx`, `location-diagnosis.spec.ts` | Pass in Chromium. Passed in Firefox too during the session (`h2-e2e.log`), but Firefox is not part of `make e2e`: see below |
+| Failure message: es/en, light/dark, 390/1440, keyboard, axe | `location-notice.spec.ts` | Pass |
+| Other engines | `webkit-locate`: the main journey | Pass in WebKit. **The button cannot run in the container's Firefox** (no WebGL, so no map) |
+| `make check`, `make e2e`, no internet | `h3-final-*` | 209 API, 238 web, 158 end-to-end; 0 public connections |
+| Earlier tests | `git diff feat/locate-me -- web/e2e web/src/**/*.test.*` | Two assertions changed, both because of the defect: silence is now "no response", not "took too long" |
+
+## Not verified
+
+- What any real device does: that is what the diagnosis screen is for. GPS, phones, Android, iOS.
+- The location button in Firefox, for the reason above.
+- A real screen reader.
+- The Firefox `about:config` procedure in `PHONE_SETUP.md`.
+
+Firefox stays out of `make e2e` for the diagnosis because, left running for about 35 s, it opened one connection of its own to a Mozilla address (measured with `tcpdump`, `h3-red-firefox-*`). Turning off its background services did not stop it. The earlier, shorter `firefox.spec.ts` does not do this.

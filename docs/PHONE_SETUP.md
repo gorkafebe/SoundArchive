@@ -60,6 +60,34 @@ Bottom right of the map. None of this has been tried on a real phone yet.
 - **With the screen off or the tab in the background it stops**, on purpose, to save battery and because a page cannot rely on running then. It resumes when you come back.
 - iOS Safari may not have the Permissions API, so the explanation can appear once per visit.
 
+## If location does not work (added 2026-11-09)
+
+Automatic tests simulate the position, so they cannot say what a real browser does. Open `/diagnostico-ubicacion` on the device (or follow "Location not working? Diagnosis" under the button's error message) and press **Test now**. It takes about 35 seconds. Nothing is sent or stored, and the report has no coordinates unless you tick the box.
+
+- **T1**: one request with high accuracy, 10 s.
+- **T2**: one request without high accuracy, 10 s.
+- **T3**: tracking for 15 s, counting readings.
+
+| What you see | Most likely cause | What to do |
+|---|---|---|
+| "Secure context: no" | Plain HTTP, or a certificate problem | Use `https://`, and install the root certificate (step 2) |
+| "Interface version" differs from the file the instance serves | Old JavaScript in the browser | Reload without cache, or close the tab and open it again |
+| Permission "denied" | The site is blocked in this browser | Site settings (icon next to the address), Location, Allow |
+| Code 1 although permission says "granted" | Permission of the operating system, a permissions policy, or another origin | Look at the OS location settings for this browser. "Permissions policy: blocked" points at the policy. `https://soundarchive:8443` and `https://localhost:9443` are two origins with two separate permissions |
+| Code 2 with "Network location provider at 'https://www.googleapis.com/' : Returned error code 403" | This browser build has no valid location provider (typical of Chromium on Linux) | Try another browser, or the phone |
+| "No response" in T1 and T2, in Firefox on Linux | GeoClue or its location service is not answering | Try another browser, or the phone |
+| "No response" in T1 and T2, elsewhere | The system's location services are off, or the browser has no OS permission | Turn them on; give the browser permission in the OS settings |
+| T2 works, T1 gives "no response" or code 3 | High accuracy on a machine without GPS, or a cold GPS | Nothing to fix: the button now tries again without high accuracy |
+| T1 and T2 work but the position is far away, or ± kilometres | The position comes from the IP address or an imprecise provider | It is all this device knows. Use a phone with GPS, or place the point by hand |
+| T3 reads nothing for a long time, then reads | Cold GPS, or indoors | Go outside and wait; the first reading can take over a minute |
+| Permission asked on every visit | Private window, or a profile that clears permissions on closing | Use a normal window |
+| Everything is correct here but the button fails | A defect in the app | Paste the report and describe exactly what the button did |
+
+### Trying the app on a laptop with no location provider
+
+- **Chrome or Chromium:** in DevTools press Control+Shift+P, type "sensors", choose "Show Sensors", and under "Geolocation" pick a city or "Custom location". Procedure taken from Chrome's documentation; not tried on this project.
+- **Firefox:** not verified. Forum posts mention pointing the `about:config` preference `geo.provider.network.url` at a fixed `data:` answer, with `geo.provider.use_geoclue` set to false. Check the exact syntax for your version before relying on it.
+
 ## 5. Known risks
 
 - **Recording in the background.** Browsers stop or silence capture when the page is hidden or the phone locks. Keep the screen on and the page in front while recording. This is a platform limit that a web app cannot remove.
