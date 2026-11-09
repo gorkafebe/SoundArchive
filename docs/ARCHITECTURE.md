@@ -149,6 +149,16 @@ browser: POST /api/places
 - The view's centre decides: inside Spain the IGN; outside, EOX (if allowed) or a notice that there is no imagery here. Only one provider is visible at a time.
 - The attribution comes from the source; MapLibre shows only the sources of visible layers.
 
+## Showing your own position (added 2026-11-09)
+
+Three pieces in `web/src/features/map/`, only in the browser; no server change.
+
+- **`useUserLocation.ts`**: the states. `off -> prompt (first time) -> searching -> on -> off`, with errors returning to `off`. Searching is `useBestLocation` from the add-place flow, reused unchanged (up to 8 s of `watchPosition`, keeping the most precise reading). While on, a lighter `watchPosition` updates the position at most once a second. It stops when the tab is hidden and resumes when it is visible. Leaving the map view (the list, the add-place flow) or unmounting turns everything off.
+- **`LocateControl.tsx`**: the button, the explanation (`PrePrompt`) and the messages. The button is a MapLibre control in the `bottom-right` corner, so it stacks above the attribution however many lines that takes. It has its own `aria-live` region, because the shared one is overwritten moments later by the map announcing the places of the area it has moved to.
+- **`UserMarker.ts`**: the drawing. An HTML marker (`role="img"`, `pointer-events: none`, `z-index: 0`, so under the pins, which use 1 and 2) and a circle of doubt as map layers (`sa-me-accuracy-*`). The `sa-` prefix makes the layer switcher leave them alone. The marker survives a change of style by itself; the layers are put back on each `style.load`, idempotently.
+
+The marker is not part of the place data, so it can never join a cluster.
+
 ## The API
 
 All routes start with `/api`. Interactive docs at `/api/docs` in dev only

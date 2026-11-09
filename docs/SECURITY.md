@@ -73,6 +73,14 @@ The basemap already worked this way: each browser asks the tile server directly.
 - `Referrer-Policy: same-origin` means they do not learn this site's address.
 - The choice of layer stays in the browser's `localStorage` and is not sent to our server.
 
+### Your own position on the map
+
+The "show my location" button does not send, store or log the position. It stays in the memory of one React component, and the state "on" is not remembered: every visit starts off. `web/e2e/locate.spec.ts` checks that it adds no request of its own and that `localStorage` and `sessionStorage` do not change.
+
+**The one thing to be precise about:** centring the map on you is a move of the map, and a move of the map loads that area, exactly as dragging it there would. So our API receives the rectangle on screen (`GET /api/places?bbox=...`) and the tile provider receives the tiles of that area. Those requests carry no coordinates of yours, only what is on screen; but the area on screen is around you. Anyone who dislikes that can leave the button off.
+
+Tracking stops when the tab is hidden (`visibilitychange`, `pagehide`) and when leaving the map. `Permissions-Policy` did not change: `geolocation=(self)`.
+
 ### Content-Security-Policy and permissions
 
 - `MAP_RASTER_ORIGINS` adds `https://www.ign.es` and `https://tiles.maps.eox.at` to `connect-src` and `img-src` on the tailnet instance, and nothing else. They are the final domains, checked: no redirects. Empty by default elsewhere.
