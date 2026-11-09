@@ -117,6 +117,38 @@ The limits live in three places that agree: the CHECK constraints, the API's
 Pydantic schemas (`backend/app/schemas.py`) and the web form
 (`web/src/features/add-place/validation.ts`).
 
+## Adding a place: duplicates and suggestions (added 2026-11-09)
+
+The flow is: where is it (current location recommended) -> is it somewhere we know -> name and description -> confirm.
+
+```
+browser: GET /api/places/suggest?lat&lon&accuracy&external
+  our API: places within radius (ST_DWithin on geography, GiST index)     -> existing[]
+  our API: grid cells the circle touches -> cache (external_place_cells)  -> external[]
+                                         -> on a miss: Overpass, one rectangle of whole cells
+browser: POST /api/places
+  our API: advisory lock -> same outside reference? 409 external_exists
+                         -> places nearby and no confirm_distinct? 409 possible_duplicate + candidates
+                         -> insert, commit (releases the lock)
+```
+
+- **Radius:** `DUPLICATE_RADIUS_M` (50) plus the GPS accuracy, up to 150 m. Geography distances are metres on the round Earth, so the date line and the poles need no special case.
+- **Similar names:** `pg_trgm`'s `similarity()` over `sa_normalize_name()` (lower case, no accents), an immutable SQL function because `unaccent()` cannot be indexed.
+- **`places` gained** `external_source` and `external_id`, with a unique index among places that have not been taken down.
+- **`external_place_cells`** holds `provider`, `cell`, `fetched_at` and a short JSON list. Cleaned by the maintenance worker.
+- **`PlaceSuggestionProvider`** (`backend/app/place_suggestions.py`) is the seam: Overpass today (`backend/app/overpass.py`), and a local PostGIS import of an OpenStreetMap extract is the recommended next one. Nothing else knows about Overpass.
+- **A race** (two people, one spot) is settled by the lock: one gets 201, the other 409.
+
+## Map layers (added 2026-11-09)
+
+`web/src/features/map/layers.ts` lists the providers; adding a layer is adding an entry. `MapLayers.ts` switches them:
+
+- The imagery is one raster layer **under** everything else. While it shows, the style's `background`, `fill` and `fill-extrusion` layers are hidden and `line` and `symbol` stay (a "hybrid" view), recoloured to read over a photograph. The topographic layer is a complete map, so it hides those too.
+- Switching uses `setLayoutProperty(..., "visibility", ...)`, not `setStyle`. The pins are HTML markers and do not depend on the style at all. The change of theme does use `setStyle`, so everything is applied again on each `style.load`, idempotently.
+- A source is added the first time it is needed, so hidden layers cost no requests.
+- The view's centre decides: inside Spain the IGN; outside, EOX (if allowed) or a notice that there is no imagery here. Only one provider is visible at a time.
+- The attribution comes from the source; MapLibre shows only the sources of visible layers.
+
 ## The API
 
 All routes start with `/api`. Interactive docs at `/api/docs` in dev only

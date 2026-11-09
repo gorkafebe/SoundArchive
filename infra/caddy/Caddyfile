@@ -40,17 +40,17 @@
 		#                        and no other site may show us inside a frame
 		# MAP_TILE_ORIGINS must list the basemap server(s) of MAP_STYLE_URL
 		# (space-separated). If you change map provider, change both.
-		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org}; img-src 'self' data: blob: {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org}; font-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org} {$MAP_RASTER_ORIGINS:}; img-src 'self' data: blob: {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org} {$MAP_RASTER_ORIGINS:}; font-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 		# Do not let the browser guess a file's type (a text file run as a script).
 		X-Content-Type-Options "nosniff"
 		# Send no address to other sites (e.g. the tile server): the address
 		# can contain which place someone is looking at. Some tile providers
 		# with API keys require "strict-origin-when-cross-origin" instead.
 		Referrer-Policy "same-origin"
-		# Browser features: location and microphone only for this site (the
-		# add-place flow, and recording in phase 5), never for embedded pages;
-		# no camera, payments or USB.
-		Permissions-Policy "geolocation=(self), microphone=(self), camera=(), payment=(), usb=()"
+		# Browser features: location, microphone and camera only for this site
+		# (adding places, recording, photos), never for embedded pages; no
+		# payments or USB.
+		Permissions-Policy "geolocation=(self), microphone=(self), camera=(self), payment=(), usb=()"
 		# Keep other sites' windows from scripting ours (window.opener).
 		Cross-Origin-Opener-Policy "same-origin"
 		# Strict-Transport-Security is NOT set: over plain HTTP browsers ignore

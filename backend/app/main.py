@@ -82,6 +82,11 @@ def public_config(settings: Annotated[Settings, Depends(get_settings)]) -> Publi
         writes_enabled=True,
         map_style_url=settings.map_style_url,
         map_style_url_dark=settings.map_style_url_dark,
+        external_places_enabled=settings.external_places_enabled,
+        satellite_enabled=settings.satellite_enabled,
+        satellite_global_fallback=settings.satellite_global_fallback,
+        topo_es_enabled=settings.topo_es_enabled,
+        location_warn_accuracy_m=settings.location_warn_accuracy_m,
     )
 
 

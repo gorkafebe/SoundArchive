@@ -7,6 +7,11 @@ export interface PublicConfig {
   writes_enabled: boolean;
   map_style_url: string;
   map_style_url_dark: string;
+  external_places_enabled: boolean;
+  satellite_enabled: boolean;
+  satellite_global_fallback: boolean;
+  topo_es_enabled: boolean;
+  location_warn_accuracy_m: number;
 }
 
 export interface Place {
@@ -50,6 +55,38 @@ export interface NewPlace {
   latitude: number;
   longitude: number;
   location_accuracy_m?: number | null;
+  confirm_distinct?: boolean;
+  external_source?: string;
+  external_id?: string;
+}
+
+export interface NearbyPlace {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  distance_m: number;
+  recording_count: number;
+  name_similarity?: number | null;
+}
+
+export interface ExternalSuggestion {
+  external_source: string;
+  external_id: string;
+  name: string;
+  category: string;
+  latitude: number;
+  longitude: number;
+  distance_m: number;
+  matches_place_id?: string | null;
+}
+
+export interface PlaceSuggestions {
+  existing: NearbyPlace[];
+  external: ExternalSuggestion[];
+  external_available: boolean;
+  attribution: string | null;
+  radius_m: number;
 }
 
 export interface Me {
@@ -183,6 +220,8 @@ export class ApiError extends Error {
   readonly code?: string;
   retryAfter?: number;
   received?: number;
+  /** On a 409 about places: which ones are in the way. */
+  conflict?: { code: string; candidates: NearbyPlace[] };
   constructor(status: number, message: string, code?: string) {
     super(message);
     this.name = "ApiError";
@@ -233,17 +272,20 @@ export async function parseFailure(response: Response): Promise<ApiError> {
   let code: string | undefined;
   let retryAfter: number | undefined;
   let received: number | undefined;
+  let conflict: ApiError["conflict"];
   try {
     const body = await response.json();
     code = typeof body?.detail?.code === "string" ? body.detail.code : undefined;
     retryAfter = typeof body?.detail?.retry_after === "number" ? body.detail.retry_after : undefined;
     received = typeof body?.detail?.received === "number" ? body.detail.received : undefined;
+    if (code && Array.isArray(body?.detail?.candidates)) conflict = { code, candidates: body.detail.candidates };
   } catch {
     // Not JSON (a proxy error page, for instance); the status is enough.
   }
   const error = new ApiError(response.status, `HTTP ${response.status}`, code);
   error.retryAfter = retryAfter;
   error.received = received;
+  error.conflict = conflict;
   return error;
 }
 
@@ -295,6 +337,19 @@ export function getPlace(id: string, signal?: AbortSignal): Promise<Place> {
 
 export function createPlace(place: NewPlace, signal?: AbortSignal): Promise<Place> {
   return postJson("/api/places", place, signal);
+}
+
+export function getSuggestions(
+  options: { lat: number; lon: number; accuracy: number | null; external: boolean },
+  signal?: AbortSignal,
+): Promise<PlaceSuggestions> {
+  const params = new URLSearchParams({
+    lat: options.lat.toFixed(7),
+    lon: options.lon.toFixed(7),
+    external: String(options.external),
+  });
+  if (options.accuracy !== null) params.set("accuracy", String(options.accuracy));
+  return request(`/api/places/suggest?${params}`, { signal });
 }
 
 // --- Accounts -----------------------------------------------------------------

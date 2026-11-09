@@ -103,3 +103,38 @@ Audio synthesised with ffmpeg. Tolerances: LUFS within 0.5 LU of the reference, 
 - A real screen reader.
 - A real backup destination; none is chosen.
 - `make admin-create` on a terminal with hidden input.
+
+# Acceptance record: places without duplicates, camera, map layers
+
+Session of 2026-11-09, branch `feat/place-dedupe-camera`. Output in the owner's evidence folder (`~/SoundArchive-Informe/lugares-camara-2026-11-09/evidencias/`).
+
+| Criterion | How | Result (2026-11-09) |
+|---|---|---|
+| `make check` | API, guards, web | 209 and 159 tests pass |
+| `make e2e` | Fresh stack, no internet | 109 pass: Chromium, no-microphone, Firefox, mobile emulation. es/en, light/dark, 390 and 1440 on the new flows |
+| Production configuration | `config --quiet` and the `prod-check` tests, from a checkout under the throwaway name `sa-test-prodcheck` (`make prod-check` runs only in `/srv/sound-archive`, by design) | Valid; db and api publish no ports; no `TEST_ADMIN_*` |
+| Current location is the main way; permission after a tap; accuracy shown; coordinates under Advanced | `AddPlaceFlow.test.tsx`, `places-flow.spec.ts` | Pass |
+| Duplicates: 409 and `confirm_distinct`; race; unique outside reference | `test_nearby.py` (six concurrent requests: one 201, five 409) | Pass |
+| The distance query uses the index, 10 000 places | `h1-explain.txt` | `ix_places_location`, 0.06 ms |
+| Migrations up and down | `test_migration_goes_down_and_up`; applied to `sa-tailnet` | Pass; instance at `0006` |
+| Only the cell leaves the server; no user data | `test_only_the_cell_leaves_the_server`, real HTTP to a local stand-in | Pass |
+| Cache, limits, breaker, silent failure, switches off | `test_suggest.py` | Pass |
+| Suggestions with the real Overpass | One query each to the main server and to Private.coffee, Zaragoza centre | **Not verified.** `overpass-api.de` answered 502; Private.coffee timed out at 15 s. Both handled silently, nothing cached |
+| Camera: `capture` on touch, in-page on desktop, tracks stopped, permission explained, fallback | `CameraCapture.test.tsx`, `camera.spec.ts` with the fake camera, `mobile.spec.ts`, `denied.spec.ts` | Pass |
+| No EXIF | Fake-camera photo in `camera.spec.ts`; GPS-tagged JPEG in `test_gps_exif_does_not_survive` | Pass |
+| `camera=(self)` and tile domains in the headers | `curl -I` on `sa-tailnet`, `h8-cabeceras.txt` | Present, and nothing else new |
+| Layers: selector on both maps, keyboard, memory, credit per layer, no request until chosen, pins intact, tile failure | `layers.test.tsx` (50 tests), `layers.spec.ts` | Pass |
+| Real imagery under the real CSP | `make e2e-manual E2E_ARGS=real-layers` | IGN 54 and 20 tiles, EOX 35, all 200; MTN loads; no CSP error |
+| axe | New screens and states, both themes | No serious or critical issue |
+| Keyboard only | Whole location flow; selector | Pass |
+| 44 px | `quality.spec.ts`, `mobile.spec.ts` | Pass |
+| `sa-tailnet` updated, data kept | restic copy; row counts before and after | Identical; 6 services healthy |
+| Exposure | `make exposure-check` | OK |
+| Production and panel untouched | Container ids, first and last | Identical, 26 h up |
+
+## Not verified
+
+- The real Overpass (above).
+- A real phone: real GPS, real camera, Android or iOS.
+- A real webcam on a computer.
+- A real screen reader.

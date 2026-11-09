@@ -52,13 +52,13 @@
 		#   media-src          ours; blob: to listen before publishing.
 		#   worker-src         MapLibre's worker (a file of ours, or a blob:).
 		#   font-src 'self'    fonts are self-hosted (@fontsource).
-		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org}; img-src 'self' data: blob: {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org}; media-src 'self' blob:; font-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org} {$MAP_RASTER_ORIGINS:}; img-src 'self' data: blob: {$MAP_TILE_ORIGINS:https://tiles.openfreemap.org} {$MAP_RASTER_ORIGINS:}; media-src 'self' blob:; font-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 		X-Content-Type-Options "nosniff"
 		# No address is sent to other sites (such as the tile server).
 		Referrer-Policy "same-origin"
-		# Microphone, location and wake lock for this site only; never for
+		# Microphone, location, camera and wake lock for this site only; never for
 		# embedded pages. Everything else this app does not use is off.
-		Permissions-Policy "microphone=(self), geolocation=(self), screen-wake-lock=(self), camera=(), payment=(), usb=()"
+		Permissions-Policy "microphone=(self), geolocation=(self), camera=(self), screen-wake-lock=(self), payment=(), usb=()"
 		Cross-Origin-Opener-Policy "same-origin"
 		# Strict-Transport-Security is deliberately NOT set, and should stay
 		# off for this instance:

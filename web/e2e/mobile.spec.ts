@@ -3,7 +3,7 @@
 import type { Page } from "@playwright/test";
 
 import { MEDIA } from "./constants";
-import { expect, prepare, test } from "./fixtures";
+import { expect, pastKnownPlaces, prepare, test } from "./fixtures";
 import { audioTime, createPlace, uploadAudio } from "./helpers";
 
 /** Every visible control is at least 44 x 44 px. */
@@ -13,7 +13,7 @@ async function checkTargets(page: Page, where: string) {
     return items
       .filter((element) => {
         if (element.closest(".maplibregl-ctrl-attrib, .visually-hidden")) return false;
-        if (element.matches("input[type=radio], input[type=file]")) return false;
+        if (element.matches("input[type=radio], input[type=file], label input[type=checkbox]")) return false;
         const box = element.getBoundingClientRect();
         if (box.width === 0 || box.height === 0) return false;
         const style = getComputedStyle(element);
@@ -107,4 +107,62 @@ test("upload, ambient and compare screens fit and have large targets", async ({ 
     expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), `overflow in ${where}`).toBe(false);
     await page.screenshot({ path: `test-results/screens/mobile-${where}.png`, fullPage: true });
   }
+});
+
+test("adding a place from the location, on a phone", async ({ page }) => {
+  await prepare(page);
+  await page.context().grantPermissions(["geolocation"]);
+  await page.context().setGeolocation({ latitude: 42.31, longitude: -2.31, accuracy: 5 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Añadir lugar" }).click();
+  await expect(page.getByRole("button", { name: /Usar mi ubicación actual/ })).toBeVisible();
+  await checkTargets(page, "add place, first step");
+  await page.screenshot({ path: "test-results/screens/add-first-390.png", fullPage: true });
+  await page.getByRole("button", { name: /Usar mi ubicación actual/ }).click();
+  await expect(page.getByText("Precisión: ±5 m")).toBeVisible();
+  await expect(page.locator(".location-picker canvas")).toBeVisible();
+  await page.screenshot({ path: "test-results/screens/add-located-390.png", fullPage: true });
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await pastKnownPlaces(page);
+  await page.getByRole("textbox", { name: "Nombre", exact: true }).fill(`Móvil ${Date.now()}`);
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await page.getByRole("button", { name: "Crear el lugar" }).click();
+  await expect(page.locator(".place-sheet")).toBeVisible();
+});
+
+test("the camera on a phone opens straight from the field", async ({ page }) => {
+  await prepare(page);
+  const placeId = await createPlace(page.request, `Foto móvil ${Date.now()}`);
+  await page.goto(`/?place=${placeId}`);
+  await page.getByRole("button", { name: "Añadir una foto" }).click();
+  const input = page.getByTestId("camera-input");
+  await expect(input).toHaveAttribute("capture", "environment");
+  await expect(input).toHaveAttribute("accept", "image/*");
+  await expect(page.getByText("Hacer una foto", { exact: true })).toBeVisible();
+  await checkTargets(page, "photo form");
+
+  // If capture is ignored it is an ordinary file field: the upload still works.
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8z8DAwMDAxMDAwMDAAAANHQEDasKb6QAAAABJRU5ErkJggg==",
+    "base64",
+  );
+  await input.setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: png });
+  await expect(page.getByRole("img", { name: "Foto lista para añadir" })).toBeVisible();
+  await page.locator("form.photo-form").getByRole("button", { name: "Añadir una foto" }).click();
+  await expect(page.locator(".photo-strip__item img")).toBeVisible();
+});
+
+test("the layer selector fits on a phone", async ({ page }) => {
+  await prepare(page);
+  await page.route("https://www.ign.es/**", (route) =>
+    route.fulfill({ path: "e2e/assets/tile.png", contentType: "image/png", headers: { "Access-Control-Allow-Origin": "*" } }),
+  );
+  await page.goto("/?view=map&lat=43.26300&lon=-2.93500&z=14.00");
+  await expect(page.locator(".map-pin, .map-cluster").first()).toBeVisible();
+  await page.getByRole("button", { name: "Capas", exact: true }).click();
+  await checkTargets(page, "layer selector");
+  await page.screenshot({ path: "test-results/screens/layers-open-390.png" });
+  await page.getByRole("radio", { name: "Satélite" }).click();
+  await expect(page.locator(".maplibregl-ctrl-attrib").first()).toContainText("PNOA cedido");
+  await expect(page.locator(".maplibregl-ctrl-attrib").first()).toBeInViewport();
 });

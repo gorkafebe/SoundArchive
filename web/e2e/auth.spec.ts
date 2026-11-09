@@ -2,7 +2,7 @@
 import AxeBuilder from "@axe-core/playwright";
 
 import { ADMIN_PASSWORD, BASE_URL, USER_PASSWORD } from "./constants";
-import { expect, prepare, test, waitForPins } from "./fixtures";
+import { expect, freshCoordinates, openAdvanced, prepare, test, waitForPins } from "./fixtures";
 import { apiPost } from "./helpers";
 
 const FRESH = { cookies: [], origins: [] };
@@ -72,8 +72,10 @@ test("invitation, sign up, create a place, sign out, sign in again", async ({ pa
   expect(cookie.path).toBe("/");
 
   await visitor.getByRole("button", { name: "Añadir lugar" }).click();
-  await visitor.getByLabel("Latitud").fill("43,2630");
-  await visitor.getByLabel("Longitud").fill("-2,9350");
+  await openAdvanced(visitor);
+  const coordinates = freshCoordinates();
+  await visitor.getByLabel("Latitud").fill(coordinates.lat);
+  await visitor.getByLabel("Longitud").fill(coordinates.lon);
   await visitor.getByRole("button", { name: "Siguiente" }).click();
   await visitor.getByLabel("Nombre", { exact: true }).fill(`Lugar de ${name}`);
   await visitor.getByRole("button", { name: "Siguiente" }).click();

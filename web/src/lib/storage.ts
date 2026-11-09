@@ -21,4 +21,6 @@ export function writeStored(key: string, value: string): void {
 export const STORAGE_KEYS = {
   language: "sa.language",
   theme: "sa.theme",
+  suggestOsm: "sa.suggestOsm",
+  mapLayer: "sa.mapLayer",
 } as const;

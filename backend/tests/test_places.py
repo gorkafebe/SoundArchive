@@ -13,7 +13,8 @@ from app.places import bbox_filter, parse_bbox
 
 
 def create(api, name="A place", lat=0.0, lon=0.0, description=None):
-    body = {"name": name, "latitude": lat, "longitude": lon}
+    # confirm_distinct: these tests put many places on the same spot on purpose.
+    body = {"name": name, "latitude": lat, "longitude": lon, "confirm_distinct": True}
     if description is not None:
         body["description"] = description
     response = api.post("/api/places", json=body)

@@ -10,7 +10,8 @@
   gap: var(--space-4);
   max-width: 40rem;
   margin-inline: auto;
-  padding: var(--space-5) var(--space-4) var(--space-7);
+  /* The top: clear of the floating search bar, which sits over this screen. */
+  padding: 76px var(--space-4) var(--space-7);
 }
 .add-place h2 {
   display: grid;
@@ -35,6 +36,8 @@
   border: 2px solid var(--line-strong);
   border-radius: var(--radius-md);
   overflow: hidden;
+}
+.location-picker .map-view__canvas {
   cursor: crosshair;
 }
 
@@ -48,13 +51,133 @@
   }
 }
 
-.add-place__geo {
+.add-place__locate {
+  min-height: 56px;
+  font-size: 16px;
+  flex-wrap: wrap;
+  white-space: normal;
+}
+.add-place__recommended {
+  padding: 2px var(--space-2);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.add-place .sa-pre__title {
+  font-size: 20px;
+}
+
+.add-place__geo-status {
   display: grid;
   gap: var(--space-2);
   justify-items: start;
+}
+.add-place__geo-status:empty {
+  display: none;
+}
+
+.add-place__map {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.add-place__chosen {
+  overflow-wrap: anywhere;
+}
+
+.add-place__osm {
+  display: grid;
+  gap: var(--space-1);
+}
+.add-place__check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+  cursor: pointer;
+}
+.add-place__check input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--accent);
+}
+
+.add-place__advanced {
+  border: 2px solid var(--line);
+  border-radius: var(--radius-md);
+  padding-inline: var(--space-4);
+}
+.add-place__advanced summary {
+  min-height: var(--target-min);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 700;
+  list-style-position: inside;
+}
+.add-place__advanced summary::before {
+  content: "›";
+  display: inline-block;
+  margin-inline-end: var(--space-2);
+}
+.add-place__advanced[open] summary::before {
+  transform: rotate(90deg);
+}
+.add-place__advanced summary:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.add-place__advanced[open] {
+  padding-block-end: var(--space-4);
+}
+
+/* "Is it the same place?" and the suggestions. */
+.known {
+  display: grid;
+  gap: var(--space-3);
   padding: var(--space-4);
   border: 2px solid var(--line);
   border-radius: var(--radius-md);
+  background: var(--surface-200);
+}
+.known--strong {
+  border-color: var(--accent);
+}
+.known__title {
+  font-size: 20px;
+  line-height: 28px;
+}
+.known__list {
+  display: grid;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.known__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+  border-block-start: 1px solid var(--line);
+}
+.known__icon {
+  color: var(--accent);
+  display: inline-flex;
+}
+.known__body {
+  flex: 1 1 12rem;
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+  justify-items: start;
+}
+.known__name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .add-place__summary {

@@ -1,0 +1,18 @@
+{
+  "version": 8,
+  "name": "sample, shaped like the provider's positron style (no colours needed here)",
+  "sources": {},
+  "layers": [
+    { "id": "background", "type": "background" },
+    { "id": "water", "type": "fill" },
+    { "id": "landuse_park", "type": "fill" },
+    { "id": "building-3d", "type": "fill-extrusion" },
+    { "id": "waterway", "type": "line" },
+    { "id": "highway_minor", "type": "line" },
+    { "id": "boundary_state", "type": "line" },
+    { "id": "place_city", "type": "symbol" },
+    { "id": "highway_name", "type": "symbol" },
+    { "id": "sa-accuracy-fill", "type": "fill" },
+    { "id": "sa-accuracy-line", "type": "line" }
+  ]
+}

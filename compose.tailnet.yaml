@@ -76,6 +76,12 @@ services:
       # Addresses the app is opened from. The CSRF check compares the browser's
       # Origin header with this list. No "*": a list of exact origins only.
       ALLOWED_ORIGINS: "https://soundarchive:8443,https://${TAILNET_FQDN:?set TAILNET_FQDN in .env}:8443,https://localhost:${TAILNET_HTTPS_PORT:-9443},https://soundarchive:${TAILNET_HTTPS_PORT:-9443}"
+      # The owner's choice for this instance. Set any of them to "no" in .env
+      # to turn it off. Licences and what each one sends: docs/THIRD_PARTY_DATA.md.
+      EXTERNAL_PLACES_ENABLED: ${EXTERNAL_PLACES_ENABLED:-true}
+      SATELLITE_ENABLED: ${SATELLITE_ENABLED:-true}
+      SATELLITE_GLOBAL_FALLBACK: ${SATELLITE_GLOBAL_FALLBACK:-true}
+      TOPO_ES_ENABLED: ${TOPO_ES_ENABLED:-true}
 
   caddy:
     <<: *logging
@@ -87,6 +93,9 @@ services:
     environment:
       TAILNET_FQDN: ${TAILNET_FQDN:?set TAILNET_FQDN in .env}
       MAP_TILE_ORIGINS: ${MAP_TILE_ORIGINS:-https://tiles.openfreemap.org}
+      # Final domains of the imagery layers, checked with curl: no redirects.
+      # Without world-wide satellite, leave out tiles.maps.eox.at.
+      MAP_RASTER_ORIGINS: ${MAP_RASTER_ORIGINS:-https://www.ign.es https://tiles.maps.eox.at}
     ports:
       # 127.0.0.1 written out on purpose: a bare "9443:443" would mean every
       # interface, and Docker would open it straight through the firewall.

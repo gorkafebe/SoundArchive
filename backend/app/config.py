@@ -7,7 +7,7 @@ one, instead of failing later in a confusing way.
 
 from urllib.parse import quote
 
-from pydantic import SecretStr
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings
 from sqlalchemy import URL
 
@@ -67,6 +67,41 @@ class Settings(BaseSettings):
     # is resolved against the site itself, e.g. a local test style.
     map_style_url: str = "https://tiles.openfreemap.org/styles/positron"
     map_style_url_dark: str = "https://tiles.openfreemap.org/styles/dark"
+
+    # "Is this the same place?": how far around a new place to look, in metres.
+    # The GPS accuracy is added to the radius, up to the maximum.
+    duplicate_radius_m: int = 50
+    duplicate_radius_max_m: int = 150
+    nearby_rate_per_minute: int = 60
+    # Above this GPS doubt, in metres, the web app says the position is rough.
+    location_warn_accuracy_m: int = 100
+
+    # Suggestions of known sites from OpenStreetMap (app/overpass.py). Off
+    # unless the instance turns it on; compose.tailnet.yaml does.
+    external_places_enabled: bool = False
+    overpass_url: str = "https://overpass-api.de/api/interpreter"
+    overpass_url_fallback: str = ""
+    overpass_daily_cap: int = 100
+    overpass_min_interval_s: float = 2.0
+    overpass_timeout_s: int = 15
+    external_cell_size_deg: float = 0.003
+    external_cell_margin_deg: float = 0.0005
+    external_cache_days: int = 30
+    suggest_radius_m: int = 80
+    suggest_rate_per_minute: int = 30
+
+    # Extra map layers, passed to the web app by /api/config.
+    satellite_enabled: bool = False
+    satellite_global_fallback: bool = False
+    topo_es_enabled: bool = False
+
+    @field_validator(
+        "external_places_enabled", "satellite_enabled", "satellite_global_fallback", "topo_es_enabled", mode="before"
+    )
+    @classmethod
+    def spanish_yes_is_yes(cls, value: object) -> object:
+        # The owner's notes say si/no; "no" is already understood.
+        return "true" if isinstance(value, str) and value.strip().lower() in ("si", "sí") else value
 
     # Interactive API docs at /api/docs. On in dev; compose.prod.yaml turns it
     # off, because the docs page loads its script from a public CDN and

@@ -1,6 +1,6 @@
 // Adding a place, end to end: the real API writes to the dev database.
 // Created places are named "E2E ..." so they are easy to recognise there.
-import { expect, prepare, test, waitForPins } from "./fixtures";
+import { expect, freshCoordinates, openAdvanced, pastKnownPlaces, prepare, test, waitForPins } from "./fixtures";
 
 test("creates a place by tapping the map, then shows it on the map and in the list (es)", async ({ page }) => {
   await prepare(page);
@@ -12,12 +12,14 @@ test("creates a place by tapping the map, then shows it on the map and in the li
   await expect(page.getByRole("heading", { level: 2 })).toBeFocused();
 
   // Tap the middle of the small map.
+  await page.getByRole("button", { name: "Elegir en el mapa" }).click();
   const picker = page.locator(".location-picker canvas");
   await expect(picker).toBeVisible();
   await picker.click();
   await expect(page.getByLabel("Latitud")).not.toHaveValue("");
   await expect(page.getByRole("img", { name: "Ubicación elegida" })).toBeVisible();
   await page.getByRole("button", { name: "Siguiente" }).click();
+  await pastKnownPlaces(page);
 
   const name = `E2E plaza ${Date.now()}`;
   await page.getByRole("textbox", { name: "Nombre" }).fill(name);
@@ -42,21 +44,24 @@ test("creates a place by typing coordinates (en)", async ({ page }) => {
   await prepare(page, { language: "en" });
   await page.goto("/");
   await page.getByRole("button", { name: "Add place" }).click();
-  await page.getByLabel("Latitude").fill("43.2569");
-  await page.getByLabel("Longitude").fill("-2.9236");
+  await openAdvanced(page);
+  const coordinates = freshCoordinates("en");
+  await page.getByLabel("Latitude").fill(coordinates.lat);
+  await page.getByLabel("Longitude").fill(coordinates.lon);
   await page.getByRole("button", { name: "Next" }).click();
   const name = `E2E square ${Date.now()}`;
   await page.getByRole("textbox", { name: "Name" }).fill(name);
   await page.getByRole("button", { name: "Next" }).click();
   await page.getByRole("button", { name: "Create place" }).click();
   await expect(page.getByRole("complementary").getByRole("heading", { level: 2, name })).toBeFocused();
-  await expect(page.getByText("43.25690° N, 2.92360° W")).toBeVisible();
+  await expect(page.getByText(`${coordinates.rawLat}0° N, ${coordinates.rawLon.slice(1)}0° W`)).toBeVisible();
 });
 
 test("validation errors move the focus to the first wrong field", async ({ page }) => {
   await prepare(page);
   await page.goto("/");
   await page.getByRole("button", { name: "Añadir lugar" }).click();
+  await openAdvanced(page);
   await page.getByLabel("Longitud").fill("200");
   await page.getByRole("button", { name: "Siguiente" }).click();
   await expect(page.getByLabel("Latitud")).toBeFocused();
@@ -92,8 +97,10 @@ test("a 403 from the server while submitting shows the disabled message", async 
   );
   await page.goto("/");
   await page.getByRole("button", { name: "Añadir lugar" }).click();
-  await page.getByLabel("Latitud").fill("40,4");
-  await page.getByLabel("Longitud").fill("-3,7");
+  await openAdvanced(page);
+  const coordinates = freshCoordinates();
+  await page.getByLabel("Latitud").fill(coordinates.lat);
+  await page.getByLabel("Longitud").fill(coordinates.lon);
   await page.getByRole("button", { name: "Siguiente" }).click();
   await page.getByRole("textbox", { name: "Nombre" }).fill("No se guardará");
   await page.getByRole("button", { name: "Siguiente" }).click();

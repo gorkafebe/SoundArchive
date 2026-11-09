@@ -132,6 +132,13 @@ export function Workspace() {
     window.setTimeout(() => mapRef.current?.centerOn(place.longitude, place.latitude, PLACE_ZOOM), 50);
   }, []);
 
+  // "Yes, it is this one": no new place, just open the one that exists.
+  const onOpenExisting = useCallback((place: { id: string; latitude: number; longitude: number }) => {
+    setAdding(false);
+    setUrl((current) => ({ ...current, view: "map", place: place.id }));
+    window.setTimeout(() => mapRef.current?.centerOn(place.longitude, place.latitude, PLACE_ZOOM), 50);
+  }, []);
+
   const showOnMap = useCallback(
     (place: Place) => {
       setView("map");
@@ -200,7 +207,13 @@ export function Workspace() {
           </div>
         )}
         {config.status === "ready" && adding && (
-          <AddPlaceFlow config={config.config} initialCamera={camera} onCancel={cancelAdding} onCreated={onCreated} />
+          <AddPlaceFlow
+            config={config.config}
+            initialCamera={camera}
+            onCancel={cancelAdding}
+            onCreated={onCreated}
+            onOpenExisting={onOpenExisting}
+          />
         )}
         {config.status === "ready" && (
           // Hidden, not removed, while adding: the map keeps its position.

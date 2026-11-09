@@ -7,6 +7,11 @@ export const CONFIG: PublicConfig = {
   writes_enabled: true,
   map_style_url: "/test-style.json",
   map_style_url_dark: "/test-style-dark.json",
+  external_places_enabled: true,
+  satellite_enabled: true,
+  satellite_global_fallback: true,
+  topo_es_enabled: true,
+  location_warn_accuracy_m: 100,
 };
 
 export const ME = {

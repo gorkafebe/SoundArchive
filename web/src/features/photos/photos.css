@@ -24,6 +24,31 @@
 .photo-form {
   margin-block-start: var(--space-2);
 }
+.photo-camera {
+  display: grid;
+  gap: var(--space-3);
+}
+.photo-camera__frame {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  background: var(--surface-300);
+}
+.photo-form__preview {
+  display: block;
+  max-width: 12rem;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-md);
+}
+/* The real control is hidden; show its focus on the label that wraps it. */
+.photo-form__camera:focus-within {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
 .photo-dialog {
   width: min(56rem, 94vw);
   padding: 0;

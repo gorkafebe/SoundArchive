@@ -7,7 +7,7 @@ import AxeBuilder from "@axe-core/playwright";
 import type { Browser, BrowserContext, Page } from "@playwright/test";
 
 import { BASE_URL, MEDIA, USER_PASSWORD } from "./constants";
-import { expect, prepare, test } from "./fixtures";
+import { expect, freshCoordinates, openAdvanced, prepare, test } from "./fixtures";
 import { apiPost, audioTime } from "./helpers";
 
 const FRESH = { cookies: [], origins: [] };
@@ -117,8 +117,10 @@ for (const { language, theme, width, height } of COMBINATIONS) {
     const a = ana.page;
     const placeName = `Plaza ${stamp}`;
     await a.getByRole("button", { name: copy.add }).click();
-    await a.getByLabel(copy.lat).fill(language === "es" ? "43,2630" : "43.2630");
-    await a.getByLabel(copy.lon).fill(language === "es" ? "-2,9350" : "-2.9350");
+    await openAdvanced(a);
+    const coordinates = freshCoordinates(language);
+    await a.getByLabel(copy.lat).fill(coordinates.lat);
+    await a.getByLabel(copy.lon).fill(coordinates.lon);
     await a.getByRole("button", { name: copy.next }).click();
     await a.getByLabel(copy.name, { exact: true }).fill(placeName);
     await a.getByRole("button", { name: copy.next }).click();

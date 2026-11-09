@@ -3,7 +3,8 @@
 - delete uploads never finished, after DRAFT_MAX_AGE_HOURS;
 - put back in the queue any recording stuck in "processing" (Redis keeps its
   queue only in memory, so a restart can lose a job, and this recovers it);
-- delete expired sessions.
+- delete expired sessions;
+- delete cached outside suggestions past their age.
 """
 
 import logging
@@ -19,6 +20,7 @@ from app import storage
 from app.config import settings
 from app.db import SessionLocal
 from app.models import AuthSession, Recording
+from app.place_suggestions import delete_expired_cells
 
 logger = logging.getLogger("maintenance")
 
@@ -73,13 +75,25 @@ def clean_sessions(now: datetime) -> int:
     return removed or 0
 
 
+def clean_external_cells(now: datetime) -> int:
+    with SessionLocal() as db:
+        return delete_expired_cells(db, settings.external_cache_days, now)
+
+
 def run_once(connection: Redis) -> None:
     now = datetime.now(UTC)
     drafts = clean_drafts(now)
     stuck = requeue_stuck(now, connection)
     sessions = clean_sessions(now)
-    if drafts or stuck or sessions:
-        logger.info("cleaned %d drafts, requeued %d recordings, deleted %d sessions", drafts, stuck, sessions)
+    cells = clean_external_cells(now)
+    if drafts or stuck or sessions or cells:
+        logger.info(
+            "cleaned %d drafts, requeued %d recordings, deleted %d sessions and %d cached cells",
+            drafts,
+            stuck,
+            sessions,
+            cells,
+        )
 
 
 def main() -> None:

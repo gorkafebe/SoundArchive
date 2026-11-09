@@ -12,11 +12,14 @@ const FAKE_MIC = [
   `--use-file-for-fake-audio-capture=/app/${MEDIA}/capture.wav%noloop`,
 ];
 
+// The manual checks talk to real providers on the internet, or are only for a
+// person to look at, so they run only when asked for: make e2e-manual and
+// make e2e-real-tiles. A project's testIgnore replaces the top-level one, so
+// this has to be repeated in every project that does not use testMatch.
+const MANUAL = process.env.E2E_REAL_TILES ? [] : ["**/*.manual.spec.ts"];
+
 export default defineConfig({
   testDir: "./e2e",
-  // The real-basemap check talks to the tile provider on the internet, so it
-  // only runs when asked for: make e2e-real-tiles (see that file).
-  testIgnore: process.env.E2E_REAL_TILES ? [] : ["**/*.manual.spec.ts"],
   globalSetup: "./e2e/global-setup.ts",
   // One worker: the tests share a database, and the machine is a laptop.
   workers: 1,
@@ -37,7 +40,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: ["**/denied.spec.ts", "**/firefox.spec.ts", "**/mobile.spec.ts"],
+      testIgnore: ["**/denied.spec.ts", "**/firefox.spec.ts", "**/mobile.spec.ts", ...MANUAL],
       use: { ...devices["Desktop Chrome"], launchOptions: { args: [...GPU, ...FAKE_MIC] } },
     },
     {

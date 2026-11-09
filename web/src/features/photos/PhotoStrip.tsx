@@ -6,10 +6,16 @@ import { Icon } from "../../components/Icon";
 import { Field, useToast } from "../../components/ui";
 import { useI18n } from "../../i18n/i18n";
 import { ApiError, listPhotos, photoUrl, removePhoto, uploadPhoto, type Photo } from "../../lib/api";
+import { CameraCapture } from "./CameraCapture";
 
 import "./photos.css";
 
 const MAX_BYTES = 20 * 1024 * 1024;
+
+/** A touch screen: the file picker can open the real camera app directly. */
+function isTouchDevice(): boolean {
+  return window.matchMedia("(pointer: coarse)").matches;
+}
 
 function errorKey(error: unknown): string {
   if (error instanceof ApiError) {
@@ -28,11 +34,13 @@ export function PhotoStrip({ placeId, isAdmin }: { placeId: string; isAdmin: boo
   const [open, setOpen] = useState<Photo | null>(null);
   const [adding, setAdding] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [alt, setAlt] = useState("");
   const [caption, setCaption] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState(0);
+  const [camera, setCamera] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLElement | null>(null);
 
@@ -48,6 +56,16 @@ export function PhotoStrip({ placeId, isAdmin }: { placeId: string; isAdmin: boo
     if (open) dialogRef.current?.showModal();
   }, [open]);
 
+  useEffect(() => {
+    if (!preview) return;
+    return () => URL.revokeObjectURL(preview);
+  }, [preview]);
+
+  function keep(chosen: File | null) {
+    setFile(chosen);
+    setPreview(chosen ? URL.createObjectURL(chosen) : null);
+  }
+
   function close() {
     dialogRef.current?.close();
     setOpen(null);
@@ -57,12 +75,19 @@ export function PhotoStrip({ placeId, isAdmin }: { placeId: string; isAdmin: boo
   function choose(event: ChangeEvent<HTMLInputElement>) {
     const chosen = event.target.files?.[0] ?? null;
     if (chosen && chosen.size > MAX_BYTES) {
-      setFile(null);
+      keep(null);
       setError(t("photos.error.tooLarge"));
       return;
     }
     setError(null);
-    setFile(chosen);
+    keep(chosen);
+  }
+
+  function endAdding() {
+    setAdding(false);
+    setCamera(false);
+    keep(null);
+    setError(null);
   }
 
   async function submit(event: FormEvent) {
@@ -75,8 +100,7 @@ export function PhotoStrip({ placeId, isAdmin }: { placeId: string; isAdmin: boo
     setError(null);
     try {
       await uploadPhoto(placeId, file, caption.trim(), alt.trim());
-      setAdding(false);
-      setFile(null);
+      endAdding();
       setAlt("");
       setCaption("");
       setVersion((n) => n + 1);
@@ -120,9 +144,47 @@ export function PhotoStrip({ placeId, isAdmin }: { placeId: string; isAdmin: boo
 
       {adding ? (
         <form className="card photo-form" onSubmit={submit} noValidate>
-          <Field label={t("photos.file")} hint={t("photos.fileHint")}>
-            {(props) => <input {...props} className="input" type="file" accept="image/jpeg,image/png,image/webp" onChange={choose} data-testid="photo-input" />}
-          </Field>
+          {camera ? (
+            <CameraCapture
+              onClose={() => setCamera(false)}
+              onUse={(photo) => {
+                setCamera(false);
+                setError(null);
+                keep(photo);
+              }}
+            />
+          ) : (
+            <>
+              <div className="actions">
+                {isTouchDevice() ? (
+                  // A label around the input, not a button that clicks it:
+                  // the camera opens from a real tap on every mobile browser.
+                  // Where capture is ignored it is an ordinary file picker.
+                  <label className="sa-btn sa-btn--primary photo-form__camera">
+                    <Icon name="camera" size={20} />
+                    {t("photos.camera.takeOne")}
+                    <input
+                      className="visually-hidden"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={choose}
+                      data-testid="camera-input"
+                    />
+                  </label>
+                ) : (
+                  <button type="button" className="sa-btn sa-btn--primary" onClick={() => setCamera(true)}>
+                    <Icon name="camera" size={20} />
+                    {t("photos.camera.takeOne")}
+                  </button>
+                )}
+              </div>
+              <Field label={t("photos.camera.fromFiles")} hint={t("photos.fileHint")}>
+                {(props) => <input {...props} className="input" type="file" accept="image/jpeg,image/png,image/webp" onChange={choose} data-testid="photo-input" />}
+              </Field>
+            </>
+          )}
+          {preview && !camera && <img className="photo-form__preview" src={preview} alt={t("photos.camera.ready")} />}
           <Field label={t("photos.alt")} hint={t("photos.altHint")}>
             {(props) => <input {...props} className="input" maxLength={500} value={alt} onChange={(e) => setAlt(e.target.value)} />}
           </Field>
@@ -138,7 +200,7 @@ export function PhotoStrip({ placeId, isAdmin }: { placeId: string; isAdmin: boo
             <button type="submit" className="sa-btn sa-btn--primary" disabled={busy}>
               {t("photos.add")}
             </button>
-            <button type="button" className="sa-btn sa-btn--quiet" onClick={() => setAdding(false)}>
+            <button type="button" className="sa-btn sa-btn--quiet" onClick={endAdding}>
               {t("common.cancel")}
             </button>
           </div>

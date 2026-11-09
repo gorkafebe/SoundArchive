@@ -104,6 +104,17 @@ services:
       # /api/config. Change them in .env to switch map provider, no rebuild.
       MAP_STYLE_URL: ${MAP_STYLE_URL:-https://tiles.openfreemap.org/styles/positron}
       MAP_STYLE_URL_DARK: ${MAP_STYLE_URL_DARK:-https://tiles.openfreemap.org/styles/dark}
+      # Outside services, off unless an instance turns them on (see .env.example;
+      # compose.tailnet.yaml does). The API is the only service that can reach
+      # the Internet, and only the API needs to, for these suggestions.
+      EXTERNAL_PLACES_ENABLED: ${EXTERNAL_PLACES_ENABLED:-false}
+      OVERPASS_URL: ${OVERPASS_URL:-https://overpass-api.de/api/interpreter}
+      OVERPASS_URL_FALLBACK: ${OVERPASS_URL_FALLBACK:-}
+      OVERPASS_DAILY_CAP: ${OVERPASS_DAILY_CAP:-100}
+      DUPLICATE_RADIUS_M: ${DUPLICATE_RADIUS_M:-50}
+      SATELLITE_ENABLED: ${SATELLITE_ENABLED:-false}
+      SATELLITE_GLOBAL_FALLBACK: ${SATELLITE_GLOBAL_FALLBACK:-false}
+      TOPO_ES_ENABLED: ${TOPO_ES_ENABLED:-false}
     volumes:
       - media:/media
     # No "ports:" on purpose. Only Caddy reaches the API, over Compose's
@@ -215,6 +226,8 @@ services:
       # Basemap server(s) the page may contact (Content-Security-Policy in the
       # Caddyfile). Must match MAP_STYLE_URL's server; see .env.example.
       MAP_TILE_ORIGINS: ${MAP_TILE_ORIGINS:-https://tiles.openfreemap.org}
+      # Servers of the optional imagery layers (none unless an instance adds them).
+      MAP_RASTER_ORIGINS: ${MAP_RASTER_ORIGINS:-}
     volumes:
       # /data holds HTTPS certificates and keys. It must survive container
       # re-creation, or Caddy would request new certificates every time

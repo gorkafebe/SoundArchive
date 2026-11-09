@@ -5,6 +5,19 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, prepare, test } from "./fixtures";
 import { createPlace } from "./helpers";
 
+test("the camera refused or missing: says so and offers a file", async ({ page }) => {
+  await prepare(page);
+  const placeId = await createPlace(page.request, `Sin camara ${Date.now()}`);
+  await page.goto(`/?place=${placeId}`);
+  await page.getByRole("button", { name: "Añadir una foto" }).click();
+  await page.getByRole("button", { name: "Hacer una foto" }).click();
+  await page.getByRole("button", { name: "Activar la cámara" }).click();
+  await expect(page.getByRole("alert")).toContainText(/bloqueada la cámara|No encontramos ninguna cámara/);
+  await page.screenshot({ path: "test-results/screens/camera-blocked-es.png" });
+  await page.getByRole("button", { name: "Elegir un archivo en su lugar" }).click();
+  await expect(page.getByTestId("photo-input")).toBeVisible();
+});
+
 for (const [language, heading, cont, upload] of [
   ["es", "No podemos usar el micrófono", "Continuar", "Subir un archivo"],
   ["en", "We cannot use the microphone", "Continue", "Upload a file"],

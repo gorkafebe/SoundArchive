@@ -18,6 +18,8 @@ export interface AppOptions {
   writesEnabled?: boolean;
   language?: "es" | "en";
   theme?: "light" | "dark";
+  /** Extra values for /api/config, to try a server with some switch changed. */
+  config?: Record<string, unknown>;
 }
 
 export async function prepare(page: Page, options: AppOptions = {}) {
@@ -42,6 +44,7 @@ export async function prepare(page: Page, options: AppOptions = {}) {
         config.map_style_url = "/e2e/style.json";
         config.map_style_url_dark = "/e2e/style.json";
         if (options.writesEnabled !== undefined) config.writes_enabled = options.writesEnabled;
+        Object.assign(config, options.config);
         return await route.fulfill({ response, json: config });
       } catch {
         return route.abort().catch(() => {});
@@ -64,6 +67,27 @@ export async function prepare(page: Page, options: AppOptions = {}) {
 
 export const test = base;
 export { expect };
+
+/** Somewhere with no example places, different on every run. */
+export function freshCoordinates(language: "es" | "en" = "es") {
+  const lat = (42 + Math.random() * 0.9).toFixed(4);
+  const lon = (-2 - Math.random() * 0.9).toFixed(4);
+  const shown = (value: string) => (language === "es" ? value.replace(".", ",") : value);
+  return { lat: shown(lat), lon: shown(lon), rawLat: lat, rawLon: lon };
+}
+
+/** Unfold "Advanced: type coordinates" in the add-place flow. */
+export async function openAdvanced(page: Page) {
+  await page.locator("details.add-place__advanced summary").click();
+}
+
+/** After the location step: answer "it is a different place" if asked. */
+export async function pastKnownPlaces(page: Page) {
+  const name = page.getByRole("textbox", { name: /^(Nombre|Name)$/ });
+  const distinct = page.getByRole("button", { name: /es un lugar distinto|different place/ });
+  await expect(name.or(distinct)).toBeVisible();
+  if (await distinct.isVisible()) await distinct.click();
+}
 
 /** Wait until the map has drawn its pins for the current view. */
 export async function waitForPins(page: Page) {
