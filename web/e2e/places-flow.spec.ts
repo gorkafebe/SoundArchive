@@ -250,3 +250,55 @@ test("the coordinates still work, the keyboard way", async ({ page }) => {
   await page.getByRole("button", { name: COPY.es.next }).click();
   await expect(page.getByRole("textbox", { name: "Nombre", exact: true })).toBeVisible();
 });
+
+/** Press Tab until the focused element's name matches. */
+async function tabTo(page: Page, name: RegExp) {
+  for (let i = 0; i < 40; i++) {
+    await page.keyboard.press("Tab");
+    const label = await page.evaluate(() => {
+      const element = document.activeElement as HTMLElement;
+      return element.getAttribute("aria-label") ?? element.textContent ?? "";
+    });
+    if (name.test(label.trim())) return;
+  }
+  throw new Error(`Tab never reached ${name}`);
+}
+
+test("the whole flow from the keyboard alone: location, not the same place, a site, create", async ({ page }) => {
+  const here = spot();
+  await prepare(page);
+  await locateAt(page, here);
+  await page.goto("/");
+  const csrf = (await (await page.request.get("/api/auth/me")).json()).csrf_token;
+  const first = await page.request.post("/api/places", {
+    headers: { "X-CSRF-Token": csrf, Origin: new URL(page.url()).origin },
+    data: { name: "Ya estaba", latitude: here.lat, longitude: here.lon },
+  });
+  expect(first.status()).toBe(201);
+
+  await tabTo(page, /^Añadir lugar$/);
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { level: 2 })).toBeFocused();
+  await tabTo(page, /^Usar mi ubicación actual/);
+  await page.keyboard.press("Enter");
+  await expect(page.getByText(COPY.es.accuracy)).toBeVisible();
+  await tabTo(page, /^Siguiente$/);
+  await page.keyboard.press("Enter");
+
+  await expect(page.getByRole("heading", { level: 3, name: COPY.es.sameTitle })).toBeFocused();
+  await tabTo(page, /^No, es un lugar distinto$/);
+  await page.keyboard.press("Enter");
+
+  await expect(page.getByRole("heading", { level: 3, name: COPY.es.sitesTitle })).toBeFocused();
+  await tabTo(page, /^Es este: Café Central$/);
+  await page.keyboard.press("Enter");
+
+  const name = page.getByRole("textbox", { name: "Nombre", exact: true });
+  await expect(name).toHaveValue("Café Central");
+  await tabTo(page, /^Siguiente$/);
+  await page.keyboard.press("Enter");
+  await tabTo(page, /^Crear el lugar$/);
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("complementary").getByRole("heading", { level: 2, name: "Café Central" })).toBeFocused();
+  expect(await nearbyCount(page, here)).toBe(2);
+});
