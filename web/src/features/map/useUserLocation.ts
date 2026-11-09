@@ -3,24 +3,22 @@
 //   off -> (explanation, the first time) -> searching -> on -> off
 //                                               \-> an error, then off again
 //
-// Searching is useBestLocation, the same code the add-place flow uses: up to
-// 8 s of watchPosition, keeping the most precise reading. While on, a lighter
-// watch keeps the marker up to date, at most once a second.
+// Searching is searchPosition: high accuracy first, then without it. While on,
+// a lighter watch keeps the marker up to date, at most once a second.
 //
 // The position stays in this component's memory. It is not sent anywhere and
 // not stored, and "on" is not remembered: every visit starts off, so showing
 // your location is always something you just decided to do.
 import { useEffect, useRef, useState } from "react";
 
-import { useBestLocation, type Reading } from "../add-place/useBestLocation";
+import type { Reading } from "../add-place/useBestLocation";
+import { HIGH_ACCURACY_MS, LOW_ACCURACY_MS, searchPosition, type SearchEnd } from "./searchPosition";
 
 export type LocateStatus = "off" | "prompt" | "searching" | "on";
 export type LocateError = "denied" | "unavailable" | "timeout" | "unsupported";
 
 /** Fastest the marker may be updated. Also spares the battery a little. */
 export const MIN_UPDATE_MS = 1000;
-
-const ignore = () => {};
 
 async function permissionState(): Promise<PermissionState | null> {
   try {
@@ -30,8 +28,11 @@ async function permissionState(): Promise<PermissionState | null> {
   }
 }
 
+type Geo = { kind: "idle" } | { kind: "locating" } | { kind: "unsupported" } | SearchEnd;
+
 export function useUserLocation({ active, locateMs }: { active: boolean; locateMs?: number }) {
-  const { geo, locate, cancel } = useBestLocation(ignore, locateMs);
+  const [geo, setGeo] = useState<Geo>({ kind: "idle" });
+  const cancelSearch = useRef<() => void>(() => {});
   const [phase, setPhase] = useState<"off" | "prompt" | "running">("off");
   const [tracked, setTracked] = useState<Reading | null>(null);
   const [trackError, setTrackError] = useState<LocateError | null>(null);
@@ -48,6 +49,31 @@ export function useUserLocation({ active, locateMs }: { active: boolean; locateM
 
   const error: LocateError | null = phase === "running" && failed ? geo.kind : trackError;
   const reading = status === "on" && geo.kind === "found" ? (tracked ?? geo.reading) : null;
+
+  function cancel() {
+    cancelSearch.current();
+    cancelSearch.current = () => {};
+    setGeo({ kind: "idle" });
+  }
+
+  async function locate() {
+    if (!("geolocation" in navigator)) {
+      setGeo({ kind: "unsupported" });
+      return;
+    }
+    // Already blocked: say how to unblock it (the browser would refuse silently).
+    if ((await permissionState()) === "denied") {
+      setGeo({ kind: "denied" });
+      return;
+    }
+    cancelSearch.current();
+    setGeo({ kind: "locating" });
+    cancelSearch.current = searchPosition(
+      navigator.geolocation,
+      { highMs: locateMs ?? HIGH_ACCURACY_MS, lowMs: locateMs ?? LOW_ACCURACY_MS },
+      setGeo,
+    );
+  }
 
   function stop() {
     cancel();
@@ -90,6 +116,9 @@ export function useUserLocation({ active, locateMs }: { active: boolean; locateM
   useEffect(() => {
     latest.current = { stop, status };
   });
+
+  // Leaving the screen stops the search.
+  useEffect(() => () => cancelSearch.current(), []);
 
   // --- Light tracking while on ---------------------------------------------
   const tracking = status === "on" && visible && active;

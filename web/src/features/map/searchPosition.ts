@@ -1,0 +1,101 @@
+// Finding the person's position for the map's "where am I?" button.
+//
+// Two attempts, because not every device can do what the first one asks:
+//
+//   1. High accuracy, up to 8 s, keeping the most precise reading.
+//   2. If that produced nothing: no high accuracy, up to 10 s more, and the
+//      first reading is good enough.
+//
+// Computers without GPS may fail or go quiet when asked for high accuracy and
+// still answer the ordinary question (see docs/PHONE_SETUP.md). A cold GPS may
+// also simply need more than 8 s. The timers are our own: a browser is allowed
+// to never call back at all.
+import type { Reading } from "../add-place/useBestLocation";
+
+export const HIGH_ACCURACY_MS = 8000;
+export const LOW_ACCURACY_MS = 10_000;
+/** Precise enough: no point in making the person wait longer. */
+const GOOD_ENOUGH_M = 10;
+/** The second attempt accepts a position this old. */
+const LOW_ACCURACY_MAX_AGE_MS = 60_000;
+
+export type SearchEnd = { kind: "found"; reading: Reading } | { kind: "denied" } | { kind: "unavailable" } | { kind: "timeout" };
+
+export interface SearchLimits {
+  highMs: number;
+  lowMs: number;
+}
+
+/** Starts the search. The function returned cancels it. */
+export function searchPosition(geolocation: Geolocation, limits: SearchLimits, onEnd: (end: SearchEnd) => void): () => void {
+  let best: Reading | null = null;
+  let finished = false;
+  let lastCode: number | null = null;
+  let attempt = 0;
+  let watch: number | undefined;
+  let timer: number | undefined;
+
+  const release = () => {
+    if (watch !== undefined) geolocation.clearWatch(watch);
+    if (timer !== undefined) window.clearTimeout(timer);
+    watch = undefined;
+    timer = undefined;
+  };
+
+  const finish = (end: SearchEnd) => {
+    if (finished) return;
+    finished = true;
+    release();
+    onEnd(end);
+  };
+
+  const finishWithBest = () => {
+    if (best) finish({ kind: "found", reading: best });
+  };
+
+  const giveUp = () => finish(lastCode === 2 ? { kind: "unavailable" } : { kind: "timeout" });
+
+  function listen(high: boolean, limitMs: number, next: () => void) {
+    release();
+    const mine = ++attempt;
+    const id = geolocation.watchPosition(
+      (position) => {
+        if (finished || mine !== attempt) return;
+        const reading = {
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+          meters: Math.round(position.coords.accuracy),
+        };
+        if (!best || reading.meters < best.meters) best = reading;
+        if (!high || reading.meters <= GOOD_ENOUGH_M) finishWithBest();
+      },
+      (error) => {
+        if (finished || mine !== attempt) return;
+        if (best) finishWithBest();
+        else if (error.code === error.PERMISSION_DENIED) finish({ kind: "denied" });
+        else {
+          lastCode = error.code;
+          next();
+        }
+      },
+      { enableHighAccuracy: high, timeout: limitMs, maximumAge: high ? 0 : LOW_ACCURACY_MAX_AGE_MS },
+    );
+    // Something already answered, inside the call itself.
+    if (finished || mine !== attempt) {
+      geolocation.clearWatch(id);
+      return;
+    }
+    watch = id;
+    timer = window.setTimeout(() => {
+      if (best) finishWithBest();
+      else next();
+    }, limitMs);
+  }
+
+  listen(true, limits.highMs, () => listen(false, limits.lowMs, giveUp));
+
+  return () => {
+    finished = true;
+    release();
+  };
+}

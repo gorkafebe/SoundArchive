@@ -80,13 +80,11 @@ test.describe("what the person sees", () => {
   });
 
   test("first reading after 9 s (cold GPS, A5): shown", async ({ page }) => {
-    test.fail(true, "A5/B6: gives up at 8 s with a timeout, no second attempt");
     await pressButton(page, "after9s");
     await expectShown(page, /±30 m$/);
   });
 
   test("first reading after 15 s (cold GPS, A5): shown", async ({ page }) => {
-    test.fail(true, "A5/B6: gives up at 8 s with a timeout, no second attempt");
     await pressButton(page, "after15s");
     await expectShown(page, /±30 m$/);
   });
@@ -132,13 +130,11 @@ test.describe("what the person sees", () => {
   });
 
   test("high accuracy fails, low accuracy works (B6): shown", async ({ page }) => {
-    test.fail(true, "B6: one attempt only, always with high accuracy");
     await pressButton(page, "highFails");
     await expectShown(page, /±900 m$/);
   });
 
   test("high accuracy says nothing, low accuracy works (B6): shown", async ({ page }) => {
-    test.fail(true, "B6: one attempt only, always with high accuracy");
     await pressButton(page, "highSilent");
     await expectShown(page, /±900 m$/);
   });
