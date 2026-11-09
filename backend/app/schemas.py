@@ -99,6 +99,29 @@ class NearbyPlaces(BaseModel):
     radius_m: float
 
 
+class ExternalSuggestion(BaseModel):
+    """A named site from an outside list, not (yet) a place here."""
+
+    external_source: str
+    external_id: str
+    name: str
+    category: str
+    latitude: float
+    longitude: float
+    distance_m: float
+    # A place here that seems to be this same site, by name.
+    matches_place_id: uuid.UUID | None = None
+
+
+class PlaceSuggestions(BaseModel):
+    existing: list[NearbyPlace]
+    external: list[ExternalSuggestion]
+    # False when the outside list could not be asked. Nothing to show the person.
+    external_available: bool
+    attribution: str | None = None
+    radius_m: float
+
+
 # --- GeoJSON (RFC 7946), the format MapLibre reads directly -----------------
 
 
@@ -134,3 +157,7 @@ class PublicConfig(BaseModel):
     writes_enabled: bool
     map_style_url: str
     map_style_url_dark: str
+    external_places_enabled: bool = False
+    satellite_enabled: bool = False
+    satellite_global_fallback: bool = False
+    topo_es_enabled: bool = False

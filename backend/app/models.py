@@ -104,6 +104,17 @@ class Place(Base):
     )
 
 
+class ExternalPlaceCell(Base):
+    """What an outside provider said about one grid cell (app/place_suggestions.py)."""
+
+    __tablename__ = "external_place_cells"
+
+    provider: Mapped[str] = mapped_column(String(16), primary_key=True)
+    cell: Mapped[str] = mapped_column(String(40), primary_key=True)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    places: Mapped[list[dict[str, Any]]] = mapped_column(JSONB)
+
+
 class User(Base):
     """An account. Created through an invitation or the admin command line."""
 
