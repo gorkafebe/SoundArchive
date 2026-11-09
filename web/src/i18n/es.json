@@ -72,6 +72,26 @@
       },
       "failed": "No se han podido cargar las imágenes de esta capa.",
       "backToMap": "Volver al mapa"
+    },
+    "locate": {
+      "show": "Mostrar mi ubicación",
+      "searching": "Buscando tu ubicación…",
+      "center": "Centrar en mi ubicación",
+      "stop": "Dejar de mostrar mi ubicación",
+      "promptTitle": "Verte en el mapa",
+      "promptBody": "Tu ubicación se usa solo en tu dispositivo para mostrarte en el mapa. No se envía ni se guarda.",
+      "accept": "Continuar",
+      "decline": "Ahora no",
+      "me": "Tu ubicación, precisión ±{meters} m",
+      "found": "Ubicación encontrada, con una precisión de ±{meters} m.",
+      "approximate": "Ubicación aproximada (±{meters} m).",
+      "error": {
+        "denied": "El navegador tiene bloqueado el acceso a tu ubicación en este sitio.",
+        "deniedHelp": "Para permitirlo, abre los ajustes del sitio (el icono junto a la dirección web), busca «Ubicación» y elige «Permitir». El mapa sigue funcionando sin ella.",
+        "unavailable": "No se pudo saber tu ubicación ahora mismo. Inténtalo de nuevo más tarde.",
+        "timeout": "La búsqueda de tu ubicación tardó demasiado. Inténtalo de nuevo.",
+        "unsupported": "Este navegador no puede compartir tu ubicación."
+      }
     }
   },
   "coords": {

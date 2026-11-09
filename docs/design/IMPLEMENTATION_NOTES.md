@@ -163,3 +163,13 @@ None of these screens were in the design. They use the existing components and t
 - **Layer selector:** a floating button under the zoom controls; the options open to its left and upwards so they fit in the small map. The current option is shown with a check mark and bold, not by colour alone.
 - **New tokens** (`--map-marker-ring`, `--map-marker-outline`, `--map-label-on-image`, `--map-halo-on-image`, `--map-road-on-image`): the design's map colours assume a quiet basemap, and a photograph is not one. A pin over imagery gets a light ring with a dark edge, so it keeps 3:1 against anything underneath.
 - **Credits on a phone:** imagery credits are long and wrap, so at phone width they move above the floating "add place" button.
+
+# Invented for the "show my location" button (2026-11-09)
+
+- **The marker is a target, not a dot.** The brief described the places as pins and the person as a round dot with a white ring. In the real interface places are round discs, and a selected place is a larger disc with a halo. A plain dot with a ring would have looked like one. So: a small dot inside a thick white ring with a dark edge, inside a larger halo with a visible outline. In greyscale it still reads as concentric rings against solid discs (`capturas/gris/` in the session's folder).
+- **`--map-me` (magenta, `#c2185b`)** is a colour used nowhere else: not the accent (places, actions), and not one of the status colours, which carry meaning. It has 5.87:1 against its white ring. Against the place colour the lightness is close in the light theme (1.07:1), which is why the difference never relies on colour.
+- **Ring and edge together give 3:1 everywhere.** A white ring disappears on a pale map and a dark edge on a dark one. `web/scripts/check-contrast.mjs` calculates the better of the two against each background, including white, mid grey and black for photographs: lowest value 4.76:1, on mid grey.
+- **`--map-me-accuracy`** is a lighter tone in the dark theme, so the circle's line can be seen there.
+- **The halo pulses gently**, and is still with `prefers-reduced-motion`. It is the one decorative movement on the map, requested for this marker.
+- **The explanation** is a floating `PrePrompt` under the search bar, so the attribution stays visible while it is open.
+- **Messages** go with the map's other status lines, top left, away from the crowded bottom corners.

@@ -1,9 +1,10 @@
 // The site over real HTTPS: the browser's own validation accepts the private
 // CA (no "ignore certificate errors" anywhere), which is what makes it a
 // secure context, the condition for the microphone and geolocation.
-import { expect, test } from "@playwright/test";
+import { expect, prepare, test } from "./fixtures";
 
 test("HTTPS is trusted and the page is a secure context", async ({ page }) => {
+  await prepare(page); // no request leaves for the real tile server
   const response = await page.goto("/");
   expect(response?.status()).toBe(200);
   expect(new URL(page.url()).protocol).toBe("https:");
@@ -12,6 +13,7 @@ test("HTTPS is trusted and the page is a secure context", async ({ page }) => {
 });
 
 test("security headers are present on the page", async ({ page }) => {
+  await prepare(page); // no request leaves for the real tile server
   const response = await page.goto("/");
   const headers = response!.headers();
   expect(headers["content-security-policy"]).toContain("default-src 'self'");

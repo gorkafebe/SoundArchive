@@ -50,6 +50,16 @@ To try after updating, none of it tested on a real phone yet:
 - **Camera.** "Take a photo" opens the phone's camera app directly (`capture="environment"`). Without the certificate from step 2 the page is not a secure context and the location will not work.
 - **Known risks.** A browser may ignore `capture` and show the file picker instead, which still works. On iOS, Safari's location and camera were not tested. Very large photos are refused above 20 MB or 40 megapixels; a phone at maximum resolution can come close.
 
+## The "show my location" button (added 2026-11-09)
+
+Bottom right of the map. None of this has been tried on a real phone yet.
+
+- The first time it explains what it does; the browser asks for permission only after you accept.
+- **If you refused:** on Android, Chrome does not ask again by itself. Tap the icon next to the address, Permissions, Location, Allow. On iOS: Settings, Privacy & Security, Location Services, and the browser's entry; then the site's own setting.
+- **Indoors** expect tens or hundreds of metres of doubt, and a position that wanders: the circle shows how much. Above 1000 m it says "approximate".
+- **With the screen off or the tab in the background it stops**, on purpose, to save battery and because a page cannot rely on running then. It resumes when you come back.
+- iOS Safari may not have the Permissions API, so the explanation can appear once per visit.
+
 ## 5. Known risks
 
 - **Recording in the background.** Browsers stop or silence capture when the page is hidden or the phone locks. Keep the screen on and the page in front while recording. This is a platform limit that a web app cannot remove.

@@ -72,6 +72,26 @@
       },
       "failed": "The images for this layer could not be loaded.",
       "backToMap": "Back to the map"
+    },
+    "locate": {
+      "show": "Show my location",
+      "searching": "Finding your location…",
+      "center": "Centre on my location",
+      "stop": "Stop showing my location",
+      "promptTitle": "See yourself on the map",
+      "promptBody": "Your location is used only on your device, to show you on the map. It is neither sent nor saved.",
+      "accept": "Continue",
+      "decline": "Not now",
+      "me": "Your location, accuracy ±{meters} m",
+      "found": "Location found, accurate to ±{meters} m.",
+      "approximate": "Approximate location (±{meters} m).",
+      "error": {
+        "denied": "Your browser blocks access to your location on this site.",
+        "deniedHelp": "To allow it, open the site settings (the icon next to the web address), find “Location” and choose “Allow”. The map keeps working without it.",
+        "unavailable": "Your location is not available right now. Try again later.",
+        "timeout": "Finding your location took too long. Try again.",
+        "unsupported": "This browser cannot share your location."
+      }
     }
   },
   "coords": {

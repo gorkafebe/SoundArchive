@@ -138,3 +138,34 @@ Session of 2026-11-09, branch `feat/place-dedupe-camera`. Output in the owner's 
 - A real phone: real GPS, real camera, Android or iOS.
 - A real webcam on a computer.
 - A real screen reader.
+
+# Acceptance record: the "show my location" button
+
+Session of 2026-11-09, branch `feat/locate-me`, on top of `feat/place-dedupe-camera`. Output in `~/SoundArchive-Informe/ubicacion-2026-11-09/evidencias/`.
+
+| Criterion | How | Result (2026-11-09) |
+|---|---|---|
+| `make check` | API, guards, web | 209 and 205 tests pass |
+| `make e2e` | Fresh stack | 128 pass: the 109 earlier ones plus 19 new |
+| No internet in `make e2e` | `tcpdump` witnesses on the browser and API containers | Baseline: 3 connections to public addresses (npm's update check; the tile server from `https.spec.ts`), fixed. Final run: 0 |
+| Production configuration | `config --quiet` and the `prod-check` tests under `sa-test-prodcheck` | Valid; no ports for db and api; no `TEST_ADMIN_*` |
+| Bottom right, 44 px, no overlap, credit visible | `locate.spec.ts`: 390 and 1440, both themes, also with the long satellite credit | Pass |
+| Permission only after a tap and the explanation; not repeated once granted | `useUserLocation.test.tsx`, `locate.spec.ts` | Pass |
+| Errors clear and not blocking; never stuck searching | Same | Pass |
+| Centred, marker, circle, accessible name | `LocateControl.test.tsx`, `locate.spec.ts` | Pass |
+| Marker distinct from a place, also in greyscale | Screenshots in `capturas/` and `capturas/gris/`, looked at | Pass, with imagery simulated by a test image |
+| Contrast 3:1 of ring and dot | `npm run check:contrast` | Lowest 4.76:1 on mid grey; dot against ring 5.87:1 |
+| No sheet, no cluster, no stolen clicks | `locate.spec.ts`: `elementFromPoint` on a pin under the marker; cluster count unchanged | Pass |
+| Survives layers, theme, style | `locate.spec.ts`, alternating; `style.load` in `LocateControl.test.tsx` | Pass. The circle after a style change is verified by the unit test and by looking, not in a browser assertion |
+| Tracking stops when hidden; off removes the marker; off on each visit | `useUserLocation.test.tsx`, `locate.spec.ts` | Pass |
+| The position leaves nothing behind | `locate.spec.ts`: requests, `localStorage`, `sessionStorage` | No request of its own; storage unchanged. Centring loads that area like any move of the map: see `SECURITY.md` |
+| axe; keyboard only; 44 px | `locate.spec.ts`, `mobile.spec.ts` | No serious or critical issue; pass |
+| Earlier tests intact | `git diff feat/place-dedupe-camera -- web/e2e` | `https.spec.ts`: 3 lines, so that it stops reaching the internet. `mobile.spec.ts`: one test added |
+| `sa-tailnet` updated, data kept | restic copy; row counts; headers before and after | Identical; 6 services healthy |
+| Exposure; production and panel | `make exposure-check`; container ids | OK; identical |
+
+## Not verified
+
+- Real GPS, a real phone, Android or iOS, accuracy indoors.
+- A real screen reader.
+- The marker over real satellite imagery: a test image was used, because this work adds no outside call. The contrast figures cover the extremes.

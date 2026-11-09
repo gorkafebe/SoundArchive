@@ -26,9 +26,11 @@ import { useTheme } from "../../lib/theme";
 import { buildIndex, clustersFor, type PlaceProps } from "./clusters";
 import { boundsToBbox } from "./geo";
 import { LayerControl } from "./LayerControl";
+import { LocateControl } from "./LocateControl";
 import { MapLayers } from "./MapLayers";
 import { applyMapTokens } from "./mapTokens";
 import { MarkerLayer, type MarkerLabels } from "./markers";
+import { UserMarker } from "./UserMarker";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -52,6 +54,8 @@ interface MapViewProps {
   onCameraChange: (camera: Camera) => void;
   /** Change it to reload the places (e.g. after one was created). */
   reloadKey: number;
+  /** False while it is hidden behind the list or the add-place flow. */
+  active?: boolean;
   ref?: Ref<MapViewHandle>;
 }
 
@@ -68,7 +72,7 @@ export function styleUrlFor(config: PublicConfig, theme: "light" | "dark"): stri
   return new URL(url, window.location.href).href;
 }
 
-export function MapView({ config, initialCamera, selectedId, onSelect, onCameraChange, reloadKey, ref }: MapViewProps) {
+export function MapView({ config, initialCamera, selectedId, onSelect, onCameraChange, reloadKey, active = true, ref }: MapViewProps) {
   const { t, formatNumber } = useI18n();
   const { theme } = useTheme();
   const announce = useAnnounce();
@@ -80,6 +84,8 @@ export function MapView({ config, initialCamera, selectedId, onSelect, onCameraC
   const [mapError, setMapError] = useState(false);
   const [loadTick, setLoadTick] = useState(0);
   const [layers, setLayers] = useState<MapLayers | null>(null);
+  const [me, setMe] = useState<{ map: maplibregl.Map; marker: UserMarker } | null>(null);
+  const [statusSlot, setStatusSlot] = useState<HTMLDivElement | null>(null);
 
   // Latest callbacks and texts, read from MapLibre's event handlers without
   // re-creating the map each time they change.
@@ -144,11 +150,14 @@ export function MapView({ config, initialCamera, selectedId, onSelect, onCameraC
     });
     // On every style, also after a change of theme.
     const mapLayers = new MapLayers(map, config);
+    const userMarker = new UserMarker(map);
     map.on("style.load", () => {
       applyMapTokens(map);
       mapLayers.onStyleLoad();
+      userMarker.onStyleLoad();
     });
     setLayers(mapLayers);
+    setMe({ map, marker: userMarker });
     map.on("error", (event: maplibregl.ErrorEvent) => {
       // An error before the style has loaded means no basemap at all. Later
       // errors are usually a single missing tile, which is harmless.
@@ -189,7 +198,9 @@ export function MapView({ config, initialCamera, selectedId, onSelect, onCameraC
       resize.disconnect();
       layer.destroy();
       mapLayers.destroy();
+      userMarker.destroy();
       setLayers(null);
+      setMe(null);
       map.remove();
       mapRef.current = null;
       layerRef.current = null;
@@ -297,7 +308,8 @@ export function MapView({ config, initialCamera, selectedId, onSelect, onCameraC
     <section className="map-view" aria-label={t("map.label")}>
       <div ref={containerRef} className="map-view__canvas" />
       {layers && <LayerControl layers={layers} />}
-      <div className="map-view__status">
+      {me && <LocateControl map={me.map} marker={me.marker} statusSlot={statusSlot} active={active} />}
+      <div className="map-view__status" ref={setStatusSlot}>
         {mapError && <p className="map-status map-status--error">{t("map.styleError")}</p>}
         {status.kind === "loading" && <p className="map-status">{t("map.status.loading")}</p>}
         {status.kind === "error" && (

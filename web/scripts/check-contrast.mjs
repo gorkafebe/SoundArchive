@@ -82,6 +82,36 @@ for (const [theme, t] of Object.entries(themes)) {
     );
   }
 }
+// The person's own marker sits on anything: both basemaps and photographs. A
+// white ring alone vanishes on a pale map and a dark edge alone on a dark one,
+// so what must reach 3:1 is the better of the two against each background.
+// #808080 is the worst case for a two-tone outline; #ffffff and #000000 stand
+// for the brightest and darkest a photograph can be.
+const IMAGERY = { "imagery white": "#ffffff", "imagery mid grey": "#808080", "imagery black": "#000000" };
+for (const [theme, t] of Object.entries(themes)) {
+  const backgrounds = {
+    ...IMAGERY,
+    "map-land": t["map-land"],
+    "map-water": t["map-water"],
+    "map-road": t["map-road"],
+  };
+  for (const [name, bg] of Object.entries(backgrounds)) {
+    const ring = ratio(t["map-me-ring"], bg);
+    const edge = ratio(t["map-me-edge"], bg);
+    const best = Math.max(ring, edge);
+    const ok = best >= UI;
+    if (!ok) failures++;
+    console.log(
+      `${ok ? "ok  " : "FAIL"} ${theme.padEnd(5)} ${best.toFixed(2).padStart(5)}:1 (min ${UI}) me marker on ${name} (ring ${ring.toFixed(2)}, edge ${edge.toFixed(2)})`,
+    );
+  }
+  const dot = ratio(t["map-me"], t["map-me-ring"]);
+  if (dot < UI) failures++;
+  console.log(`${dot >= UI ? "ok  " : "FAIL"} ${theme.padEnd(5)} ${dot.toFixed(2).padStart(5)}:1 (min ${UI}) me dot against its ring`);
+  const place = ratio(t["map-me"], t["accent"]);
+  console.log(`info ${theme.padEnd(5)} ${place.toFixed(2).padStart(5)}:1 me dot against the place colour (differs by shape and size too)`);
+}
+
 if (failures) {
   console.error(`\n${failures} colour pair(s) below the WCAG AA minimum.`);
   process.exit(1);

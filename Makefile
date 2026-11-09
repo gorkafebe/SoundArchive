@@ -148,6 +148,7 @@ e2e-up: guard-project e2e-image
 e2e: e2e-up ## Dev: end-to-end browser tests over HTTPS (Playwright in Docker)
 	docker run --rm --name sa-e2e-playwright --network $(E2E_PROJECT)_default --shm-size=1g \
 	  -u "$$(id -u):$$(id -g)" -e HOME=/tmp/home -v "$(CURDIR)/web:/app" -w /app \
+	  -e npm_config_update_notifier=false \
 	  -e NODE_EXTRA_CA_CERTS=/app/test-results/ca/root.crt \
 	  $(E2E_IMAGE) e2e-run npx playwright test $(E2E_ARGS)
 e2e-down: guard-project ## Dev: destroy the end-to-end stack and its data

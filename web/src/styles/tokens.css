@@ -24,6 +24,11 @@
   --map-road-on-image: rgba(255,255,255,0.3);
   --map-marker-ring: #ffffff;
   --map-marker-outline: #0b121b;
+  --map-me: #c2185b;
+  --map-me-ring: #ffffff;
+  --map-me-edge: #0b121b;
+  --map-me-halo: rgba(194,24,91,0.2);
+  --map-me-accuracy: #a3134c;
   --shadow-sheet: 0 -6px 24px rgba(20,32,46,0.14);
   --shadow-pin: 0 2px 6px rgba(20,32,46,0.3);
 }
@@ -52,6 +57,11 @@
   --map-road-on-image: rgba(255,255,255,0.3);
   --map-marker-ring: #ffffff;
   --map-marker-outline: #0b121b;
+  --map-me: #c2185b;
+  --map-me-ring: #ffffff;
+  --map-me-edge: #0b121b;
+  --map-me-halo: rgba(194,24,91,0.2);
+  --map-me-accuracy: #f27aa6;
   --shadow-sheet: 0 -6px 24px rgba(0,0,0,0.55);
   --shadow-pin: 0 2px 6px rgba(0,0,0,0.6);
 }

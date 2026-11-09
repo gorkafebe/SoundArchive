@@ -239,6 +239,7 @@ export function Workspace() {
                   onSelect={select}
                   onCameraChange={onCameraChange}
                   reloadKey={reloadKey}
+                  active={url.view === "map" && !adding}
                 />
               </div>
               {url.view === "list" && (
