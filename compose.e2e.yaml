@@ -7,6 +7,17 @@ services:
     environment:
       # The browser container opens the site as https://soundarchive.
       ALLOWED_ORIGINS: "https://soundarchive,https://localhost:19443"
+      # Suggestions come from the local stand-in: the tests never reach Overpass.
+      EXTERNAL_PLACES_ENABLED: "true"
+      OVERPASS_URL: "http://sa-e2e-overpass-mock:8080/api/interpreter"
+      OVERPASS_URL_FALLBACK: ""
+      OVERPASS_TIMEOUT_S: "2"
+      OVERPASS_MIN_INTERVAL_S: "0"
+      OVERPASS_DAILY_CAP: "100000"
+      SUGGEST_RATE_PER_MINUTE: "1000"
+    depends_on:
+      overpass-mock:
+        condition: service_healthy
 
   caddy:
     networks:
@@ -14,3 +25,16 @@ services:
         # The certificate lists "soundarchive"; this name makes it resolve
         # to Caddy from the browser container on this network.
         aliases: [soundarchive]
+
+  overpass-mock:
+    image: python:3.14.2-alpine3.23
+    container_name: sa-e2e-overpass-mock
+    command: ["python", "-I", "/mock.py"]
+    volumes:
+      - ./infra/e2e/overpass-mock.py:/mock.py:ro
+    networks: [default]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/__health', timeout=2)"]
+      interval: 2s
+      timeout: 3s
+      retries: 10

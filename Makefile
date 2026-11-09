@@ -38,7 +38,7 @@ NODE = docker run --rm -u "$$(id -u):$$(id -g)" -v "$(CURDIR)/web:/app" -w /app 
 
 # These targets are command names, not files to build.
 .PHONY: help guard-project guard-prod guard-test up down ps logs test migrate seed-dev psql reset-db \
-        web-install web-check web-build web-dev check e2e e2e-real-tiles \
+        web-install web-check web-build web-dev check e2e e2e-real-tiles e2e-manual \
         e2e-image e2e-up e2e-down tailnet-up tailnet-down tailnet-ps tailnet-logs tailnet-ca-export exposure-check need-username need-id admin-create admin-reset-password invite-create purge-recording purge-place \
         prod-config prod-check prod-up prod-down prod-ps prod-logs \
         msi-check msi-snapshot shellcheck backup restore-test need-backup-vars
@@ -160,6 +160,13 @@ e2e-real-tiles: e2e-up ## Dev: one manual browser check with the real map tiles
 	  -u "$$(id -u):$$(id -g)" -e HOME=/tmp/home -e E2E_REAL_TILES=1 -v "$(CURDIR)/web:/app" -w /app \
 	  -e NODE_EXTRA_CA_CERTS=/app/test-results/ca/root.crt \
 	  $(E2E_IMAGE) e2e-run npx playwright test --project=chromium real-tiles
+# Other manual browser checks (web/e2e/*.manual.spec.ts). real-layers needs the
+# internet; screens does not. Example: make e2e-manual E2E_ARGS=screens
+e2e-manual: e2e-up ## Dev: run a manual browser check (E2E_ARGS=real-layers or screens)
+	docker run --rm --name sa-e2e-manual --network $(E2E_PROJECT)_default --shm-size=1g \
+	  -u "$$(id -u):$$(id -g)" -e HOME=/tmp/home -e E2E_REAL_TILES=1 -v "$(CURDIR)/web:/app" -w /app \
+	  -e NODE_EXTRA_CA_CERTS=/app/test-results/ca/root.crt \
+	  $(E2E_IMAGE) e2e-run npx playwright test --project=chromium $(E2E_ARGS)
 reset-db: guard-project ## Dev: DELETE all database data and volumes, then start fresh
 	@printf 'This deletes ALL database data in the dev Docker volumes. Type y to continue: '; \
 	  read answer; [ "$$answer" = y ] || { echo "Cancelled."; exit 1; }

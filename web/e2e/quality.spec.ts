@@ -5,7 +5,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 
-import { expect, prepare, test, waitForPins } from "./fixtures";
+import { freshCoordinates, expect, prepare, test, waitForPins } from "./fixtures";
 
 const SCREENS = "test-results/screens";
 const SPAIN = "/?view=map&lat=40.50000&lon=-2.50000&z=5.50";
@@ -36,6 +36,7 @@ const screens: Record<string, (page: Page) => Promise<void>> = {
   "add-step-1": async (page) => {
     await page.goto(BILBAO);
     await page.getByRole("button", { name: "Añadir lugar" }).click();
+    await page.getByRole("button", { name: "Elegir en el mapa" }).click();
     await expect(page.locator(".location-picker canvas")).toBeVisible();
   },
   "add-errors": async (page) => {
@@ -159,13 +160,17 @@ test.describe("keyboard only", () => {
     await tabTo(page, /^Añadir lugar$/);
     await page.keyboard.press("Enter");
     await expect(page.getByRole("heading", { level: 2 })).toBeFocused();
+    await tabTo(page, /^Avanzado/);
+    await page.keyboard.press("Enter"); // unfolds the coordinates
     await tabTo(page, /^$/);
     await expect(page.getByLabel("Latitud")).toBeFocused();
-    await page.keyboard.type("43,2600");
+    const coordinates = freshCoordinates();
+    await page.keyboard.type(coordinates.lat);
     await page.keyboard.press("Tab");
-    await page.keyboard.type("-2,9400");
+    await page.keyboard.type(coordinates.lon);
     await page.keyboard.press("Enter"); // submits the step
     const name = page.getByRole("textbox", { name: "Nombre" });
+    await expect(name).toBeVisible();
     await tabTo(page, /^$/);
     await expect(name).toBeFocused();
     await page.keyboard.type(`E2E teclado ${Date.now()}`);
@@ -192,6 +197,8 @@ test.describe("target size", () => {
             // (the map attribution line). The map canvas is the whole map.
             if (el.closest(".maplibregl-ctrl-attrib")) return false;
             if (el.classList.contains("maplibregl-canvas")) return false;
+            // A checkbox inside its label: the whole 44 px label is the target.
+            if (el.matches("label input[type=checkbox]")) return false;
             const box = el.getBoundingClientRect();
             return box.width > 0 && box.height > 0 && (box.width < 43.5 || box.height < 43.5);
           })
