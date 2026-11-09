@@ -213,7 +213,7 @@ describe("the button", () => {
     expect(busy).toHaveAttribute("aria-busy", "true");
     // The window ends: never stuck in "searching".
     expect(await screen.findByRole("button", { name: SHOW })).toHaveAttribute("aria-busy", "false");
-    expect(screen.getByText(/tardó demasiado/)).toBeInTheDocument();
+    expect(document.querySelector(".locate-notice")).toHaveTextContent(/tardó demasiado/);
   });
 
   it("on and centred: a press turns it off and takes the marker away", async () => {
@@ -245,7 +245,7 @@ describe("the button", () => {
     renderControl();
     await turnOn();
     await waitFor(() =>
-      expect(document.querySelector('[role="status"]')).toHaveTextContent(`Ubicación encontrada, con una precisión de ±8 m. ${STOP}`),
+      expect(document.querySelector(".locate-live")).toHaveTextContent(`Ubicación encontrada, con una precisión de ±8 m. ${STOP}`),
     );
   });
 
@@ -254,7 +254,7 @@ describe("the button", () => {
     const { slot } = renderControl();
     const u = userEvent.setup();
     await u.click(button(SHOW));
-    await screen.findByText(/tiene bloqueado el acceso/);
+    await waitFor(() => expect(slot).toHaveTextContent(/tiene bloqueado el acceso/));
     expect(slot).toHaveTextContent("abre los ajustes del sitio");
     expect(button(SHOW)).toBeInTheDocument();
     await u.click(screen.getByRole("button", { name: "Cerrar" }));
@@ -361,6 +361,7 @@ describe("the marker", () => {
   it("knows whether the map is still centred on the person", () => {
     const { map, marker } = setup();
     map.center = { lng: -2, lat: 41 };
+    marker.update(reading(30), "x");
     marker.update(reading(30), "x");
     expect(marker.getCentered()).toBe(true);
     map.center = { lng: -1.9, lat: 41 };

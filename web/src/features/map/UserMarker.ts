@@ -52,15 +52,17 @@ export class UserMarker {
   private styleReady = false;
   // It starts true: turning on centres the map straight away.
   private centered = true;
+  // Moving to the person: a position arriving meanwhile must not read as "moved away".
+  private centering = false;
   private readonly listeners = new Set<() => void>();
 
   constructor(map: maplibregl.Map) {
     this.map = map;
-    map.on("moveend", this.measure);
+    map.on("moveend", this.onMoveEnd);
   }
 
   destroy(): void {
-    this.map.off("moveend", this.measure);
+    this.map.off("moveend", this.onMoveEnd);
     this.marker?.remove();
     this.marker = null;
     this.listeners.clear();
@@ -80,12 +82,17 @@ export class UserMarker {
     this.listeners.forEach((listener) => listener());
   }
 
-  private readonly measure = () => {
-    if (!this.reading) return;
+  private readonly onMoveEnd = () => {
+    this.centering = false;
+    this.measure();
+  };
+
+  private measure(): void {
+    if (!this.reading || this.centering) return;
     const here = this.map.project([this.reading.lon, this.reading.lat]);
     const middle = this.map.project(this.map.getCenter());
     this.setCentered(Math.hypot(here.x - middle.x, here.y - middle.y) <= CENTERED_PX);
-  };
+  }
 
   // --- The drawing ---------------------------------------------------------------
 
@@ -143,10 +150,10 @@ export class UserMarker {
       this.element.removeAttribute("tabindex");
       // Under the pins, which use 1 and 2.
       this.element.style.zIndex = "0";
-    } else {
-      this.marker.setLngLat([reading.lon, reading.lat]);
-      this.element?.setAttribute("aria-label", label);
+      return; // the first drawing is followed by center(): nothing to measure yet
     }
+    this.marker.setLngLat([reading.lon, reading.lat]);
+    this.element?.setAttribute("aria-label", label);
     this.measure();
   }
 
@@ -155,6 +162,7 @@ export class UserMarker {
     const reading = this.reading;
     if (!reading) return;
     this.setCentered(true);
+    this.centering = true;
     const map = this.map;
     const duration = motionDuration(400);
     if (reading.meters > FIT_ABOVE_M) {

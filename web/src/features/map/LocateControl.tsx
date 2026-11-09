@@ -3,10 +3,9 @@
 // It is added as a MapLibre control so that it stacks above the attribution by
 // itself, however many lines that text takes. Everything inside is React.
 import type * as maplibregl from "maplibre-gl";
-import { useEffect, useMemo, useRef, useSyncExternalStore, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 
-import { useAnnounce } from "../../components/Announcer";
 import { Icon } from "../../components/Icon";
 import { PrePrompt } from "../../components/ui";
 import { useI18n } from "../../i18n/i18n";
@@ -29,7 +28,9 @@ interface LocateControlProps {
 
 export function LocateControl({ map, marker, statusSlot, active, locateMs }: LocateControlProps) {
   const { t } = useI18n();
-  const announce = useAnnounce();
+  // Its own live region: the shared one is overwritten moments later by
+  // the map announcing the places of the area it has just moved to.
+  const [spoken, setSpoken] = useState("");
   const location = useUserLocation({ active, locateMs });
   const { status, error, reading } = location;
   const centered = useSyncExternalStore(marker.subscribe, marker.getCentered);
@@ -73,17 +74,17 @@ export function LocateControl({ map, marker, statusSlot, active, locateMs }: Loc
     previous.current = { label, status };
     if (before.label === label) return;
     if (status === "on" && before.status !== "on" && reading) {
-      announce(`${t("map.locate.found", { meters: reading.meters })} ${label}`);
+      setSpoken(`${t("map.locate.found", { meters: reading.meters })} ${label}`);
     } else {
-      announce(label);
+      setSpoken(label);
     }
-  }, [label, status, reading, announce, t]);
+  }, [label, status, reading, t]);
 
   const previousError = useRef(error);
   useEffect(() => {
-    if (error && error !== previousError.current) announce(t(`map.locate.error.${error}`));
+    if (error && error !== previousError.current) setSpoken(t(`map.locate.error.${error}`));
     previousError.current = error;
-  }, [error, announce, t]);
+  }, [error, t]);
 
   useEffect(() => {
     if (status === "prompt") promptRef.current?.querySelector<HTMLElement>(".sa-btn--primary")?.focus();
@@ -116,6 +117,9 @@ export function LocateControl({ map, marker, statusSlot, active, locateMs }: Loc
 
   return (
     <>
+      <div className="visually-hidden locate-live" role="status" aria-live="polite" aria-atomic="true">
+        {spoken}
+      </div>
       {createPortal(
         <button
           ref={buttonRef}

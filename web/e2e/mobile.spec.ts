@@ -166,3 +166,25 @@ test("the layer selector fits on a phone", async ({ page }) => {
   await expect(page.locator(".maplibregl-ctrl-attrib").first()).toContainText("PNOA cedido");
   await expect(page.locator(".maplibregl-ctrl-attrib").first()).toBeInViewport();
 });
+
+test("where am I, on a phone", async ({ page }) => {
+  const here = { lat: 41.5 + Math.random() * 0.4, lon: -5.5 + Math.random() * 0.4 };
+  await prepare(page);
+  await page.goto(`/?view=map&lat=${here.lat.toFixed(5)}&lon=${here.lon.toFixed(5)}&z=12.00`);
+  const show = page.getByRole("button", { name: "Mostrar mi ubicación", exact: true });
+  await expect(show).toBeVisible();
+  await checkTargets(page, "map with the location button");
+  await show.tap();
+  const dialog = page.getByRole("dialog", { name: "Verte en el mapa" });
+  await expect(dialog).toBeVisible();
+  await checkTargets(page, "location explanation");
+  await page.context().grantPermissions(["geolocation"]);
+  await page.context().setGeolocation({ latitude: here.lat, longitude: here.lon, accuracy: 5 });
+  await dialog.getByRole("button", { name: "Continuar" }).tap();
+  const stop = page.getByRole("button", { name: "Dejar de mostrar mi ubicación", exact: true });
+  await expect(stop).toBeVisible();
+  await expect(page.getByRole("img", { name: /^Tu ubicación, precisión/ })).toBeVisible();
+  await page.screenshot({ path: "test-results/screens/locate-on-390-touch.png" });
+  await stop.tap();
+  await expect(page.locator(".map-me")).toHaveCount(0);
+});

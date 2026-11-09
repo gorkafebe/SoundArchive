@@ -128,7 +128,8 @@
   background: var(--surface-200);
   box-shadow: var(--shadow-sheet);
 }
-.locate-control__button--on {
+.locate-control__button--on,
+.locate-control__button--on:hover {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--on-accent);
